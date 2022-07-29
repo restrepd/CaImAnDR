@@ -1,6 +1,8 @@
-%drgcmCrossPCArhddFF
+%drgcmCrossPCArhddFFv2
 clear all
 close all
+
+rng('shuffle')
 
 use_raw=1; %If this is 1 the program uses the raw trace, otherwise it uses the inferred trace
 
@@ -70,7 +72,7 @@ rho_glm=[];
 rho_glm_bwii=[];
 rho_glm_elctrode_no=[];
 
-
+ 
 for fileNo=1:handles_per_file.no_files
     for bwii=1:4
         no_timepoints_dFF=size(handles_per_file.file(fileNo).dFFtraces,2);
@@ -115,7 +117,7 @@ for fileNo=1:handles_per_file.no_files
         
         %Now calculate rho for shuffled dFF
         no_segments=10;
-        no_shuffles=10;
+        no_shuffles=100;
         segments=[1:no_segments];
         per_seg=perms(segments);
         seg_ii=randi(size(per_seg,1),1,10000);
@@ -148,69 +150,69 @@ for fileNo=1:handles_per_file.no_files
                 end
             end
         end
-         
-         %Fit LFP with dFFtraces
-        order=3;
-        framelen=31;
-        mask_dFF=~isnan(decimated_LFP_logPtraces(1,:));
-        for elect_no=1:handles_per_file.file(fileNo).no_electrodes
-            this_decimated_LFP_logPtraces=zeros(sum(mask_dFF),1);
-            this_decimated_LFP_logPtraces(:,1)=decimated_LFP_logPtraces(elect_no,mask_dFF)';
-            sgf_this_decimated_LFP_logPtraces = sgolayfilt(this_decimated_LFP_logPtraces,order,framelen);
-            %Now do a k-fold glm fit where the data left out (1/8th) is predicted from
-            %the data that was used for the glm (the other 7/8ths)
-            k_fold_chunk=floor(length(sgf_this_decimated_LFP_logPtraces)/k_fold);
-            LFPlog_pred=zeros(length(sgf_this_decimated_LFP_logPtraces),1);
-            LFPlog_CI=zeros(length(sgf_this_decimated_LFP_logPtraces),2);
-            for k_fold_ii=1:k_fold
-                mask_test_dFFtraces=zeros(1,length(sgf_this_decimated_LFP_logPtraces));
-                mask_test_dFFtraces((k_fold_ii-1)*k_fold_chunk+1:k_fold_ii*k_fold_chunk)=1;
-                mask_test_dFFtraces=logical(mask_test_dFFtraces);
-                mdl=fitglm(dFFtraces(:,~mask_test_dFFtraces)',sgf_this_decimated_LFP_logPtraces(~mask_test_dFFtraces),'linear');
-                [LFPlog_pred(mask_test_dFFtraces),LFPlog_CI(mask_test_dFFtraces,:)] = predict(mdl,dFFtraces(:,mask_test_dFFtraces)');
-            end
-            ii_rho_glm=ii_rho_glm+1;
-            rho_glm_elctrode_no(ii_rho_glm)=elect_no;
-            rho_glm_bwii(ii_rho_glm)=bwii;
-            rho_glm(ii_rho_glm)=corr(LFPlog_pred,sgf_this_decimated_LFP_logPtraces);
-            
-          
-            if figNo<5
-                figNo=figNo+1;
-                try
-                    close(figNo)
-                catch
-                end
-                hFig=figure(figNo);
-                hold on
-                set(hFig, 'units','normalized','position',[.3 .3 .6 .3])
-                plot(dFFtime,sgf_this_decimated_LFP_logPtraces,'-k','LineWidth',3)
-                plot(dFFtime+3,LFPlog_pred,'-r')
-                title(['glm fit of logLFP of electrode No ' num2str(elect_no) ' for ' handles.bw_names{bwii}])
-                fprintf(1, ['\nProcessed glm for ' handles.bw_names{bwii} ' electrode No ' num2str(elect_no) '\n']);
-            end
-            
-            %Do shuffled glm
-            LFPlog_pred=zeros(length(sgf_this_decimated_LFP_logPtraces),1);
-            LFPlog_CI=zeros(length(sgf_this_decimated_LFP_logPtraces),2);
-            
-            for k_fold_ii=1:k_fold
-                mask_test_dFFtraces=zeros(1,length(sgf_this_decimated_LFP_logPtraces));
-                mask_test_dFFtraces((k_fold_ii-1)*k_fold_chunk+1:k_fold_ii*k_fold_chunk)=1;
-                mask_test_dFFtraces=logical(mask_test_dFFtraces);
-                perm_k_fold_ii=randperm(k_fold);
-                sh_sgf_this_decimated_LFP_logPtraces=zeros(1,length(sgf_this_decimated_LFP_logPtraces));
-                for jj=1:k_fold
-                    sh_sgf_this_decimated_LFP_logPtraces((jj-1)*k_fold_chunk+1:jj*k_fold_chunk)=...
-                        sgf_this_decimated_LFP_logPtraces((perm_k_fold_ii(jj)-1)*k_fold_chunk+1:perm_k_fold_ii(jj)*k_fold_chunk);
-                end
-                mdl=fitglm(dFFtraces(:,~mask_test_dFFtraces)',sh_sgf_this_decimated_LFP_logPtraces(~mask_test_dFFtraces),'linear');
-                [LFPlog_pred(mask_test_dFFtraces),LFPlog_CI(mask_test_dFFtraces,:)] = predict(mdl,dFFtraces(:,mask_test_dFFtraces)');
-            end
-
-            rho_glm_sh(ii_rho_glm)=corr(LFPlog_pred,sgf_this_decimated_LFP_logPtraces);
-            
-        end
+        
+%          %Fit LFP with dFFtraces
+%         order=3;
+%         framelen=31;
+%         mask_dFF=~isnan(decimated_LFP_logPtraces(1,:));
+%         for elect_no=1:handles_per_file.file(fileNo).no_electrodes
+%             this_decimated_LFP_logPtraces=zeros(sum(mask_dFF),1);
+%             this_decimated_LFP_logPtraces(:,1)=decimated_LFP_logPtraces(elect_no,mask_dFF)';
+%             sgf_this_decimated_LFP_logPtraces = sgolayfilt(this_decimated_LFP_logPtraces,order,framelen);
+%             %Now do a k-fold glm fit where the data left out (1/8th) is predicted from
+%             %the data that was used for the glm (the other 7/8ths)
+%             k_fold_chunk=floor(length(sgf_this_decimated_LFP_logPtraces)/k_fold);
+%             LFPlog_pred=zeros(length(sgf_this_decimated_LFP_logPtraces),1);
+%             LFPlog_CI=zeros(length(sgf_this_decimated_LFP_logPtraces),2);
+%             for k_fold_ii=1:k_fold
+%                 mask_test_dFFtraces=zeros(1,length(sgf_this_decimated_LFP_logPtraces));
+%                 mask_test_dFFtraces((k_fold_ii-1)*k_fold_chunk+1:k_fold_ii*k_fold_chunk)=1;
+%                 mask_test_dFFtraces=logical(mask_test_dFFtraces);
+%                 mdl=fitglm(dFFtraces(:,~mask_test_dFFtraces)',sgf_this_decimated_LFP_logPtraces(~mask_test_dFFtraces),'linear');
+%                 [LFPlog_pred(mask_test_dFFtraces),LFPlog_CI(mask_test_dFFtraces,:)] = predict(mdl,dFFtraces(:,mask_test_dFFtraces)');
+%             end
+%             ii_rho_glm=ii_rho_glm+1;
+%             rho_glm_elctrode_no(ii_rho_glm)=elect_no;
+%             rho_glm_bwii(ii_rho_glm)=bwii;
+%             rho_glm(ii_rho_glm)=corr(LFPlog_pred,sgf_this_decimated_LFP_logPtraces);
+%             
+%           
+%             if figNo<5
+%                 figNo=figNo+1;
+%                 try
+%                     close(figNo)
+%                 catch
+%                 end
+%                 hFig=figure(figNo);
+%                 hold on
+%                 set(hFig, 'units','normalized','position',[.3 .3 .6 .3])
+%                 plot(dFFtime,sgf_this_decimated_LFP_logPtraces,'-k','LineWidth',3)
+%                 plot(dFFtime+3,LFPlog_pred,'-r')
+%                 title(['glm fit of logLFP of electrode No ' num2str(elect_no) ' for ' handles.bw_names{bwii}])
+%                 fprintf(1, ['\nProcessed glm for ' handles.bw_names{bwii} ' electrode No ' num2str(elect_no) '\n']);
+%             end
+%             
+%             %Do shuffled glm
+%             LFPlog_pred=zeros(length(sgf_this_decimated_LFP_logPtraces),1);
+%             LFPlog_CI=zeros(length(sgf_this_decimated_LFP_logPtraces),2);
+%             
+%             for k_fold_ii=1:k_fold
+%                 mask_test_dFFtraces=zeros(1,length(sgf_this_decimated_LFP_logPtraces));
+%                 mask_test_dFFtraces((k_fold_ii-1)*k_fold_chunk+1:k_fold_ii*k_fold_chunk)=1;
+%                 mask_test_dFFtraces=logical(mask_test_dFFtraces);
+%                 perm_k_fold_ii=randperm(k_fold);
+%                 sh_sgf_this_decimated_LFP_logPtraces=zeros(1,length(sgf_this_decimated_LFP_logPtraces));
+%                 for jj=1:k_fold
+%                     sh_sgf_this_decimated_LFP_logPtraces((jj-1)*k_fold_chunk+1:jj*k_fold_chunk)=...
+%                         sgf_this_decimated_LFP_logPtraces((perm_k_fold_ii(jj)-1)*k_fold_chunk+1:perm_k_fold_ii(jj)*k_fold_chunk);
+%                 end
+%                 mdl=fitglm(dFFtraces(:,~mask_test_dFFtraces)',sh_sgf_this_decimated_LFP_logPtraces(~mask_test_dFFtraces),'linear');
+%                 [LFPlog_pred(mask_test_dFFtraces),LFPlog_CI(mask_test_dFFtraces,:)] = predict(mdl,dFFtraces(:,mask_test_dFFtraces)');
+%             end
+% 
+%             rho_glm_sh(ii_rho_glm)=corr(LFPlog_pred,sgf_this_decimated_LFP_logPtraces);
+%             
+%         end
         
 %         %Calculate PCs per timepoint
 %         for ii_time=1:no_timepoints_dFF
@@ -262,18 +264,18 @@ for fileNo=1:handles_per_file.no_files
 %         
         %Now do dFF derivative
                 %Convolve lick_freq using a window of 0.9 sec
-        no_conv_points=5;
-        conv_win=ones(1,no_conv_points);
-        conv_dFFtraces=zeros(handles_per_file.file(fileNo).no_electrodes,no_timepoints_dFF);
-        
-        for trace_no=1:no_traces_dFF
-            conv_dFFtraces(trace_no,:)=conv(dFFtraces(trace_no,:),conv_win,'same')/no_conv_points;
-        end
-        
-        ddFFtraces=zeros(no_traces_dFF,size(dFFtraces,2));
-        ddFFtraces(:,2:end)=(conv_dFFtraces(:,2:end)-conv_dFFtraces(:,1:end-1))/dt_dFF;
-        ddFFtraces(:,1)=ddFFtraces(:,2);
-        pffft=1;
+%         no_conv_points=5;
+%         conv_win=ones(1,no_conv_points);
+%         conv_dFFtraces=zeros(handles_per_file.file(fileNo).no_electrodes,no_timepoints_dFF);
+%         
+%         for trace_no=1:no_traces_dFF
+%             conv_dFFtraces(trace_no,:)=conv(dFFtraces(trace_no,:),conv_win,'same')/no_conv_points;
+%         end
+%         
+%         ddFFtraces=zeros(no_traces_dFF,size(dFFtraces,2));
+%         ddFFtraces(:,2:end)=(conv_dFFtraces(:,2:end)-conv_dFFtraces(:,1:end-1))/dt_dFF;
+%         ddFFtraces(:,1)=ddFFtraces(:,2);
+%         pffft=1;
 %               %Calculate PCs per timepoint
 %         for ii_time=1:no_timepoints_dFF
 %             
@@ -337,104 +339,104 @@ for fileNo=1:handles_per_file.no_files
 %         
     end
 end
-
-%Plot correlation between glm prediction and LFP vs shuffled
-edges=[-1:0.05:1];
-rand_offset=0.8;
-
-figNo=figNo+1;
-try
-    close(figNo)
-catch
-end
-hFig=figure(figNo);
-set(hFig, 'units','normalized','position',[.3 .3 .6 .3])
-hold on 
-bar_offset=0;
-
-glm_rho_glm=[];
-glm_ii=0;
-
-id_ii=0;
-input_data=[];
-
-for bwii=1:4
-    
-    rho_glm_elctrode_no(ii_rho_glm)=elect_no;
-    rho_glm_bwii(ii_rho_glm)=bwii;
-    rho_glm(ii_rho_glm)=corr(LFPlog_pred,sgf_this_decimated_LFP_logPtraces);
-    
-    
-    %Shuffled rho
-    bar_offset=bar_offset+1
-    bar(bar_offset,mean(rho_glm_sh(rho_glm_bwii==bwii)),'LineWidth', 3,'EdgeColor','none','FaceColor',[0.7 0.7 0.7])
-    
-    %Violin plot
-    these_rhos=rho_glm_sh(rho_glm_bwii==bwii);
-    [mean_out, CIout]=drgViolinPoint(these_rhos...
-        ,edges,bar_offset,rand_offset,'k','k',3);
-    
-    %Shuffled
-    glm_rho_glm.data(glm_ii+1:glm_ii+length(these_rhos))=these_rhos;
-    glm_rho_glm.bwii(glm_ii+1:glm_ii+length(these_rhos))=bwii*ones(1,length(these_rhos));
-    glm_rho_glm.shuffled(glm_ii+1:glm_ii+length(these_rhos))=ones(1,length(these_rhos));
-
-    glm_ii=glm_ii+length(these_rhos);
-    
-    id_ii=id_ii+1;
-    input_data(id_ii).data=these_rhos;
-    input_data(id_ii).description=['rho for shuffled ' handles.bw_names{bwii}];
-    
-    
-    %rho
-    bar_offset=bar_offset+1
-    bar(bar_offset,mean(rho_glm(rho_glm_bwii==bwii)),'LineWidth', 3,'EdgeColor','none','FaceColor',[0 0.7 0.7])
-    
-    %Violin plot
-    these_rhos=rho_glm(rho_glm_bwii==bwii);
-    [mean_out, CIout]=drgViolinPoint(these_rhos...
-        ,edges,bar_offset,rand_offset,'k','k',3);
-    
-    
-    bar_offset=bar_offset+1
-    
-    %Original data
-    glm_rho_glm.data(glm_ii+1:glm_ii+length(these_rhos))=these_rhos;
-    glm_rho_glm.bwii(glm_ii+1:glm_ii+length(these_rhos))=bwii*ones(1,length(these_rhos));
-    glm_rho_glm.shuffled(glm_ii+1:glm_ii+length(these_rhos))=zeros(1,length(these_rhos));
-
-    glm_ii=glm_ii+length(these_rhos);
-    
-    id_ii=id_ii+1;
-    input_data(id_ii).data=these_rhos;
-    input_data(id_ii).description=['rho for original ' handles.bw_names{bwii}];
-    
-    
-end
-
-title('Correlation between glm predict and LFP power')
-ylabel('rho')
-
-xticks([1.5 4.5 7.5 10.5])
-xticklabels({handles.bw_names{1}, handles.bw_names{2}, handles.bw_names{3}, handles.bw_names{4}})
-
-%Perform the glm
-fprintf(1, ['glm for rho between LFP log power and predicted using dFF\n'])
-
-
-tbl = table(glm_rho_glm.data',glm_rho_glm.bwii',glm_rho_glm.shuffled',...
-    'VariableNames',{'rho','bwii','shuffled'});
-mdl = fitglm(tbl,'rho~bwii+shuffled+bwii*shuffled'...
-    ,'CategoricalVars',[2,3])
-
-
-%Do the ranksum/t-test
-fprintf(1, ['\n\nRanksum or t-test p values for rho between LFP log power and predicted using dFF\n'])
-
-try
-    [output_data] = drgMutiRanksumorTtest(input_data);
-catch
-end
+% 
+% %Plot correlation between glm prediction and LFP vs shuffled
+% edges=[-1:0.05:1];
+% rand_offset=0.8;
+% 
+% figNo=figNo+1;
+% try
+%     close(figNo)
+% catch
+% end
+% hFig=figure(figNo);
+% set(hFig, 'units','normalized','position',[.3 .3 .6 .3])
+% hold on 
+% bar_offset=0;
+% 
+% glm_rho_glm=[];
+% glm_ii=0;
+% 
+% id_ii=0;
+% input_data=[];
+% 
+% for bwii=1:4
+%     
+%     rho_glm_elctrode_no(ii_rho_glm)=elect_no;
+%     rho_glm_bwii(ii_rho_glm)=bwii;
+%     rho_glm(ii_rho_glm)=corr(LFPlog_pred,sgf_this_decimated_LFP_logPtraces);
+%     
+%     
+%     %Shuffled rho
+%     bar_offset=bar_offset+1
+%     bar(bar_offset,mean(rho_glm_sh(rho_glm_bwii==bwii)),'LineWidth', 3,'EdgeColor','none','FaceColor',[0.7 0.7 0.7])
+%     
+%     %Violin plot
+%     these_rhos=rho_glm_sh(rho_glm_bwii==bwii);
+%     [mean_out, CIout]=drgViolinPoint(these_rhos...
+%         ,edges,bar_offset,rand_offset,'k','k',3);
+%     
+%     %Shuffled
+%     glm_rho_glm.data(glm_ii+1:glm_ii+length(these_rhos))=these_rhos;
+%     glm_rho_glm.bwii(glm_ii+1:glm_ii+length(these_rhos))=bwii*ones(1,length(these_rhos));
+%     glm_rho_glm.shuffled(glm_ii+1:glm_ii+length(these_rhos))=ones(1,length(these_rhos));
+% 
+%     glm_ii=glm_ii+length(these_rhos);
+%     
+%     id_ii=id_ii+1;
+%     input_data(id_ii).data=these_rhos;
+%     input_data(id_ii).description=['rho for shuffled ' handles.bw_names{bwii}];
+%     
+%     
+%     %rho
+%     bar_offset=bar_offset+1
+%     bar(bar_offset,mean(rho_glm(rho_glm_bwii==bwii)),'LineWidth', 3,'EdgeColor','none','FaceColor',[0 0.7 0.7])
+%     
+%     %Violin plot
+%     these_rhos=rho_glm(rho_glm_bwii==bwii);
+%     [mean_out, CIout]=drgViolinPoint(these_rhos...
+%         ,edges,bar_offset,rand_offset,'k','k',3);
+%     
+%     
+%     bar_offset=bar_offset+1
+%     
+%     %Original data
+%     glm_rho_glm.data(glm_ii+1:glm_ii+length(these_rhos))=these_rhos;
+%     glm_rho_glm.bwii(glm_ii+1:glm_ii+length(these_rhos))=bwii*ones(1,length(these_rhos));
+%     glm_rho_glm.shuffled(glm_ii+1:glm_ii+length(these_rhos))=zeros(1,length(these_rhos));
+% 
+%     glm_ii=glm_ii+length(these_rhos);
+%     
+%     id_ii=id_ii+1;
+%     input_data(id_ii).data=these_rhos;
+%     input_data(id_ii).description=['rho for original ' handles.bw_names{bwii}];
+%     
+%     
+% end
+% 
+% title('Correlation between glm predict and LFP power')
+% ylabel('rho')
+% 
+% xticks([1.5 4.5 7.5 10.5])
+% xticklabels({handles.bw_names{1}, handles.bw_names{2}, handles.bw_names{3}, handles.bw_names{4}})
+% 
+% %Perform the glm
+% fprintf(1, ['glm for rho between LFP log power and predicted using dFF\n'])
+% 
+% 
+% tbl = table(glm_rho_glm.data',glm_rho_glm.bwii',glm_rho_glm.shuffled',...
+%     'VariableNames',{'rho','bwii','shuffled'});
+% mdl = fitglm(tbl,'rho~bwii+shuffled+bwii*shuffled'...
+%     ,'CategoricalVars',[2,3])
+% 
+% 
+% %Do the ranksum/t-test
+% fprintf(1, ['\n\nRanksum or t-test p values for rho between LFP log power and predicted using dFF\n'])
+% 
+% try
+%     [output_data] = drgMutiRanksumorTtest(input_data);
+% catch
+% end
     
 %Plot correlation histograms
 edges=[-0.2:0.01:0.2];
@@ -479,6 +481,29 @@ for bwii=1:4
     xlabel('Rho')
     
     sgtitle(['Rho for dFF x LFP log P for ' handles.bw_names{bwii} ])
+    
+    [h,p] = kstest2(rhos_dFF,rho_dFF,'Alpha',0.01);
+    fprintf(1, ['\np value for thr KS test difference between original and shuffled ' handles.bw_names{bwii}  ' = %d\n\n'],p);
+    
+    
+    figNo=figNo+1;
+    try
+        close(figNo)
+    catch
+    end
+    hFig=figure(figNo);
+    set(hFig, 'units','normalized','position',[.3 .3 .6 .3])
+    hold on
+    
+    [f_rho,x_rho] = drg_ecdf(rho_dFF);
+    plot(x_rho,f_rho,'k')
+    
+    [f_rhos,x_rhos] = drg_ecdf(rhos_dFF);
+    plot(x_rhos,f_rhos,'b')
+    
+    title(['Cumulative probability for rho ' handles.bw_names{bwii}])
+    xlabel('rho')
+    ylabel('Cumulative probability')
 end
 
 
@@ -509,6 +534,6 @@ title('Percent of significant correlations')
 text(10,28,'Original','Color','red','FontSize',12)
 text(10,26,'Shuffled','Color','blue','FontSize',12)
 
-
+  
 
 pffft=1;

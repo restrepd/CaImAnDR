@@ -8,44 +8,23 @@ if exist('handles_choices')==0
     %Load file
     [pre_perFileName,pre_perPathName] = uigetfile({'*pre_per.mat'},'Select the .m file with all the choices for analysis');
 
-    processing_algorithm=2;
 
-    %For some reason for post_time=5 we get artificailly high prediction with
-    %k_fold=10 even when we post_shift -5 or 20
-
-    %         post_time=5; %The SVZ will be trained with all points 5 sec following odor on
-    %         k_fold=10; %Note: make sure that this does not result in points masked=0 --->overtrained
-    %         post_shift=0;
-
-    %         post_time=5; %The SVZ will be trained with all points 20-255 sec following odor on
-    %         k_fold=10; %Note: make sure that this does not result in points masked=0 --->overtrained
-    %         post_shift=20;
-    %
-
-    post_time=5; %The SVZ will be trained with all points in 5 sec intervals 0-25 sec following odor on
-    k_fold=5; %Note: make sure that this does not result in points masked=0 --->overtrained
+    
     post_shift=0;
     
     trial_time_from=-5; %-10
-    trial_time_to=20; %30
+    trial_time_to=60; %30
 
-    %     post_time=20; %The SVZ will be trained with all points 20 sec following odor on
-    %     k_fold=30; %Ran with 10 in the past, 63 is loo
-    %     post_shift=0;
-
-
-    %     post_time=20; %Because of post_shift=10 the SVZ will be trained with all points 10-30 sec following odor on
-    %     k_fold=30; %Ran with 10 in the past, 63 is loo
-    %     post_shift=10; %This shifts the post training by this time
-    %
-    pre_time=5;
+    
     MLalgo_to_use=6;
-
+    p_threshold=1; %This limits the ROIs used in the decoding model to those whose p value in a ttest for the two odors in <=p_threshold
+    dt_p_threshold=20; %Time to be used after the odor on for the p_threshold t_test
+    show_figures=1; %Show the figures
+    convert_z=2; %0, do not convert, 1= z=x/std, 2= per trial z=(x-x_pre)/std
+    pre_time=5; %Used to calcuate x_pre
 else
     pre_perPathName=handles_choices.pre_per_PathName;
     pre_perFileName=handles_choices.pre_per_FileName;
-    processing_algorithm=handles_choices.processing_algorithm;
-    post_time=handles_choices.post_time;
     k_fold=handles_choices.k_fold;
     post_shift=handles_choices.post_shift;
     MLalgo_to_use=handles_choices.MLalgo_to_use;
@@ -55,10 +34,10 @@ end
  
 moving_mean_n=20;
 show_figures=1;
-
+ 
 load([pre_perPathName pre_perFileName])
 fprintf(1, ['\ndrgCaImAn_SVZ_entire_session run for ' pre_perFileName '\n\n']);
-fprintf(1, 'post_time = %d, k_fold= %d, post_shift= %d\n',post_time,k_fold,post_shift);
+fprintf(1, 'p threshold = %d\n',p_threshold);
 
 
 classifier_names{1}='Linear Discriminant';
@@ -70,8 +49,6 @@ classifier_names{6}='Binomial glm';
 
 handles_out.pre_perFileName=pre_perFileName;
 handles_out.pre_perPathName=pre_perPathName;
-handles_out.post_time=post_time;
-handles_out.k_fold=k_fold;
 handles_out.post_shift=post_shift;
 handles_out.pre_time=pre_time;
 handles_out.MLalgo_to_use=MLalgo_to_use;
@@ -113,7 +90,6 @@ if show_figures==1
     for trNo=1:no_traces
         % for trNo=1:20
         plot(time,traces(trNo,:)+y_shift*trNo,'-k','LineWidth',1)
-        traces(trNo,:)=traces(trNo,:)/std(traces(trNo,:));
     end
 
     ylim([-y_shift*0.2 (no_traces+2)*y_shift])
@@ -130,10 +106,19 @@ end
 %For example Hit||Miss shows S+ odor application times (red)
 %and FA||CR gives S- (blue)
 
+if convert_z==2
+    std_traces=zeros(1,size(traces,1));
+    for trace_no=1:size(traces,1)
+        std_traces(trace_no)=std(traces(trace_no,:));
+    end
+    std_traces=std_traces';
+end
+
 %Post points
 Nall=size(traces,1);
 dt=time(2)-time(1);
-
+ii_pre=ceil(pre_time/dt);
+ii_p_threshold=ceil(dt_p_threshold/dt);
 no_points_before=floor(-trial_time_from/dt);
 no_points_after=floor(trial_time_to/dt);
 measurements_per_trial=[];
@@ -143,16 +128,34 @@ training_decisions=[];
 at_end=0;
 this_ii=0;
 ii_post=0;
-ii_pre=0;
+
 ii=0;
 trNo=0;
+ii_sp_post=0;
+ii_sm_post=0;
+
+dFF_per_trial_sp=[];
+dFF_per_trial_sm=[];
+dFFs_sp_per_trial_per_ROI=[];
+dFFs_sm_per_trial_per_ROI=[];
 
 while (at_end==0)
     next_ii=find((epochs(this_ii+1:end)==7)|(epochs(this_ii+1:end)==6),1,'first');
     if ~isempty(next_ii)
         if (no_points_after+this_ii+next_ii<length(epochs))&(this_ii+next_ii-no_points_before>0)
             trNo=trNo+1;
-            measurements_per_trial(1:no_points_before+no_points_after,:,trNo)=traces(:,this_ii+next_ii:this_ii+next_ii+no_points_before+no_points_after-1)';
+             if convert_z==2
+                mean_trace_before=mean(traces(:,this_ii+next_ii+no_points_before-ii_pre:this_ii+next_ii+no_points_before),2);
+                mean_trace_before=repmat(mean_trace_before,1,size(traces(:,this_ii+next_ii:this_ii+next_ii+no_points_before+no_points_after-1),2));
+                these_std_traces=repmat(std_traces,1,size(traces(:,this_ii+next_ii:this_ii+next_ii+no_points_before+no_points_after-1),2));
+                measurements_per_trial(1:no_points_before+no_points_after,:,trNo)=((traces(:,this_ii+next_ii:this_ii+next_ii+no_points_before+no_points_after-1)...
+                    -mean_trace_before)./these_std_traces)';
+            else
+                measurements_per_trial(1:no_points_before+no_points_after,:,trNo)=traces(:,this_ii+next_ii:this_ii+next_ii+no_points_before+no_points_after-1)';
+            end
+%             measurements_per_trial(1:no_points_before+no_points_after,:,trNo)=traces(:,this_ii+next_ii:this_ii+next_ii+no_points_before+no_points_after-1)';
+            ii_sp_post=ii_sp_post+1;
+            dFFs_sp_per_trial_per_ROI(ii_sp_post,:,:)=traces(:,this_ii+next_ii:this_ii+next_ii+ii_p_threshold);        
             this_ii=this_ii+next_ii+no_points_after;
             training_decisions(trNo)=1;
         else
@@ -160,6 +163,12 @@ while (at_end==0)
         end
     else
         at_end=1;
+    end
+end
+
+if convert_z==1
+    for trace_no=1:size(traces,1)
+        traces(trace_no,:)=traces(trace_no,:)/std(traces(trace_no,:));
     end
 end
 
@@ -176,7 +185,17 @@ while (at_end==0)
     if ~isempty(next_ii)
         if (no_points_after+this_ii+next_ii<length(epochs))&(this_ii+next_ii-no_points_before>0)
             trNo=trNo+1;
-            measurements_per_trial(1:no_points_before+no_points_after,:,trNo)=traces(:,this_ii+next_ii:this_ii+next_ii+no_points_before+no_points_after-1)';
+            if convert_z==2
+                mean_trace_before=mean(traces(:,this_ii+next_ii+no_points_before-ii_pre:this_ii+next_ii+no_points_before),2);
+                mean_trace_before=repmat(mean_trace_before,1,size(traces(:,this_ii+next_ii:this_ii+next_ii+no_points_before+no_points_after-1),2));
+                these_std_traces=repmat(std_traces,1,size(traces(:,this_ii+next_ii:this_ii+next_ii+no_points_before+no_points_after-1),2));
+                measurements_per_trial(1:no_points_before+no_points_after,:,trNo)=((traces(:,this_ii+next_ii:this_ii+next_ii+no_points_before+no_points_after-1)...
+                    -mean_trace_before)./these_std_traces)';
+            else
+                measurements_per_trial(1:no_points_before+no_points_after,:,trNo)=traces(:,this_ii+next_ii:this_ii+next_ii+no_points_before+no_points_after-1)';
+            end
+            ii_sm_post=ii_sm_post+1;
+            dFFs_sm_per_trial_per_ROI(ii_sm_post,:,:)=traces(:,this_ii+next_ii:this_ii+next_ii+ii_p_threshold);
             this_ii=this_ii+next_ii+no_points_after;
             training_decisions(trNo)=0;
         else
@@ -186,6 +205,73 @@ while (at_end==0)
         at_end=1;
     end
 end
+
+
+p_values=ones(1,size(dFFs_sm_per_trial_per_ROI,2));
+for iiROI=1:size(dFFs_sm_per_trial_per_ROI,2)
+    dFF_sm=zeros(size(dFFs_sm_per_trial_per_ROI,1),size(dFFs_sm_per_trial_per_ROI,3));
+    dFF_sm(:,:)=dFFs_sm_per_trial_per_ROI(:,iiROI,:);
+    dFF_sp=zeros(size(dFFs_sp_per_trial_per_ROI,1),size(dFFs_sp_per_trial_per_ROI,3));
+    dFF_sp(:,:)=dFFs_sp_per_trial_per_ROI(:,iiROI,:);
+    
+    [h,p_values(iiROI)]=ttest2(mean(dFF_sp,2),mean(dFF_sm,2));
+end
+
+p_value_mask=logical(p_values<=p_threshold);
+
+%Trim the number of ROIs in all matrices
+noROIs_before_trimming=size(measurements_per_trial,2);
+% dFF_per_trial_sp=dFF_per_trial_sp(:,p_value_mask,:);
+% dFF_per_trial_sm=dFF_per_trial_sm(:,p_value_mask,:);
+measurements_per_trial=measurements_per_trial(:,p_value_mask,:);
+traces=traces(p_value_mask,:);
+no_traces=size(traces,1);
+
+
+%Plot the trimmed traces
+%time has the time for the dF/F traces(ROI,time)
+if show_figures==1
+    figNo=figNo+1;
+    try
+        close(figNo)
+    catch
+    end
+    
+    hFig = figure(figNo);
+    
+    set(hFig, 'units','normalized','position',[.05 .1 .85 .8])
+    hold on
+    
+    % Determine the y spacing of the traces
+    y_shift=1.2*(prctile(traces(:),95)-prctile(traces(:),5));
+    
+    %Plot the traces and do z normalization
+    %For S+ and S- plot odor on and reinforcement
+    for epoch=1:handles.dropcData.epochIndex
+        %Epoch 2 is odor on, 3 is odor off
+        plot_epoch=(handles.dropcData.epochEvent(epoch)==2)||(handles.dropcData.epochEvent(epoch)==3);
+        if plot_epoch
+            if handles.dropcData.epochTypeOfOdor(epoch)==handles.dropcProg.splusOdor
+                plot([handles.dropcData.epochTime(epoch) handles.dropcData.epochTime(epoch)], [0 (no_traces+2)*y_shift],...
+                    '-r','LineWidth',1)
+            else
+                plot([handles.dropcData.epochTime(epoch) handles.dropcData.epochTime(epoch)], [0 (no_traces+2)*y_shift],...
+                    '-b','LineWidth',1)
+            end
+        end
+    end
+    
+    for trNo=1:no_traces
+        % for trNo=1:20
+        plot(time,traces(trNo,:)+y_shift*trNo,'-k','LineWidth',1)
+    end
+    
+    ylim([-y_shift*0.2 (no_traces+2)*y_shift])
+    xlabel('time(sec)')
+    title(['dFF timecourses after p value trimming ' num2str(size(measurements_per_trial,2)) ' ROIs'])
+end
+
+fprintf(1, ['Demixed PCA run with %d ROIs (original no ROIs %d)...\n'],size(measurements_per_trial,2),noROIs_before_trimming);
 
 
 handles_out.Nall=Nall;
@@ -416,6 +502,10 @@ optimalLambda = dpca_optimizeLambda(firingRatesAverage, firingRates, trialNum, .
 Cnoise = dpca_getNoiseCovariance(firingRatesAverage, ...
     firingRates, trialNum, 'simultaneous', ifSimultaneousRecording);
 
+% This is the core function.
+% W is the decoder, V is the encoder (ordered by explained variance),
+% whichMarg is an array that tells you which component comes from which
+% marginalization
 [W,V,whichMarg] = dpca(firingRatesAverage, numComp, ...
     'combinedParams', combinedParams, ...
     'lambda', optimalLambda, ...
@@ -432,7 +522,8 @@ dpca_plot(firingRatesAverage, W, V, @dpca_plot_default, ...
     'time', time,                        ...
     'timeEvents', timeEvents,               ...
     'timeMarginalization', 3,           ...
-    'legendSubplot', 16);
+    'legendSubplot', 16,          ...
+    'displaySumStimComps', 1);
 
 sgtitle('dPCA with regularization')
 %% Optional: estimating "signal variance"
@@ -493,5 +584,18 @@ sgtitle('dPCA with regularization with signal dFF variance')
 %     'timeMarginalization', 3,           ...
 %     'legendSubplot', 16,                ...
 %     'componentsSignif', componentsSignif);
+
+%% Plot the different components and 3D for each trial
+
+drg_dpca_plot_per_trial(firingRatesAverage, firingRates, W, V, @dpca_plot_default, ...
+    'explainedVar', explVar, ...
+    'marginalizationNames', margNames, ...
+    'marginalizationColours', margColours, ...
+    'whichMarg', whichMarg,                 ...
+    'time', time,                        ...
+    'timeEvents', timeEvents,               ...
+    'timeMarginalization', 3,           ...
+    'legendSubplot', 16,          ...
+    'displaySumStimComps', 1);
 
 pffft=1;

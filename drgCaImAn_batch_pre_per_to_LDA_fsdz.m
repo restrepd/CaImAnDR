@@ -28,7 +28,7 @@ end
 %Parallel batch processing for each file
 all_files_present=1;
 for filNum=first_file:handles.no_files
-    
+     
     
     %Make sure that all the files exist
     pre_per_FileName=handles.FileName_pre_per{filNum};
@@ -37,7 +37,7 @@ for filNum=first_file:handles.no_files
     else
         pre_per_PathName=handles.PathName_pre_per;
     end
-    
+     
     if exist([pre_per_PathName pre_per_FileName])==0
         fprintf(1, ['Program will be terminated because file No %d, ' pre_per_PathName pre_per_FileName ' does not exist\n'],filNum);
         all_files_present=0;
@@ -71,7 +71,7 @@ if all_files_present==1
         pre_per_FileName=handles.FileName_pre_per{fileNo};
          
         figNo=0;
-        
+         
         for ii_p_thr=1:length(handles.p_thr_less_than)
             for MLalgo=handles.MLalgo
                 

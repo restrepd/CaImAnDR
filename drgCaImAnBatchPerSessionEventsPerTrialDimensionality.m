@@ -59,6 +59,8 @@ dLickTraces=[];
 skip_ii=19;
 baseline_ii=200;
 
+handles_out=[];
+these_times=[];
 
 for filNum=1:caimanhandles.caimandr_choices.no_files
     
@@ -161,11 +163,11 @@ for filNum=1:caimanhandles.caimandr_choices.no_files
                 end
                 mean_snip_dFF(num_odor_trials_dFF,1:no_time_points)=mean(these_traces,1);
                 CI_snip_dFF(num_odor_trials_dFF,1:2,1:no_time_points)=bootci(1000, @mean, these_traces);
-                time(num_odor_trials_dFF).time_to_event=handles_out.time_to_eventHit;
+                these_times(num_odor_trials_dFF).time_to_event=handles_out.time_to_eventHit;
                 
 %                 %Get the movement
-%                 snip_maskOF=(timeOF>=epoch_time(trNo)-dt_before)...
-%                     &(timeOF<=epoch_time(trNo)+dt_after);
+%                 snip_maskOF=(timeOF>=epoch_these_times(trNo)-dt_before)...
+%                     &(timeOF<=epoch_these_times(trNo)+dt_after);
 %                 velocity(num_odor_trials_dFF,1:sum(snip_maskOF))=mag_meantail(snip_maskOF);
 %                 time_OFsnip(num_odor_trials_dFF,1:sum(snip_maskOF))=([1:sum(snip_maskOF)]*(1/frame_rate))-dt_before;
 %                 no_timepointsOF(num_odor_trials_dFF)=sum(snip_maskOF);
@@ -231,11 +233,11 @@ for filNum=1:caimanhandles.caimandr_choices.no_files
                 end
                 mean_snip_dFF(num_odor_trials_dFF,1:no_time_points)=mean(these_traces,1);
                 CI_snip_dFF(num_odor_trials_dFF,1:2,1:no_time_points)=bootci(1000, @mean, these_traces);
-                time(num_odor_trials_dFF).time_to_event=handles_out.time_to_eventMiss;
+                these_times(num_odor_trials_dFF).time_to_event=handles_out.time_to_eventMiss;
                 
 %                 %Get the movement
-%                 snip_maskOF=(timeOF>=epoch_time(trNo)-dt_before)...
-%                     &(timeOF<=epoch_time(trNo)+dt_after);
+%                 snip_maskOF=(timeOF>=epoch_these_times(trNo)-dt_before)...
+%                     &(timeOF<=epoch_these_times(trNo)+dt_after);
 %                 velocity(num_odor_trials_dFF,1:sum(snip_maskOF))=mag_meantail(snip_maskOF);
 %                 time_OFsnip(num_odor_trials_dFF,1:sum(snip_maskOF))=([1:sum(snip_maskOF)]*(1/frame_rate))-dt_before;
 %                 no_timepointsOF(num_odor_trials_dFF)=sum(snip_maskOF);
@@ -301,11 +303,11 @@ for filNum=1:caimanhandles.caimandr_choices.no_files
                 end
                 mean_snip_dFF(num_odor_trials_dFF,1:no_time_points)=mean(these_traces,1);
                 CI_snip_dFF(num_odor_trials_dFF,1:2,1:no_time_points)=bootci(1000, @mean, these_traces);
-                time(num_odor_trials_dFF).time_to_event=handles_out.time_to_eventFA;
+                these_times(num_odor_trials_dFF).time_to_event=handles_out.time_to_eventFA;
 %                 
 %                 %Get the movement
-%                 snip_maskOF=(timeOF>=epoch_time(trNo)-dt_before)...
-%                     &(timeOF<=epoch_time(trNo)+dt_after);
+%                 snip_maskOF=(timeOF>=epoch_these_times(trNo)-dt_before)...
+%                     &(timeOF<=epoch_these_times(trNo)+dt_after);
 %                 velocity(num_odor_trials_dFF,1:sum(snip_maskOF))=mag_meantail(snip_maskOF);
 %                 time_OFsnip(num_odor_trials_dFF,1:sum(snip_maskOF))=([1:sum(snip_maskOF)]*(1/frame_rate))-dt_before;
 %                 no_timepointsOF(num_odor_trials_dFF)=sum(snip_maskOF);
@@ -368,14 +370,14 @@ for filNum=1:caimanhandles.caimandr_choices.no_files
                 end
                 mean_snip_dFF(num_odor_trials_dFF,1:no_time_points)=mean(these_traces,1);
                 CI_snip_dFF(num_odor_trials_dFF,1:2,1:no_time_points)=bootci(1000, @mean, these_traces);
-                time(num_odor_trials_dFF).time_to_event=handles_out.time_to_eventCR;
+                these_times(num_odor_trials_dFF).time_to_event=handles_out.time_to_eventCR;
                 
                 epochs_per_trial_dFF(num_odor_trials_dFF)=4;
                 trial_dFF(num_odor_trials_dFF)=num_odor_trials;
                 
 %                 %Get the movement
-%                 snip_maskOF=(timeOF>=epoch_time(trNo)-dt_before)...
-%                     &(timeOF<=epoch_time(trNo)+dt_after);
+%                 snip_maskOF=(timeOF>=epoch_these_times(trNo)-dt_before)...
+%                     &(timeOF<=epoch_these_times(trNo)+dt_after);
 %                 velocity(num_odor_trials_dFF,1:sum(snip_maskOF))=mag_meantail(snip_maskOF);
 %                 time_OFsnip(num_odor_trials_dFF,1:sum(snip_maskOF))=([1:sum(snip_maskOF)]*(1/frame_rate))-dt_before;
 %                 no_timepointsOF(num_odor_trials_dFF)=sum(snip_maskOF);
@@ -494,19 +496,20 @@ if caimanhandles.caimandr_choices.start_reversal<caimanhandles.caimandr_choices.
     x_val=1;
     handles_out2.pctPerWin(1).pct=perCorr(1:first_num_odor_trials(caimanhandles.caimandr_choices.start_reversal)-1);
     bar(x_val,mean(handles_out2.pctPerWin(1).pct),'FaceColor',[0.7 0.7 0.7])
-    [handles_out2.pctPerWin(1).pct_mean, handles_out2.pctPerWin(1).pct_CI]=drgViolinPoint(handles_out2.pctPerWin(1).pct,edges,x_val,rand_offset,'k',2);
+    [handles_out2.pctPerWin(1).pct_mean, handles_out2.pctPerWin(1).pct_CI]=drgViolinPoint(handles_out2.pctPerWin(1).pct,edges,x_val,rand_offset,'k','k',2);
     
     %Trials after reversal
     x_val=2;
-    handles_out2.pctPerWin(2).pct=perCorr(first_num_odor_trials(caimanhandles.caimandr_choices.start_reversal)+15:first_num_odor_trials(caimanhandles.caimandr_choices.start_reversal)+65);
+    this_end=min([first_num_odor_trials(caimanhandles.caimandr_choices.start_reversal)+65 length(perCorr)]);
+    handles_out2.pctPerWin(2).pct=perCorr(first_num_odor_trials(caimanhandles.caimandr_choices.start_reversal)+15:this_end);
     bar(x_val,mean(handles_out2.pctPerWin(2).pct),'FaceColor',[0.7 0.7 0.7])
-    [handles_out2.pctPerWin(2).pct_mean, handles_out2.pctPerWin(2).pct_CI]=drgViolinPoint(handles_out2.pctPerWin(2).pct,edges,x_val,rand_offset,'k',2);
+    [handles_out2.pctPerWin(2).pct_mean, handles_out2.pctPerWin(2).pct_CI]=drgViolinPoint(handles_out2.pctPerWin(2).pct,edges,x_val,rand_offset,'k','k',2);
     
     %Trials at end
     x_val=3;
-    handles_out2.pctPerWin(3).pct=perCorr(end-100:end);
+    handles_out2.pctPerWin(3).pct=perCorr(end-50:end);
     bar(x_val,mean(handles_out2.pctPerWin(3).pct),'FaceColor',[0.7 0.7 0.7])
-    [handles_out2.pctPerWin(3).pct_mean, handles_out2.pctPerWin(3).pct_CI]=drgViolinPoint(handles_out2.pctPerWin(3).pct,edges,x_val,rand_offset,'k',2);
+    [handles_out2.pctPerWin(3).pct_mean, handles_out2.pctPerWin(3).pct_CI]=drgViolinPoint(handles_out2.pctPerWin(3).pct,edges,x_val,rand_offset,'k','k',2);
     
     %Draw lines between points
     plot([1 2 3],[mean(handles_out2.pctPerWin(1).pct) mean(handles_out2.pctPerWin(2).pct) mean(handles_out2.pctPerWin(3).pct)],'-k')
@@ -752,7 +755,7 @@ for winNo=1:szwins(1)
         ylabel('Normalized dF/F')
         ylim([prctile(mean_win_dFF(:),1)-0.1*(prctile(mean_win_dFF(:),99)-prctile(mean_win_dFF(:),1)) 1.2*prctile(mean_win_dFF(:),99)-0.1*(prctile(mean_win_dFF(:),99)+prctile(mean_win_dFF(:),1))])
     end
-    suptitle(['Normalized dF/F for window No ' num2str(winNo) ' Hit(red) Miss(cyan) FA(magenta) CR(blue)'])
+    sgtitle(['Normalized dF/F for window No ' num2str(winNo) ' Hit(red) Miss(cyan) FA(magenta) CR(blue)'])
 end
 
 %Do a linear discriminant analysis
@@ -1208,7 +1211,7 @@ for no_trial_windows=1:total_trial_windows
         hFig=figure(figNo);
         set(hFig, 'units','normalized','position',[.05 .05 .9 .9])
         
-        suptitle(['Timecourse for dF/F, lick frequency (LF) and velocity and derivatives for ' supertitle_description{no_trial_windows}])
+        sgtitle(['Timecourse for dF/F, lick frequency (LF) and velocity and derivatives for ' supertitle_description{no_trial_windows}])
         
         %First dF/F
         maxdFF=-200;

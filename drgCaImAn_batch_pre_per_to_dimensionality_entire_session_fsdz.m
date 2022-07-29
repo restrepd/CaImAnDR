@@ -1,10 +1,11 @@
-function drgCaImAn_batch_pre_per_to_decode_entire_session_fsdz(choiceBatchPathName,choiceFileName)
+function drgCaImAn_batch_pre_per_to_dimensionality_entire_session_fsdz(choiceBatchPathName,choiceFileName)
 %Note: fitcnet will not work in Matlab versions earlier than 2021a
 
-   
+
+
 
 if nargin==0
-    [choiceFileName,choiceBatchPathName] = uigetfile({'drgCaImAn_LDAfsdz_choices*.m'},'Select the .m file with all the choices for analysis');
+    [choiceFileName,choiceBatchPathName] = uigetfile({'drgCaImAn_dim_choices*.m'},'Select the .m file with all the choices for analysis');
 end
 
 fprintf(1, ['\ndrgCaImAn_batch_pre_per_to_LDA_fsdz run for ' choiceFileName '\n\n']);
@@ -50,7 +51,7 @@ for filNum=first_file:handles.no_files
     else
         pre_per_PathName=handles.PathName_pre_per;
     end
-     
+    
     if exist([pre_per_PathName pre_per_FileName])==0
         fprintf(1, ['Program will be terminated because file No %d, ' pre_per_FileName ' does not exist\n'],filNum);
         all_files_present=0;
@@ -87,18 +88,15 @@ if all_files_present==1
         
         handles_choices.pre_per_PathName=pre_per_PathName;
         handles_choices.pre_per_FileName=pre_per_FileName;
-        handles_choices.processing_algorithm=handles.processing_algorithm;
-        handles_choices.MLalgo_to_use=handles.MLalgo_to_use;
-        handles_choices.dt_p_threshold=handles.dt_p_threshold;
+       
         handles_choices.show_figures=handles.show_figures;
         handles_choices.post_time=handles.post_time;
-        handles_choices.k_fold=handles.k_fold;
+      
         handles_choices.post_shift=handles.post_shift;
-        handles_choices.pre_time=handles.pre_time;
-        handles_choices.ii_cost=handles.ii_cost;
- 
+       
+  
         for ii_thr=1:length(handles.p_threshold)
-             
+            
            handles_choices.p_threshold=handles.p_threshold(ii_thr);
             
             ii_out=ii_out+1;
@@ -108,14 +106,14 @@ if all_files_present==1
             
             start_toc=toc;
             
-            handles_out.ii_out(ii_out).handles_out=drgCaImAn_SVZ_entire_session_shuffling(handles_choices);
+            handles_out.ii_out(ii_out).handles_out=drgCaImAn_dimensionality_entire_session_shuffling(handles_choices);
             
-            fprintf(1, ['Data processed for file number %d, condition number %d\n'],fileNo,ii_thr);
+%             fprintf(1, ['Data processed for file number %d, condition number %d\n'],fileNo,ii_thr);
             
-            fprintf(1,'Processing time for drgCaImAn_pre_per_to_LDA_fsdz_new %d hours\n',(toc-start_toc)/(60*60));
+%             fprintf(1,'Processing time for drgCaImAn_dimensionality_entire_session_shuffling %d hours\n',(toc-start_toc)/(60*60));
         end
         
-        fprintf(1,'\n\nProcessing time for file No %d is %d hours\n',fileNo,(toc-first_toc)/(60*60));
+%         fprintf(1,'\n\nProcessing time for file No %d is %d hours\n',fileNo,(toc-first_toc)/(60*60));
         
         %Save output file
         handles_out.last_file_processed=fileNo;

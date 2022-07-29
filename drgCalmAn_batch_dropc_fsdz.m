@@ -56,7 +56,7 @@ for fileNo=handles_choice.first_file:handles_choice.no_files
 end
 
 for fileNo=handles_choice.first_file:handles_choice.no_files
-    try
+     try
         figNo=0;
 
         fprintf(1, ['\nProcessing  ' num2str(fileNo) '\n']);
@@ -169,9 +169,9 @@ for fileNo=handles_choice.first_file:handles_choice.no_files
         %     fprintf(1, ['\nStndard deviation (um) is %d\n\n'],std(diameter));
         %
         %
-
+ 
         this_filename=handles_choice.csvFileName{fileNo};
-
+   
         if strcmp(this_filename(end-3:end),'.mat')
             %This reads the extract file
             load([handles_choice.PathNamecsv{fileNo} handles_choice.csvFileName{fileNo}])
@@ -376,17 +376,19 @@ for fileNo=handles_choice.first_file:handles_choice.no_files
         epochs=zeros(1,length(time));
 
         ylim([-y_shift*0.2 (no_traces+2)*y_shift])
-
+ 
 
         xlabel('time (s)')
         ylabel('deltaF/F')
         title(fnameca(1:end-4), 'Interpreter', 'none')
-
+ 
         if do_warp==1
             savefig([fnameca(1:end-4) '_dropc_warp_Fig1.fig'])
         else
             savefig([fnameca(1:end-4) '_dropc_batch_Fig1.fig'])
         end
+        
+        
 
         dt_before=10;
         dt_after=20;

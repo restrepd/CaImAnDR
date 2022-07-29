@@ -1,4 +1,4 @@
-function drgCaImAn_batch_pre_per_to_decode_entire_session_fsdz(choiceBatchPathName,choiceFileName)
+function drgCaImAn_batch_pre_per_fix_percent_entire_session_fsdz(choiceBatchPathName,choiceFileName)
 %Note: fitcnet will not work in Matlab versions earlier than 2021a
 
    
@@ -7,7 +7,7 @@ if nargin==0
     [choiceFileName,choiceBatchPathName] = uigetfile({'drgCaImAn_LDAfsdz_choices*.m'},'Select the .m file with all the choices for analysis');
 end
 
-fprintf(1, ['\ndrgCaImAn_batch_pre_per_to_LDA_fsdz run for ' choiceFileName '\n\n']);
+fprintf(1, ['\ndrgCaImAn_batch_pre_per_fix_percent_entire_session_fsdz run for ' choiceFileName '\n\n']);
 
 tempDirName=['temp' choiceFileName(12:end-2)];
 
@@ -97,6 +97,9 @@ if all_files_present==1
         handles_choices.pre_time=handles.pre_time;
         handles_choices.ii_cost=handles.ii_cost;
  
+        %Load previously processed file
+        load([handles.PathName_out pre_per_FileName(1:end-4) suffix_out],'handles_out')
+        
         for ii_thr=1:length(handles.p_threshold)
              
            handles_choices.p_threshold=handles.p_threshold(ii_thr);
@@ -108,7 +111,7 @@ if all_files_present==1
             
             start_toc=toc;
             
-            handles_out.ii_out(ii_out).handles_out=drgCaImAn_SVZ_entire_session_shuffling(handles_choices);
+            handles_out.ii_out(ii_out).handles_out.percent_correct=drgCaImAn_fix_percent_correct(handles_choices);
             
             fprintf(1, ['Data processed for file number %d, condition number %d\n'],fileNo,ii_thr);
             

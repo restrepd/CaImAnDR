@@ -1,4 +1,4 @@
-function handles_out=drgCaImAn_SVZ_entire_session_shuffling(handles_choices)
+function handles_out=drgCaImAn_SVZ_entire_session_shuffling_shifted(handles_choices)
 %This program trains several decoding algorithms with the post odorant and then determines what happens throughout the entire timecouse
 %The user enters the choices entered under exist('handles_choices')==0
 %
@@ -60,10 +60,10 @@ warning('off')
 rng('shuffle');
 
 convert_z=1; %Convert dFF traces to z
-dt_span=40; %Seconds for per trial traces centered on odor on 
+dt_span=40; %Seconds shown before and after odor on in the figures
 moving_mean_n=30; %Points used to calculate moving mean for the prediction label figure
 no_shuffles=10; %Number of shuffles for per trial shuffling
-  
+ 
 load([pre_perPathName pre_perFileName])
 fprintf(1, ['\ndrgCaImAn_SVZ_entire_session run for ' pre_perFileName '\n\n']);
 fprintf(1, 'post_time = %d, p_threshold= %d, post_shift= %d, cost %d\n',post_time,p_threshold,post_shift, ii_cost);
@@ -132,7 +132,7 @@ if show_figures==1
     ylim([-y_shift*0.2 (no_traces+2)*y_shift])
     xlabel('time(sec)')
     title(['All dFF timecourses ' num2str(size(traces,1)) ' ROIs'])
-endii_p_threshold
+end
 
 %epochs is a vector of the length of time that gives information on
 %behavior
@@ -144,7 +144,7 @@ endii_p_threshold
 
 %For example Hit||Miss shows S+ odor application times (red)
 %and FA||CR gives S- (blue)
-          
+
 %Post points
 Nall=size(traces,1);
 dt=time(2)-time(1);
@@ -176,24 +176,13 @@ dFF_per_trial_sp=[];
 dFF_per_trial_sm=[];
 dFFs_sp_per_trial_per_ROI=[];
 dFFs_sm_per_trial_per_ROI=[];
-hit_per_trial=[];
-miss_per_trial=[];
-cr_per_trial=[];
-fa_per_trial=[];
- 
+
+%Shift the eopochs
+shuffling_ii=2; %1 Different Slotnick's pseudorandom, 2 random
+epochs=drgCaImAn_find_trials_in_eopchs(epochs,shuffling_ii);
+
 %training_decisions is 1 if S+ and 2 if S-
-%epochs has masks for the following epochs
-% 1 - FV on
-% 2 - odor on
-% 3 - odor off
-% 4 - reinforcement on
-% 5 - reinforcement off
-% 6 - Hit
-% 7 - Miss
-% 8 - FA
-% 9 - CR
 while (at_end==0)
-    %6 is hit, 7 is miss, 8 FA and 9 CR
     next_ii_sp=find((epochs(this_ii+1:end)==7)|(epochs(this_ii+1:end)==6),1,'first');
     next_ii_sm=find((epochs(this_ii+1:end)==8)|(epochs(this_ii+1:end)==9),1,'first');
     
@@ -202,17 +191,6 @@ while (at_end==0)
     else
         
         if isempty(next_ii_sm)
-            %This is S+
-            if epochs(this_ii+1+next_ii_sp)==6
-                hit_per_trial=[hit_per_trial 1];
-                miss_per_trial=[miss_per_trial 0];
-            else
-                hit_per_trial=[hit_per_trial 0];
-                miss_per_trial=[miss_per_trial 1];
-            end
-            cr_per_trial=[cr_per_trial 0];
-            fa_per_trial=[fa_per_trial 0];
-
             next_ii=next_ii_sp;
             if (no_points_post_shift+this_ii+next_ii+no_points_post<length(epochs))&(no_points_post_shift+this_ii+next_ii-no_points_pre>0)&(no_points_post_shift+this_ii+next_ii+ii_span<=length(epochs))
                 measurements_post(ii_post+1:ii_post+no_points_post,:)=traces(:,no_points_post_shift+this_ii+next_ii:no_points_post_shift+this_ii+next_ii+no_points_post-1)';
@@ -242,17 +220,6 @@ while (at_end==0)
         end
         
         if isempty(next_ii_sp)
-            %This is S-
-            if epochs(this_ii+1+next_ii_sm)==9
-                cr_per_trial=[cr_per_trial 1];
-                fa_per_trial=[fa_per_trial 0];
-            else
-                cr_per_trial=[cr_per_trial 0];
-                fa_per_trial=[fa_per_trial 1];
-            end
-            hit_per_trial=[hit_per_trial 0];
-            miss_per_trial=[miss_per_trial 0];
-
             next_ii=next_ii_sm;
             if (no_points_post_shift+this_ii+next_ii+no_points_post<length(epochs))&(no_points_post_shift+this_ii+next_ii-no_points_pre>0)...
                     &(no_points_post_shift+this_ii+next_ii+ii_span<=length(epochs))&(no_points_post_shift+this_ii+next_ii-ii_span>0)
@@ -284,19 +251,7 @@ while (at_end==0)
         
         if (~isempty(next_ii_sp))&(~isempty(next_ii_sm))
             if next_ii_sm<next_ii_sp
-                %This is S-
                 next_ii=next_ii_sm;
-
-                if epochs(this_ii+1+next_ii_sm)==9
-                    cr_per_trial=[cr_per_trial 1];
-                    fa_per_trial=[fa_per_trial 0];
-                else
-                    cr_per_trial=[cr_per_trial 0];
-                    fa_per_trial=[fa_per_trial 1];
-                end
-                hit_per_trial=[hit_per_trial 0];
-                miss_per_trial=[miss_per_trial 0];
-
                 if (no_points_post_shift+this_ii+next_ii+no_points_post<length(epochs))&(no_points_post_shift+this_ii+next_ii-no_points_pre>0)...
                         &(no_points_post_shift+this_ii+next_ii+ii_span<=length(epochs))&(no_points_post_shift+this_ii+next_ii-ii_span>0)
                     measurements_post(ii_post+1:ii_post+no_points_post,:)=traces(:,no_points_post_shift+this_ii+next_ii:no_points_post_shift+this_ii+next_ii+no_points_post-1)';
@@ -324,19 +279,7 @@ while (at_end==0)
                     end
                 end
             else
-                %This is S+
                 next_ii=next_ii_sp;
-                
-                if epochs(this_ii+1+next_ii_sp)==6
-                    hit_per_trial=[hit_per_trial 1];
-                    miss_per_trial=[miss_per_trial 0];
-                else
-                    hit_per_trial=[hit_per_trial 0];
-                    miss_per_trial=[miss_per_trial 1];
-                end
-                cr_per_trial=[cr_per_trial 0];
-                fa_per_trial=[fa_per_trial 0];
-                
                 if (no_points_post_shift+this_ii+next_ii+no_points_post<length(epochs))&(no_points_post_shift+this_ii+next_ii-no_points_pre>0)...
                         &(no_points_post_shift+this_ii+next_ii+ii_span<=length(epochs))&(no_points_post_shift+this_ii+next_ii-ii_span>0)
                     measurements_post(ii_post+1:ii_post+no_points_post,:)=traces(:,no_points_post_shift+this_ii+next_ii:no_points_post_shift+this_ii+next_ii+no_points_post-1)';
@@ -370,9 +313,6 @@ while (at_end==0)
     end
     
 end
-
-%Calculate percent correct
-handles_out.percent_correct=100*(sum(hit_per_trial)+sum(cr_per_trial))/length(hit_per_trial);
 
 which_model_for_traces_loo(which_model_for_traces_loo>trial_no)=trial_no;
 %
@@ -709,7 +649,7 @@ if show_figures==1
     plot(time_span',KLdivergence', 'Color',[238/255 111/255 179/255]);
     
     
-    sh2
+    
     title(['KL divergence'])
     xlabel('Time(sec)')
     ylabel('KL divergence')

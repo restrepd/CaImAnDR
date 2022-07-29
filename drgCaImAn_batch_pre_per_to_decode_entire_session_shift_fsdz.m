@@ -1,7 +1,8 @@
-function drgCaImAn_batch_pre_per_to_decode_entire_session_fsdz(choiceBatchPathName,choiceFileName)
+function drgCaImAn_batch_pre_per_to_decode_entire_session_shift_fsdz(choiceBatchPathName,choiceFileName)
 %Note: fitcnet will not work in Matlab versions earlier than 2021a
 
-   
+
+
 
 if nargin==0
     [choiceFileName,choiceBatchPathName] = uigetfile({'drgCaImAn_LDAfsdz_choices*.m'},'Select the .m file with all the choices for analysis');
@@ -50,7 +51,7 @@ for filNum=first_file:handles.no_files
     else
         pre_per_PathName=handles.PathName_pre_per;
     end
-     
+    
     if exist([pre_per_PathName pre_per_FileName])==0
         fprintf(1, ['Program will be terminated because file No %d, ' pre_per_FileName ' does not exist\n'],filNum);
         all_files_present=0;
@@ -98,7 +99,7 @@ if all_files_present==1
         handles_choices.ii_cost=handles.ii_cost;
  
         for ii_thr=1:length(handles.p_threshold)
-             
+            
            handles_choices.p_threshold=handles.p_threshold(ii_thr);
             
             ii_out=ii_out+1;
@@ -108,7 +109,7 @@ if all_files_present==1
             
             start_toc=toc;
             
-            handles_out.ii_out(ii_out).handles_out=drgCaImAn_SVZ_entire_session_shuffling(handles_choices);
+            handles_out.ii_out(ii_out).handles_out=drgCaImAn_SVZ_entire_session_shuffling_shifted(handles_choices);
             
             fprintf(1, ['Data processed for file number %d, condition number %d\n'],fileNo,ii_thr);
             

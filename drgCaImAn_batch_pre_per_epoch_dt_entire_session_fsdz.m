@@ -1,7 +1,7 @@
 function drgCaImAn_batch_pre_per_to_decode_entire_session_fsdz(choiceBatchPathName,choiceFileName)
 %Note: fitcnet will not work in Matlab versions earlier than 2021a
 
-   
+    
 
 if nargin==0
     [choiceFileName,choiceBatchPathName] = uigetfile({'drgCaImAn_LDAfsdz_choices*.m'},'Select the .m file with all the choices for analysis');
@@ -73,7 +73,10 @@ show_figures=1;
 
 if all_files_present==1
     
-    
+    all_delta_odor=[];
+    all_delta_odor_on_reinf_on=[];
+    all_delta_reinf=[];
+
     %Process each file separately
     for fileNo=first_file:length(handles.FileName_pre_per)
         tic
@@ -84,47 +87,22 @@ if all_files_present==1
         
         pre_per_PathName=handles.PathName_pre_per{fileNo};
         pre_per_FileName=handles.FileName_pre_per{fileNo};
-        
-        handles_choices.pre_per_PathName=pre_per_PathName;
-        handles_choices.pre_per_FileName=pre_per_FileName;
-        handles_choices.processing_algorithm=handles.processing_algorithm;
-        handles_choices.MLalgo_to_use=handles.MLalgo_to_use;
-        handles_choices.dt_p_threshold=handles.dt_p_threshold;
-        handles_choices.show_figures=handles.show_figures;
-        handles_choices.post_time=handles.post_time;
-        handles_choices.k_fold=handles.k_fold;
-        handles_choices.post_shift=handles.post_shift;
-        handles_choices.pre_time=handles.pre_time;
-        handles_choices.ii_cost=handles.ii_cost;
- 
-        for ii_thr=1:length(handles.p_threshold)
-             
-           handles_choices.p_threshold=handles.p_threshold(ii_thr);
-            
-            ii_out=ii_out+1;
-            handles_out.ii_out(ii_out).handles_choices=handles_choices;
-            handles_out.ii_out(ii_out).grNo=handles.group(fileNo);
-            handles_out.ii_out(ii_out).fileNo=fileNo;
-            
-            start_toc=toc;
-            
-            handles_out.ii_out(ii_out).handles_out=drgCaImAn_SVZ_entire_session_shuffling(handles_choices);
-            
-            fprintf(1, ['Data processed for file number %d, condition number %d\n'],fileNo,ii_thr);
-            
-            fprintf(1,'Processing time for drgCaImAn_pre_per_to_LDA_fsdz_new %d hours\n',(toc-start_toc)/(60*60));
-        end
-        
-        fprintf(1,'\n\nProcessing time for file No %d is %d hours\n',fileNo,(toc-first_toc)/(60*60));
-        
-        %Save output file
-        handles_out.last_file_processed=fileNo;
-        handles_out.last_ii_out=ii_out;
-        handles_out.handles=handles;
-        save([handles.PathName_out pre_per_FileName(1:end-4) suffix_out],'handles_out','handles_choices','-v7.3')
+
+        this_handles=handles;
+
+        load([pre_per_PathName pre_per_FileName])
+
+        all_delta_odor=[all_delta_odor delta_odor];
+        all_delta_odor_on_reinf_on=[all_delta_odor_on_reinf_on delta_odor_on_reinf_on];
+        all_delta_reinf=[all_delta_reinf delta_reinf];
+
+        handles=this_handles;
+
     end
-    
-    fprintf(1, 'Total processing time %d hours\n',toc/(60*60));
+
+    fprintf(1, 'delta_odor %d\n',mean(all_delta_odor));
+    fprintf(1, 'delta_odor_on_reinf_on %d\n',mean(all_delta_odor_on_reinf_on));
+    fprintf(1, 'all_delta_reinf %d\n',mean(all_delta_reinf));
 end
 
 
