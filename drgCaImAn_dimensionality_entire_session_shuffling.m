@@ -174,6 +174,10 @@ dFF_per_trial_sp=[];
 dFF_per_trial_sm=[];
 dFFs_sp_per_trial_per_ROI=[];
 dFFs_sm_per_trial_per_ROI=[];
+hit_per_trial=[];
+miss_per_trial=[];
+cr_per_trial=[];
+fa_per_trial=[];
 
 no_points_pre=-no_points_post_shift;
 
@@ -197,7 +201,17 @@ while (at_end==0)
     else
         
         if isempty(next_ii_sm)
-            %This is S+
+             %This is S+
+            if epochs(this_ii+1+next_ii_sp)==6
+                hit_per_trial=[hit_per_trial 1];
+                miss_per_trial=[miss_per_trial 0];
+            else
+                hit_per_trial=[hit_per_trial 0];
+                miss_per_trial=[miss_per_trial 1];
+            end
+            cr_per_trial=[cr_per_trial 0];
+            fa_per_trial=[fa_per_trial 0];
+
             next_ii=next_ii_sp;
             if (no_points_post_shift+this_ii+next_ii+ii_span<length(epochs))&(no_points_post_shift+this_ii+next_ii-ii_span>0)
                  ii_sp_post=ii_sp_post+1;
@@ -216,7 +230,17 @@ while (at_end==0)
         end
         
         if isempty(next_ii_sp)
-            %This is S-
+             %This is S-
+            if epochs(this_ii+1+next_ii_sm)==9
+                cr_per_trial=[cr_per_trial 1];
+                fa_per_trial=[fa_per_trial 0];
+            else
+                cr_per_trial=[cr_per_trial 0];
+                fa_per_trial=[fa_per_trial 1];
+            end
+            hit_per_trial=[hit_per_trial 0];
+            miss_per_trial=[miss_per_trial 0];
+
             next_ii=next_ii_sm;
             if (no_points_post_shift+this_ii+next_ii+ii_span<length(epochs))&(no_points_post_shift+this_ii+next_ii-ii_span>0)
                 ii_sm_post=ii_sm_post+1;
@@ -236,7 +260,19 @@ while (at_end==0)
         
         if (~isempty(next_ii_sp))&(~isempty(next_ii_sm))
             if next_ii_sm<next_ii_sp
-                %This is S-
+                  %This is S-
+                next_ii=next_ii_sm;
+
+                if epochs(this_ii+1+next_ii_sm)==9
+                    cr_per_trial=[cr_per_trial 1];
+                    fa_per_trial=[fa_per_trial 0];
+                else
+                    cr_per_trial=[cr_per_trial 0];
+                    fa_per_trial=[fa_per_trial 1];
+                end
+                hit_per_trial=[hit_per_trial 0];
+                miss_per_trial=[miss_per_trial 0];
+
                 next_ii=next_ii_sm;
                 if (no_points_post_shift+this_ii+next_ii+ii_span<length(epochs))&(no_points_post_shift+this_ii+next_ii-ii_span>0)
                     ii_sm_post=ii_sm_post+1;
@@ -256,6 +292,18 @@ while (at_end==0)
                 end
             else
                 %This is S+
+                next_ii=next_ii_sp;
+                
+                if epochs(this_ii+1+next_ii_sp)==6
+                    hit_per_trial=[hit_per_trial 1];
+                    miss_per_trial=[miss_per_trial 0];
+                else
+                    hit_per_trial=[hit_per_trial 0];
+                    miss_per_trial=[miss_per_trial 1];
+                end
+                cr_per_trial=[cr_per_trial 0];
+                fa_per_trial=[fa_per_trial 0];
+
                 next_ii=next_ii_sp;
                 if (no_points_post_shift+this_ii+next_ii+ii_span<length(epochs))&(no_points_post_shift+this_ii+next_ii-ii_span>0)
                     ii_sp_post=ii_sp_post+1;
@@ -278,6 +326,9 @@ while (at_end==0)
     end
     
 end
+
+%Calculate percent correct
+handles_out.percent_correct=100*(sum(hit_per_trial)+sum(cr_per_trial))/length(hit_per_trial);
 
 which_model_for_traces_loo(which_model_for_traces_loo>trial_no)=trial_no;
 

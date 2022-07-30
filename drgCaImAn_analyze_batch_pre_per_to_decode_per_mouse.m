@@ -76,6 +76,9 @@ end
 
 fprintf(1, ['\nData were processed with p value threshold = ' num2str(handles.p_threshold(ii_thr)) '\n\n']);
 
+t_from=-10;
+t_to=20;
+
 %Now plot for each algorithm the prediction accuracy
 handles_out2=[];
 
@@ -212,33 +215,7 @@ if exist([choiceBatchPathName choiceFileName(1:end-2) '.mat'])==0
 
             grNo=(this_grNo-1)*no_pcorr+ii_pCorr;
 
-%             %Is this the first session?
-%             if sum(first_last(:,1)==fileNo)==1
-%                 mouseNo=find(first_last(:,1)==fileNo);
-%                 for iiMLalgo=handles.MLalgo_to_use
-%                     for ii_out=1:length(handles_out.ii_out)
-%                         this_mean_correct_predict=mean(handles_out.ii_out(ii_out).handles_out.MLalgo(iiMLalgo).this_correct_predict);
-%                         handles_out2.mouse_no(mouseNo).ii_thr(ii_out).MLalgo(iiMLalgo).first_mean_correct_predict(1,1:length(this_mean_correct_predict))=this_mean_correct_predict;
-% 
-%                         this_mean_correct_predict_sh=mean(handles_out.ii_out(ii_out).handles_out.MLalgo(iiMLalgo).this_correct_predict_sh);
-%                         handles_out2.mouse_no(mouseNo).ii_thr(ii_out).MLalgo(iiMLalgo).first_mean_correct_predict_sh(1,1:length(this_mean_correct_predict_sh))=this_mean_correct_predict_sh;
-%                     end
-%                 end
-%             end
-% 
-%             %Is this the last session?
-%             if sum(first_last(:,2)==fileNo)
-%                 mouseNo=find(first_last(:,2)==fileNo);
-%                 for iiMLalgo=handles.MLalgo_to_use
-%                     for ii_out=1:length(handles_out.ii_out)
-%                         this_mean_correct_predict=mean(handles_out.ii_out(ii_out).handles_out.MLalgo(iiMLalgo).this_correct_predict);
-%                         handles_out2.mouse_no(mouseNo).ii_thr(ii_out).MLalgo(iiMLalgo).last_mean_correct_predict(1,1:length(this_mean_correct_predict))=this_mean_correct_predict;
-% 
-%                         this_mean_correct_predict_sh=mean(handles_out.ii_out(ii_out).handles_out.MLalgo(iiMLalgo).this_correct_predict_sh);
-%                         handles_out2.mouse_no(mouseNo).ii_thr(ii_out).MLalgo(iiMLalgo).last_mean_correct_predict_sh(1,1:length(this_mean_correct_predict_sh))=this_mean_correct_predict_sh;
-%                     end
-%                 end
-%             end
+
 
             for iiMLalgo=handles.MLalgo_to_use
                 if iiMLalgo==handles.MLalgo_to_use(1)
@@ -382,65 +359,75 @@ for iiMLalgo=handles.MLalgo_to_use
     
 end
 
+%Plot timecourses
+%Note: These data were acquired at different rates. Here they are all
+%resampled to a dt of 0.03 sec
+dt_res=0.03;
+time_span=t_from:dt_res:t_to;
+ii_tspan=length(time_span);
+fprintf(1, ['Length of time_span ' num2str(length(time_span)) '\n'])
+
 %Plot the timecourse of mean dFF
 
-figureNo = figureNo + 1;
-try
-    close(figureNo)
-catch
-end
-hFig=figure(figureNo);
 
-ax=gca;ax.LineWidth=3;
-set(hFig, 'units','normalized','position',[.2 .2 .3 .6])
 
 for grNo=1:no_pcorr*length(these_groups)
-     
-    subplot(8,1,grNo)
-    hold on
-         
-    [ii_tspan,ii_file]=max(handles_out2.group_no(grNo).ii_time_span);
-    if ~isempty(ii_tspan)
+
+    
+        figureNo = figureNo + 1;
+        try
+            close(figureNo)
+        catch
+        end
+        hFig=figure(figureNo);
+        hold on
+
+        ax=gca;ax.LineWidth=3;
+        set(hFig, 'units','normalized','position',[.2 .2 .3 .3])
+   
+
+   
+    if ~isempty(handles_out2.group_no(grNo).ii_time_span)
 
         %Extrapolate all points onto the longest ii_tspan
-        time_span=handles_out2.group_no(grNo).time_span_euclid(ii_file,1:ii_tspan);
-
         these_meandFFsp=zeros(size(handles_out2.group_no(grNo).ii_time_span,1),ii_tspan);
-        these_meandFFsm=handles_out2.group_no(grNo).meandFFsm(1,1:ii_tspan);
+        these_meandFFsm=zeros(size(handles_out2.group_no(grNo).ii_time_span,1),ii_tspan);
         for ii_f=1:size(handles_out2.group_no(grNo).ii_time_span,1)
-            if ii_f==ii_file
-                these_meandFFsp=handles_out2.group_no(grNo).meandFFsp(ii_file,1:ii_tspan);
-                these_meandFFsm=handles_out2.group_no(grNo).meandFFsm(ii_file,1:ii_tspan);
-            else
-                this_ii_tspan=handles_out2.group_no(grNo).ii_time_span(ii_f);
-                this_time_span=handles_out2.group_no(grNo).time_span_euclid(ii_f,1:this_ii_tspan);
-                this_meandFFsp=zeros(1,ii_tspan);
-                for ii_tsp=1:ii_tspan
-                    if time_span(ii_tsp)<this_time_span(1)
-                        these_meandFFsp(ii_f,ii_tsp)=handles_out2.group_no(grNo).meandFFsp(ii_f,1);
-                        these_meandFFsm(ii_f,ii_tsp)=handles_out2.group_no(grNo).meandFFsm(ii_f,1);
-                    else
-                        if time_span(ii_tsp)>this_time_span(end)
-                            these_meandFFsp(ii_f,ii_tsp)=handles_out2.group_no(grNo).meandFFsp(ii_f,end);
-                            these_meandFFsm(ii_f,ii_tsp)=handles_out2.group_no(grNo).meandFFsm(ii_f,end);
-                        else
-                            ii_0=find(this_time_span<=time_span(ii_tsp),1,'last');
-                            ii_1=find(this_time_span>time_span(ii_tsp),1,'first');
-                            these_meandFFsp(ii_f,ii_tsp)=handles_out2.group_no(grNo).meandFFsp(ii_f,ii_0)+...
-                                (handles_out2.group_no(grNo).meandFFsp(ii_f,ii_1)-handles_out2.group_no(grNo).meandFFsp(ii_f,ii_0))...
-                                *(time_span(ii_tsp)-this_time_span(ii_0))/(this_time_span(ii_1)-this_time_span(ii_0));
-                             these_meandFFsm(ii_f,ii_tsp)=handles_out2.group_no(grNo).meandFFsm(ii_f,ii_0)+...
-                                (handles_out2.group_no(grNo).meandFFsm(ii_f,ii_1)-handles_out2.group_no(grNo).meandFFsm(ii_f,ii_0))...
-                                *(time_span(ii_tsp)-this_time_span(ii_0))/(this_time_span(ii_1)-this_time_span(ii_0));
+            print_out=1;
+
+            this_ii_tspan=handles_out2.group_no(grNo).ii_time_span(ii_f);
+            this_time_span=handles_out2.group_no(grNo).time_span_euclid(ii_f,1:this_ii_tspan);
+            %                 this_meandFFsp=zeros(1,ii_tspan);
+            for ii_tsp=1:ii_tspan
+                if time_span(ii_tsp)<this_time_span(1)
+                    these_meandFFsp(ii_f,ii_tsp)=handles_out2.group_no(grNo).meandFFsp(ii_f,1);
+                    these_meandFFsm(ii_f,ii_tsp)=handles_out2.group_no(grNo).meandFFsm(ii_f,1);
+                else
+                    if time_span(ii_tsp)>this_time_span(end)
+                        these_meandFFsp(ii_f,ii_tsp)=handles_out2.group_no(grNo).meandFFsp(ii_f,end);
+                        these_meandFFsm(ii_f,ii_tsp)=handles_out2.group_no(grNo).meandFFsm(ii_f,end);
+                        if print_out==1
+                            fprintf(1, ['Mouse No ' num2str(mouseNo) ' Group No ' num2str(grNo) ' File No ' num2str(ii_f) '\n'])
+                            print_out=0;
                         end
+                    else
+                        ii_0=find(this_time_span<=time_span(ii_tsp),1,'last');
+                        ii_1=find(this_time_span>time_span(ii_tsp),1,'first');
+                        these_meandFFsp(ii_f,ii_tsp)=handles_out2.group_no(grNo).meandFFsp(ii_f,ii_0)+...
+                            (handles_out2.group_no(grNo).meandFFsp(ii_f,ii_1)-handles_out2.group_no(grNo).meandFFsp(ii_f,ii_0))...
+                            *(time_span(ii_tsp)-this_time_span(ii_0))/(this_time_span(ii_1)-this_time_span(ii_0));
+                        these_meandFFsm(ii_f,ii_tsp)=handles_out2.group_no(grNo).meandFFsm(ii_f,ii_0)+...
+                            (handles_out2.group_no(grNo).meandFFsm(ii_f,ii_1)-handles_out2.group_no(grNo).meandFFsm(ii_f,ii_0))...
+                            *(time_span(ii_tsp)-this_time_span(ii_0))/(this_time_span(ii_1)-this_time_span(ii_0));
                     end
                 end
-
             end
-                
+
+
+
         end
-        
-        
+
+
          
 
         if size(these_meandFFsm,1)>2
@@ -481,48 +468,49 @@ for grNo=1:no_pcorr*length(these_groups)
     xlabel('Time(sec)')
 
     if no_pcorr==1
-        title([handles.group_names{grNo}])
+        title(['Mean dFF ' handles.group_names{grNo}])
     else
 
         this_grNo=floor((grNo-1)/4)+1;
         ii_pcorr=grNo-4*(this_grNo-1);
-        title([handles.group_names{these_groups(this_grNo)} ' ' per_names{ii_pcorr}])
+        title(['Mean dFF ' handles.group_names{these_groups(this_grNo)} ' ' per_names{ii_pcorr}])
     end
     pffft=1;
 end
-sgtitle('Mean dFF')
+
   
 %Now plot the timecourse for euclidean distance
-figureNo = figureNo + 1;
-try
-    close(figureNo)
-catch
-end
-hFig=figure(figureNo);
 
-ax=gca;ax.LineWidth=3;
-set(hFig, 'units','normalized','position',[.2 .2 .3 .6])
 
 for grNo=1:no_pcorr*length(these_groups)
     
-    [ii_tspan,ii_file]=max(handles_out2.group_no(grNo).ii_time_span);
-    subplot(8,1,grNo)
-    hold on
+ 
+
     
-    if ~isempty(ii_tspan)
-        time_span=handles_out2.group_no(grNo).time_span_euclid(1,1:ii_tspan);
+        figureNo = figureNo + 1;
+        try
+            close(figureNo)
+        catch
+        end
+        hFig=figure(figureNo);
+        hold on
+
+        ax=gca;ax.LineWidth=3;
+        set(hFig, 'units','normalized','position',[.2 .2 .3 .3])
+   
+
+    
+    if ~isempty(handles_out2.group_no(grNo).ii_time_span)
+        
         
        
         
-        %Extrapolate all points onto the longest ii_tspan
-        time_span=handles_out2.group_no(grNo).time_span_euclid(ii_file,1:ii_tspan);
-
+        %Extrapolate all points onto time_span
+       
         these_dist_euclid=zeros(size(handles_out2.group_no(grNo).ii_time_span,1),ii_tspan);
         
         for ii_f=1:size(handles_out2.group_no(grNo).ii_time_span,1)
-            if ii_f==ii_file
-                these_dist_euclid=handles_out2.group_no(grNo).dist_euclid(ii_file,1:ii_tspan);
-            else
+         
                 this_ii_tspan=handles_out2.group_no(grNo).ii_time_span(ii_f);
                 this_time_span=handles_out2.group_no(grNo).time_span_euclid(ii_f,1:this_ii_tspan);
                 this_dist_euclid=zeros(1,ii_tspan);
@@ -543,7 +531,7 @@ for grNo=1:no_pcorr*length(these_groups)
                     end
                 end
 
-            end
+            
                 
         end
         
@@ -568,66 +556,63 @@ for grNo=1:no_pcorr*length(these_groups)
     xlim([-10 20])
     xlabel('Time(sec)')
     if no_pcorr==1
-        title([handles.group_names{grNo}])
+        title(['Euclidean distance ' handles.group_names{grNo}])
     else
         this_grNo=floor((grNo-1)/4)+1;
         ii_pcorr=grNo-4*(this_grNo-1);
-        title([handles.group_names{these_groups(this_grNo)} ' ' per_names{ii_pcorr}])
+        title(['Euclidean distance ' handles.group_names{these_groups(this_grNo)} ' ' per_names{ii_pcorr}])
     end
 end
-sgtitle('Euclidean distance')
 
-figureNo = figureNo + 1;
-try
-    close(figureNo)
-catch
-end
-hFig=figure(figureNo);
 
-ax=gca;ax.LineWidth=3;
-set(hFig, 'units','normalized','position',[.2 .2 .3 .6])
+
 
 delta_KLdiv_post=[];
 for grNo=1:no_pcorr*length(these_groups)
-    
-    [ii_tspan,ii_file]=max(handles_out2.group_no(grNo).ii_time_span);
-    subplot(8,1,grNo)
-    hold on
-        
-    if ~isempty(ii_tspan)
-        time_span=handles_out2.group_no(grNo).time_span_euclid(1,1:ii_tspan);
 
-        %Extrapolate all points onto the longest ii_tspan
-        time_span=handles_out2.group_no(grNo).time_span_euclid(ii_file,1:ii_tspan);
-        
+
+    figureNo = figureNo + 1;
+    try
+        close(figureNo)
+    catch
+    end
+    hFig=figure(figureNo);
+    hold on
+
+    ax=gca;ax.LineWidth=3;
+    set(hFig, 'units','normalized','position',[.2 .2 .3 .3])
+
+
+    if ~isempty(handles_out2.group_no(grNo).ii_time_span)
+
+
+        %Extrapolate all points onto time_span
         for ii_f=1:size(handles_out2.group_no(grNo).ii_time_span,1)
-            if ii_f==ii_file
-                these_KLdivergence=handles_out2.group_no(grNo).KLdivergence(ii_file,1:ii_tspan);
-            else
-                this_ii_tspan=handles_out2.group_no(grNo).ii_time_span(ii_f);
-                this_time_span=handles_out2.group_no(grNo).time_span_euclid(ii_f,1:this_ii_tspan);
-                this_KLdivergence=zeros(1,ii_tspan);
-                for ii_tsp=1:ii_tspan
-                    if time_span(ii_tsp)<this_time_span(1)
-                        these_KLdivergence(ii_f,ii_tsp)=handles_out2.group_no(grNo).KLdivergence(ii_f,1);
-                        
+
+            this_ii_tspan=handles_out2.group_no(grNo).ii_time_span(ii_f);
+            this_time_span=handles_out2.group_no(grNo).time_span_euclid(ii_f,1:this_ii_tspan);
+            this_KLdivergence=zeros(1,ii_tspan);
+            for ii_tsp=1:ii_tspan
+                if time_span(ii_tsp)<this_time_span(1)
+                    these_KLdivergence(ii_f,ii_tsp)=handles_out2.group_no(grNo).KLdivergence(ii_f,1);
+
+                else
+                    if time_span(ii_tsp)>this_time_span(end)
+                        these_KLdivergence(ii_f,ii_tsp)=handles_out2.group_no(grNo).KLdivergence(ii_f,end);
                     else
-                        if time_span(ii_tsp)>this_time_span(end)
-                            these_KLdivergence(ii_f,ii_tsp)=handles_out2.group_no(grNo).KLdivergence(ii_f,end);
-                        else
-                            ii_0=find(this_time_span<=time_span(ii_tsp),1,'last');
-                            ii_1=find(this_time_span>time_span(ii_tsp),1,'first');
-                            these_KLdivergence(ii_f,ii_tsp)=handles_out2.group_no(grNo).KLdivergence(ii_f,ii_0)+...
-                                (handles_out2.group_no(grNo).KLdivergence(ii_f,ii_1)-handles_out2.group_no(grNo).KLdivergence(ii_f,ii_0))...
-                                *(time_span(ii_tsp)-this_time_span(ii_0))/(this_time_span(ii_1)-this_time_span(ii_0));
-                        end
+                        ii_0=find(this_time_span<=time_span(ii_tsp),1,'last');
+                        ii_1=find(this_time_span>time_span(ii_tsp),1,'first');
+                        these_KLdivergence(ii_f,ii_tsp)=handles_out2.group_no(grNo).KLdivergence(ii_f,ii_0)+...
+                            (handles_out2.group_no(grNo).KLdivergence(ii_f,ii_1)-handles_out2.group_no(grNo).KLdivergence(ii_f,ii_0))...
+                            *(time_span(ii_tsp)-this_time_span(ii_0))/(this_time_span(ii_1)-this_time_span(ii_0));
                     end
                 end
-
             end
-                
+
+
+
         end
-        
+
         %Calculate the delta_KLdiv
         delta_KLdiv=[];
         these_delta_KLdiv_post=[];
@@ -640,40 +625,40 @@ for grNo=1:no_pcorr*length(these_groups)
         delta_KLdiv_post.group(grNo).delta_KLdiv_post=these_delta_KLdiv_post;
 
         if size(these_KLdivergence,1)>2
-            
+
             CIpv = bootci(1000, @mean, delta_KLdiv);
             meanpv=mean(delta_KLdiv,1);
             CIpv(1,:)=meanpv-CIpv(1,:);
             CIpv(2,:)=CIpv(2,:)-meanpv;
-            
+
             delta_mean_KLdiv=mean(delta_KLdiv,1)';
-            
+
             [hlpvl, hppvl] = boundedline(time_span',delta_mean_KLdiv, CIpv', 'm');
         else
             if size(these_KLdivergence,1)>0
                 delta_mean_KLdiv=mean(delta_KLdiv,1)';
                 plot(time_span',delta_mean_KLdiv, 'm');
             end
-            
+
         end
         this_ylim=ylim;
         plot([0 0],this_ylim,'-k')
     end
-    
-        xlim([-10 20])
-    
+
+    xlim([-10 20])
+
     xlabel('Time(sec)')
 
     if no_pcorr==1
-        title([handles.group_names{grNo}])
+        title(['KL divergence ' handles.group_names{grNo}])
     else
         this_grNo=floor((grNo-1)/4)+1;
         ii_pcorr=grNo-4*(this_grNo-1);
-        title([handles.group_names{these_groups(this_grNo)} ' ' per_names{ii_pcorr}])
+        title(['KL divergence ' handles.group_names{these_groups(this_grNo)} ' ' per_names{ii_pcorr}])
     end
 
 end
-sgtitle('KL divergence')
+
 
 %Plot a bar graph for post_time KL divergence
 figureNo = figureNo + 1;
@@ -729,522 +714,6 @@ ylabel('delta KL div')
 
 
 
-%Plot the delta KL divergence for grNo1 and grNo2
-figureNo = figureNo + 1;
-try
-    close(figureNo)
-catch
-end
-hFig=figure(figureNo);
-hold on
-
-ax=gca;ax.LineWidth=3;
-set(hFig, 'units','normalized','position',[.2 .2 .3 .3])
-
-
-
-
-%Do forward
-grNo=grNo1;
-
-[ii_tspan,ii_file]=max(handles_out2.group_no(grNo).ii_time_span);
-
-
-if ~isempty(ii_tspan)
-    time_span=handles_out2.group_no(grNo).time_span_euclid(1,1:ii_tspan);
-    
-    %Extrapolate all points onto the longest ii_tspan
-    time_span=handles_out2.group_no(grNo).time_span_euclid(ii_file,1:ii_tspan);
-    
-    for ii_f=1:size(handles_out2.group_no(grNo).ii_time_span,1)
-        if ii_f==ii_file
-            these_KLdivergence=handles_out2.group_no(grNo).KLdivergence(ii_file,1:ii_tspan);
-        else
-            this_ii_tspan=handles_out2.group_no(grNo).ii_time_span(ii_f);
-            this_time_span=handles_out2.group_no(grNo).time_span_euclid(ii_f,1:this_ii_tspan);
-            this_KLdivergence=zeros(1,ii_tspan);
-            for ii_tsp=1:ii_tspan
-                if time_span(ii_tsp)<this_time_span(1)
-                    these_KLdivergence(ii_f,ii_tsp)=handles_out2.group_no(grNo).KLdivergence(ii_f,1);
-                    
-                else
-                    if time_span(ii_tsp)>this_time_span(end)
-                        these_KLdivergence(ii_f,ii_tsp)=handles_out2.group_no(grNo).KLdivergence(ii_f,end);
-                    else
-                        ii_0=find(this_time_span<=time_span(ii_tsp),1,'last');
-                        ii_1=find(this_time_span>time_span(ii_tsp),1,'first');
-                        these_KLdivergence(ii_f,ii_tsp)=handles_out2.group_no(grNo).KLdivergence(ii_f,ii_0)+...
-                            (handles_out2.group_no(grNo).KLdivergence(ii_f,ii_1)-handles_out2.group_no(grNo).KLdivergence(ii_f,ii_0))...
-                            *(time_span(ii_tsp)-this_time_span(ii_0))/(this_time_span(ii_1)-this_time_span(ii_0));
-                    end
-                end
-            end
-            
-        end
-        
-    end
-     
-    %Calculate the delta_KLdiv
-    delta_KLdiv=[];
-    for ii_file=1:ii_f
-        delta_KLdiv(ii_file,:)=these_KLdivergence(ii_file,:)-mean(these_KLdivergence(ii_file,(time_span'>-20)&(time_span'<-2)));
-    end
-    
-    if size(these_KLdivergence,1)>2
-        
-        CIpv = bootci(1000, @mean, delta_KLdiv);
-        meanpv=mean(delta_KLdiv,1);
-        CIpv(1,:)=meanpv-CIpv(1,:);
-        CIpv(2,:)=CIpv(2,:)-meanpv;
-        
-        delta_mean_KLdiv=mean(delta_KLdiv,1)';
-        [hlpvl, hppvl] = boundedline(time_span',delta_mean_KLdiv, CIpv', 'b');
-    else
-        if size(these_KLdivergence,1)>0
-            delta_mean_KLdiv=mean(delta_KLdiv,1)';
-            plot(time_span',delta_mean_KLdiv, 'b');
-        end
-        
-    end
-    this_ylim=ylim;
-        plot([0 0],this_ylim,'-k')
-end
-
-%Do reversed
-grNo=grNo2;
-
-[ii_tspan,ii_file]=max(handles_out2.group_no(grNo).ii_time_span);
-
-
-if ~isempty(ii_tspan)
-    time_span=handles_out2.group_no(grNo).time_span_euclid(1,1:ii_tspan);
-    
-    %Extrapolate all points onto the longest ii_tspan
-    time_span=handles_out2.group_no(grNo).time_span_euclid(ii_file,1:ii_tspan);
-    
-    for ii_f=1:size(handles_out2.group_no(grNo).ii_time_span,1)
-        if ii_f==ii_file
-            these_KLdivergence=handles_out2.group_no(grNo).KLdivergence(ii_file,1:ii_tspan);
-        else
-            this_ii_tspan=handles_out2.group_no(grNo).ii_time_span(ii_f);
-            this_time_span=handles_out2.group_no(grNo).time_span_euclid(ii_f,1:this_ii_tspan);
-            this_KLdivergence=zeros(1,ii_tspan);
-            for ii_tsp=1:ii_tspan
-                if time_span(ii_tsp)<this_time_span(1)
-                    these_KLdivergence(ii_f,ii_tsp)=handles_out2.group_no(grNo).KLdivergence(ii_f,1);
-                    
-                else
-                    if time_span(ii_tsp)>this_time_span(end)
-                        these_KLdivergence(ii_f,ii_tsp)=handles_out2.group_no(grNo).KLdivergence(ii_f,end);
-                    else
-                        ii_0=find(this_time_span<=time_span(ii_tsp),1,'last');
-                        ii_1=find(this_time_span>time_span(ii_tsp),1,'first');
-                        these_KLdivergence(ii_f,ii_tsp)=handles_out2.group_no(grNo).KLdivergence(ii_f,ii_0)+...
-                            (handles_out2.group_no(grNo).KLdivergence(ii_f,ii_1)-handles_out2.group_no(grNo).KLdivergence(ii_f,ii_0))...
-                            *(time_span(ii_tsp)-this_time_span(ii_0))/(this_time_span(ii_1)-this_time_span(ii_0));
-                    end
-                end
-            end
-            
-        end
-        
-    end
-    
-      %Calculate the delta_KLdiv
-    delta_KLdiv=[];
-    for ii_file=1:ii_f
-        delta_KLdiv(ii_file,:)=these_KLdivergence(ii_file,:)-mean(these_KLdivergence(ii_file,(time_span'>-20)&(time_span'<-2)));
-    end
-    
-    if size(these_KLdivergence,1)>2
-        
-        CIpv = bootci(1000, @mean, delta_KLdiv);
-        meanpv=mean(delta_KLdiv,1);
-        CIpv(1,:)=meanpv-CIpv(1,:);
-        CIpv(2,:)=CIpv(2,:)-meanpv;
-        
-        
-        delta_mean_KLdiv=mean(delta_KLdiv,1)';
-        [hlpvl, hppvl] = boundedline(time_span',delta_mean_KLdiv, CIpv', 'r');
-    else
-        if size(these_KLdivergence,1)>0
-            delta_mean_KLdiv=mean(delta_KLdiv,1)';
-            plot(time_span',delta_mean_KLdiv, 'r');
-        end
-        
-    end
-    this_ylim=ylim;
-        plot([0 0],this_ylim,'-k')
-end
-
-% ylim([-10 10])
-
-    xlim([-10 20])
-
-xlabel('Time(sec)')
-
-
-title(['delta KL distance for blue=' grNo1_label ' red= '  grNo2_label])
-
-% %Plot the delta KL divergence for forward proficient and naive
-% figureNo = figureNo + 1;
-% try
-%     close(figureNo)
-% catch
-% end
-% hFig=figure(figureNo);
-% hold on
-% 
-% ax=gca;ax.LineWidth=3;
-% set(hFig, 'units','normalized','position',[.2 .2 .3 .3])
-% 
-% %Do forward naive
-% grNo=2;
-% 
-% [ii_tspan,ii_file]=max(handles_out2.group_no(grNo).ii_time_span);
-% 
-% 
-% if ~isempty(ii_tspan)
-%     time_span=handles_out2.group_no(grNo).time_span_euclid(1,1:ii_tspan);
-%     
-%     %Extrapolate all points onto the longest ii_tspan
-%     time_span=handles_out2.group_no(grNo).time_span_euclid(ii_file,1:ii_tspan);
-%     
-%     for ii_f=1:size(handles_out2.group_no(grNo).ii_time_span,1)
-%         if ii_f==ii_file
-%             these_KLdivergence=handles_out2.group_no(grNo).KLdivergence(ii_file,1:ii_tspan);
-%         else
-%             this_ii_tspan=handles_out2.group_no(grNo).ii_time_span(ii_f);
-%             this_time_span=handles_out2.group_no(grNo).time_span_euclid(ii_f,1:this_ii_tspan);
-%             this_KLdivergence=zeros(1,ii_tspan);
-%             for ii_tsp=1:ii_tspan
-%                 if time_span(ii_tsp)<this_time_span(1)
-%                     these_KLdivergence(ii_f,ii_tsp)=handles_out2.group_no(grNo).KLdivergence(ii_f,1);
-%                     
-%                 else
-%                     if time_span(ii_tsp)>this_time_span(end)
-%                         these_KLdivergence(ii_f,ii_tsp)=handles_out2.group_no(grNo).KLdivergence(ii_f,end);
-%                     else
-%                         ii_0=find(this_time_span<=time_span(ii_tsp),1,'last');
-%                         ii_1=find(this_time_span>time_span(ii_tsp),1,'first');
-%                         these_KLdivergence(ii_f,ii_tsp)=handles_out2.group_no(grNo).KLdivergence(ii_f,ii_0)+...
-%                             (handles_out2.group_no(grNo).KLdivergence(ii_f,ii_1)-handles_out2.group_no(grNo).KLdivergence(ii_f,ii_0))...
-%                             *(time_span(ii_tsp)-this_time_span(ii_0))/(this_time_span(ii_1)-this_time_span(ii_0));
-%                     end
-%                 end
-%             end
-%             
-%         end
-%         
-%     end
-%      
-%     %Calculate the delta_KLdiv
-%     delta_KLdiv=[];
-%     for ii_file=1:ii_f
-%         delta_KLdiv(ii_file,:)=these_KLdivergence(ii_file,:)-mean(these_KLdivergence(ii_file,(time_span'>-20)&(time_span'<-2)));
-%     end
-%     
-%     if size(these_KLdivergence,1)>2
-%         
-%         CIpv = bootci(1000, @mean, delta_KLdiv);
-%         meanpv=mean(delta_KLdiv,1);
-%         CIpv(1,:)=meanpv-CIpv(1,:);
-%         CIpv(2,:)=CIpv(2,:)-meanpv;
-%         
-%         delta_mean_KLdiv=mean(delta_KLdiv,1)';
-%         [hlpvl, hppvl] = boundedline(time_span',delta_mean_KLdiv, CIpv', 'cmap',[80/255 194/255 255/255]);
-%     else
-%         if size(these_KLdivergence,1)>0
-%             delta_mean_KLdiv=mean(delta_KLdiv,1)';
-%             plot(time_span',delta_mean_KLdiv, 'Color' ,[80/255 194/255 255/255]);
-%         end
-%         
-%     end
-%     
-% end
-% 
-% %Do forward proficient
-% grNo=4;
-% 
-% [ii_tspan,ii_file]=max(handles_out2.group_no(grNo).ii_time_span);
-% 
-% 
-% if ~isempty(ii_tspan)
-%     time_span=handles_out2.group_no(grNo).time_span_euclid(1,1:ii_tspan);
-%     
-%     %Extrapolate all points onto the longest ii_tspan
-%     time_span=handles_out2.group_no(grNo).time_span_euclid(ii_file,1:ii_tspan);
-%     
-%     for ii_f=1:size(handles_out2.group_no(grNo).ii_time_span,1)
-%         if ii_f==ii_file
-%             these_KLdivergence=handles_out2.group_no(grNo).KLdivergence(ii_file,1:ii_tspan);
-%         else
-%             this_ii_tspan=handles_out2.group_no(grNo).ii_time_span(ii_f);
-%             this_time_span=handles_out2.group_no(grNo).time_span_euclid(ii_f,1:this_ii_tspan);
-%             this_KLdivergence=zeros(1,ii_tspan);
-%             for ii_tsp=1:ii_tspan
-%                 if time_span(ii_tsp)<this_time_span(1)
-%                     these_KLdivergence(ii_f,ii_tsp)=handles_out2.group_no(grNo).KLdivergence(ii_f,1);
-%                     
-%                 else
-%                     if time_span(ii_tsp)>this_time_span(end)
-%                         these_KLdivergence(ii_f,ii_tsp)=handles_out2.group_no(grNo).KLdivergence(ii_f,end);
-%                     else
-%                         ii_0=find(this_time_span<=time_span(ii_tsp),1,'last');
-%                         ii_1=find(this_time_span>time_span(ii_tsp),1,'first');
-%                         these_KLdivergence(ii_f,ii_tsp)=handles_out2.group_no(grNo).KLdivergence(ii_f,ii_0)+...
-%                             (handles_out2.group_no(grNo).KLdivergence(ii_f,ii_1)-handles_out2.group_no(grNo).KLdivergence(ii_f,ii_0))...
-%                             *(time_span(ii_tsp)-this_time_span(ii_0))/(this_time_span(ii_1)-this_time_span(ii_0));
-%                     end
-%                 end
-%             end
-%             
-%         end
-%         
-%     end
-%     
-%       %Calculate the delta_KLdiv
-%     delta_KLdiv=[];
-%     for ii_file=1:ii_f
-%         delta_KLdiv(ii_file,:)=these_KLdivergence(ii_file,:)-mean(these_KLdivergence(ii_file,(time_span'>-20)&(time_span'<-2)));
-%     end
-%     
-%     if size(these_KLdivergence,1)>2
-%         
-%         CIpv = bootci(1000, @mean, delta_KLdiv);
-%         meanpv=mean(delta_KLdiv,1);
-%         CIpv(1,:)=meanpv-CIpv(1,:);
-%         CIpv(2,:)=CIpv(2,:)-meanpv;
-%         
-%         
-%         delta_mean_KLdiv=mean(delta_KLdiv,1)';
-%         [hlpvl, hppvl] = boundedline(time_span',delta_mean_KLdiv, CIpv', 'b');
-%         
-%     else
-%         if size(these_KLdivergence,1)>0
-%             delta_mean_KLdiv=mean(delta_KLdiv,1)';
-%             plot(time_span',delta_mean_KLdiv, 'b');
-%         end
-%         
-%     end
-%     
-% end
-% 
-% ylim([-10 10])
-% xlim([-10 20])
-% xlabel('Time(sec)')
-% 
-% 
-% title('delta KL distance for naive vs. proficient forward')
-
-
-% 
-% 
-% % %Choose threshold
-% % ii_out=4;
-% 
-% %Decoding accuracy
-% for iiMLalgo=handles.MLalgo_to_use
-%     figureNo = figureNo + 1;
-%     try
-%         close(figureNo)
-%     catch
-%     end
-%     hFig=figure(figureNo);
-%     
-%     ax=gca;ax.LineWidth=3;
-%     set(hFig, 'units','normalized','position',[.2 .2 .3 .6])
-%     
-%     for grNo=1:no_pcorr*length(these_groups)
-%         
-%         [ii_tspan,ii_file]=max(handles_out2.group_no(grNo).ii_time_span);
-%         
-%         subplot(8,1,grNo)
-%         hold on
-%         
-%         if ~isempty(ii_tspan)
-%             time_span=handles_out2.group_no(grNo).time_span_euclid(1,1:ii_tspan);
-%             
-%            
-% 
-%             %Extrapolate all points onto the longest ii_tspan
-%             time_span=handles_out2.group_no(grNo).time_span_euclid(ii_file,1:ii_tspan);
-% 
-%             for ii_f=1:size(handles_out2.group_no(grNo).ii_time_span,1)
-%                 if ii_f==ii_file
-%                     these_per_corr=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_correct_predict_sh(ii_file,1:ii_tspan);
-%                 else
-%                     this_ii_tspan=handles_out2.group_no(grNo).ii_time_span(ii_f);
-%                     this_time_span=handles_out2.group_no(grNo).time_span_euclid(ii_f,1:this_ii_tspan);
-%                     
-%                     for ii_tsp=1:ii_tspan
-%                         if time_span(ii_tsp)<this_time_span(1)
-%                             these_per_corr(ii_f,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_correct_predict_sh(ii_f,1);
-% 
-%                         else
-%                             if time_span(ii_tsp)>this_time_span(end)
-%                                 these_per_corr(ii_f,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_correct_predict_sh(ii_f,end);
-%                             else
-%                                 ii_0=find(this_time_span<=time_span(ii_tsp),1,'last');
-%                                 ii_1=find(this_time_span>time_span(ii_tsp),1,'first');
-%                                 these_per_corr(ii_f,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_correct_predict_sh(ii_f,ii_0)+...
-%                                     (handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_correct_predict_sh(ii_f,ii_1)-handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_correct_predict_sh(ii_f,ii_0))...
-%                                     *(time_span(ii_tsp)-this_time_span(ii_0))/(this_time_span(ii_1)-this_time_span(ii_0));
-%                             end
-%                         end
-%                     end
-% 
-%                 end
-% 
-%             end
-% 
-%             if size(these_per_corr,1)>2
-%                 
-%                 CIpv = bootci(1000, @mean, these_per_corr);
-%                 meanpv=mean(these_per_corr,1);
-%                 CIpv(1,:)=meanpv-CIpv(1,:);
-%                 CIpv(2,:)=CIpv(2,:)-meanpv;
-%                 
-%                 
-%                 [hlpvl, hppvl] = boundedline(time_span',mean(these_per_corr,1)', CIpv', 'k');
-%             else
-%                 if size(these_per_corr,1)>1
-%                     plot(time_span',mean(these_per_corr,1)', 'k');
-%                 else 
-%                     plot(time_span',these_per_corr', 'k');
-%                 end
-%                 
-%             end
-%             
-% 
-%              for ii_f=1:size(handles_out2.group_no(grNo).ii_time_span,1)
-%                 if ii_f==ii_file
-%                     these_per_corr=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_correct_predict(ii_file,1:ii_tspan);
-%                 else
-%                     this_ii_tspan=handles_out2.group_no(grNo).ii_time_span(ii_f);
-%                     this_time_span=handles_out2.group_no(grNo).time_span_euclid(ii_f,1:this_ii_tspan);
-%                     
-%                     for ii_tsp=1:ii_tspan
-%                         if time_span(ii_tsp)<this_time_span(1)
-%                             these_per_corr(ii_f,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_correct_predict(ii_f,1);
-% 
-%                         else
-%                             if time_span(ii_tsp)>this_time_span(end)
-%                                 these_per_corr(ii_f,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_correct_predict(ii_f,end);
-%                             else
-%                                 ii_0=find(this_time_span<=time_span(ii_tsp),1,'last');
-%                                 ii_1=find(this_time_span>time_span(ii_tsp),1,'first');
-%                                 these_per_corr(ii_f,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_correct_predict(ii_f,ii_0)+...
-%                                     (handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_correct_predict(ii_f,ii_1)-handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_correct_predict(ii_f,ii_0))...
-%                                     *(time_span(ii_tsp)-this_time_span(ii_0))/(this_time_span(ii_1)-this_time_span(ii_0));
-%                             end
-%                         end
-%                     end
-% 
-%                 end
-% 
-%              end
-%       
-%             if size(these_per_corr,1)>2
-%                 
-%                 CIpv = bootci(1000, @mean, these_per_corr);
-%                 meanpv=mean(these_per_corr,1);
-%                 CIpv(1,:)=meanpv-CIpv(1,:);
-%                 CIpv(2,:)=CIpv(2,:)-meanpv;
-%                 
-%                 
-%                 [hlpvl, hppvl] = boundedline(time_span',mean(these_per_corr,1)', CIpv', 'm');
-%             else
-%                 if size(these_per_corr,1)>1
-%                     plot(time_span',mean(these_per_corr,1)', 'm');
-%                 else
-%                     plot(time_span',these_per_corr', 'm');
-%                 end
-%                 
-%             end
-%             this_ylim=ylim;
-%         plot([0 0],this_ylim,'-k')
-%             xlim([-10 20])
-%             xlabel('Time(sec)')
-% 
-%             if no_pcorr==1
-%                 title([handles.group_names{grNo}])
-%             else
-%                 this_grNo=floor((grNo-1)/4)+1;
-%                 ii_pcorr=grNo-4*(this_grNo-1);
-%                 title([handles.group_names{these_groups(this_grNo)} ' ' per_names{ii_pcorr}])
-%             end
-%         end
-%         
-%     end
-%     sgtitle(['Percent correct ' handles_out2.classifier_names{iiMLalgo}])
-% end
-% 
-% %Decoding accuracy
-% for iiMLalgo=handles.MLalgo_to_use
-%     figureNo = figureNo + 1;
-%     try
-%         close(figureNo)
-%     catch
-%     end
-%     hFig=figure(figureNo);
-%     
-%     ax=gca;ax.LineWidth=3;
-%     set(hFig, 'units','normalized','position',[.2 .2 .3 .6])
-%     
-%     for grNo=1:length(these_groups)
-%         ii_tspan=min(handles_out2.group_no(grNo).ii_time_span);
-%         if ~isempty(ii_tspan)
-%             time_span=handles_out2.group_no(grNo).time_span_euclid(1,1:ii_tspan);
-%             subplot(6,1,grNo)
-%             hold on
-%             
-%             these_per_corr=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_correct_predict_sh(:,1:ii_tspan);
-%             
-%             if size(these_per_corr,1)>2
-%                 
-%                 CIpv = bootci(1000, @mean, these_per_corr);
-%                 meanpv=mean(these_per_corr,1);
-%                 CIpv(1,:)=meanpv-CIpv(1,:);
-%                 CIpv(2,:)=CIpv(2,:)-meanpv;
-%                 
-%                 
-%                 [hlpvl, hppvl] = boundedline(time_span',mean(these_per_corr,1)', CIpv', 'k');
-%             else
-%                 if size(these_per_corr,1)>1
-%                     plot(time_span',mean(these_per_corr,1)', 'k');
-%                 else 
-%                     plot(time_span',these_per_corr', 'k');
-%                 end
-%                 
-%             end
-%             
-%             these_per_corr=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_correct_predict(:,1:ii_tspan);
-%       
-%             if size(these_per_corr,1)>2
-%                 
-%                 CIpv = bootci(1000, @mean, these_per_corr);
-%                 meanpv=mean(these_per_corr,1);
-%                 CIpv(1,:)=meanpv-CIpv(1,:);
-%                 CIpv(2,:)=CIpv(2,:)-meanpv;
-%                 
-%                 
-%                 [hlpvl, hppvl] = boundedline(time_span',mean(these_per_corr,1)', CIpv', 'm');
-%             else
-%                 if size(these_per_corr,1)>1
-%                     plot(time_span',mean(these_per_corr,1)', 'm');
-%                 else
-%                     plot(time_span',these_per_corr', 'm');
-%                 end
-%                 
-%             end
-%             xlim([-10 20])
-%             xlabel('Time(sec)')
-%             title(handles.group_names{these_groups(grNo)})
-%         end
-%     end
-%     sgtitle(['Percent correct ' handles_out2.classifier_names{iiMLalgo}])
-% end
 
 %Plot decoding accuracy for each group per mouse
 per_mouse_acc=[];
@@ -1270,23 +739,21 @@ for mouseNo=1:length(handles_out2.mouse_names)
         end
 
 
-        [ii_tspan,ii_file]=max(handles_out2.group_no(grNo).ii_time_span);
+       
         %         handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mouseNo
-        if ~isempty(ii_tspan)
-            time_span=handles_out2.group_no(grNo).time_span_euclid(1,1:ii_tspan);
+        if ~isempty(handles_out2.group_no(grNo).ii_time_span)
+            
             these_per_corr=[];
 
 
             %Extrapolate all points onto the longest ii_tspan
-            time_span=handles_out2.group_no(grNo).time_span_euclid(ii_file,1:ii_tspan);
+            
             these_mice=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mouseNo;
             ii_included=0;
             for ii_f=1:size(handles_out2.group_no(grNo).ii_time_span,1)
                 if these_mice(ii_f)==mouseNo
                     ii_included=ii_included+1;
-                    if ii_f==ii_file
-                        these_per_corr(ii_included,:)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_correct_predict_sh(ii_file,1:ii_tspan);
-                    else
+                 
                         this_ii_tspan=handles_out2.group_no(grNo).ii_time_span(ii_f);
                         this_time_span=handles_out2.group_no(grNo).time_span_euclid(ii_f,1:this_ii_tspan);
 
@@ -1307,7 +774,7 @@ for mouseNo=1:length(handles_out2.mouse_names)
                             end
                         end
 
-                    end
+                    
                 end
             end
 
@@ -1359,9 +826,7 @@ for mouseNo=1:length(handles_out2.mouse_names)
             for ii_f=1:size(handles_out2.group_no(grNo).ii_time_span,1)
                 if these_mice(ii_f)==mouseNo
                     ii_included=ii_included+1;
-                    if ii_f==ii_file
-                        these_per_corr(ii_included,:)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_correct_predict(ii_file,1:ii_tspan);
-                    else
+                 
                         this_ii_tspan=handles_out2.group_no(grNo).ii_time_span(ii_f);
                         this_time_span=handles_out2.group_no(grNo).time_span_euclid(ii_f,1:this_ii_tspan);
 
@@ -1382,7 +847,7 @@ for mouseNo=1:length(handles_out2.mouse_names)
                             end
                         end
 
-                    end
+                    
                 end
             end
 
@@ -1940,6 +1405,9 @@ if is_Fabio==0
     %Perform the glm
     fprintf(1, ['\nglm for decoding accuracy\n'])
     fprintf(fileID, ['\nglm for decoding accuracy\n']);
+
+    fprintf(1, ['\nwindow 0: shuffled, 1:pre, 2:odor, 3:reinforcement\n'])
+    fprintf(fileID, ['\nwindow 0: shuffled, 1:pre, 2:odor, 3:reinforcement\n']);
     
     tbl = table(glm_acc.data',glm_acc.pcorr',glm_acc.window',...
         'VariableNames',{'accuracy','percent_correct','window'});
@@ -1982,171 +1450,7 @@ if is_Fabio==0
 end
 
 pfft=1;
-% %Plot decoding accuracy for forward proficient
-% figureNo = figureNo + 1;
-% try
-%     close(figureNo)
-% catch
-% end
-% hFig=figure(figureNo);
-% hold on
-% 
-% ax=gca;ax.LineWidth=3;
-% set(hFig, 'units','normalized','position',[.2 .2 .3 .3])
-% 
-% 
-% 
-% %Do forward
-% grNo=grNo1;
-% 
-% [ii_tspan,ii_file]=max(handles_out2.group_no(grNo).ii_time_span);
-% 
-% if ~isempty(ii_tspan)
-%     time_span=handles_out2.group_no(grNo).time_span_euclid(1,1:ii_tspan);
-% 
-% 
-%     %Extrapolate all points onto the longest ii_tspan
-%     time_span=handles_out2.group_no(grNo).time_span_euclid(ii_file,1:ii_tspan);
-% 
-%     for ii_f=1:size(handles_out2.group_no(grNo).ii_time_span,1)
-%         if ii_f==ii_file
-%             these_per_corr=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_correct_predict_sh(ii_file,1:ii_tspan);
-%         else
-%             this_ii_tspan=handles_out2.group_no(grNo).ii_time_span(ii_f);
-%             this_time_span=handles_out2.group_no(grNo).time_span_euclid(ii_f,1:this_ii_tspan);
-% 
-%             for ii_tsp=1:ii_tspan
-%                 if time_span(ii_tsp)<this_time_span(1)
-%                     these_per_corr(ii_f,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_correct_predict_sh(ii_f,1);
-% 
-%                 else
-%                     if time_span(ii_tsp)>this_time_span(end)
-%                         these_per_corr(ii_f,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_correct_predict_sh(ii_f,end);
-%                     else
-%                         ii_0=find(this_time_span<=time_span(ii_tsp),1,'last');
-%                         ii_1=find(this_time_span>time_span(ii_tsp),1,'first');
-%                         these_per_corr(ii_f,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_correct_predict_sh(ii_f,ii_0)+...
-%                             (handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_correct_predict_sh(ii_f,ii_1)-handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_correct_predict_sh(ii_f,ii_0))...
-%                             *(time_span(ii_tsp)-this_time_span(ii_0))/(this_time_span(ii_1)-this_time_span(ii_0));
-%                     end
-%                 end
-%             end
-% 
-%         end
-% 
-%     end
-% 
-% 
-%     %For some reason whe have a subset of sessions with zero accuracy
-%     vetted_these_per_corr=[];
-%     ii_s=0;
-%     for ii_sessions=1:size(these_per_corr,1)
-%         if sum(these_per_corr(ii_sessions,:)==0)<200
-%             ii_s=ii_s+1;
-%             vetted_these_per_corr(ii_s,:)=these_per_corr(ii_sessions,:);
-%         end
-%     end
-% 
-%     these_per_corr=[];
-%     these_per_corr=vetted_these_per_corr;
-% 
-%     if size(these_per_corr,1)>2
-% 
-%         CIpv = bootci(1000, @mean, these_per_corr);
-%         meanpv=mean(these_per_corr,1);
-%         CIpv(1,:)=meanpv-CIpv(1,:);
-%         CIpv(2,:)=CIpv(2,:)-meanpv;
-% 
-% 
-%         [hlpvl, hppvl] = boundedline(time_span',mean(these_per_corr,1)', CIpv', 'k');
-%     else
-%         if size(these_per_corr,1)>1
-%             plot(time_span',mean(these_per_corr,1)', 'k');
-%         else
-%             plot(time_span',these_per_corr', 'k');
-%         end
-% 
-%     end
-% 
-% 
-%     for ii_f=1:size(handles_out2.group_no(grNo).ii_time_span,1)
-%         if ii_f==ii_file
-%             these_per_corr=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_correct_predict(ii_file,1:ii_tspan);
-%         else
-%             this_ii_tspan=handles_out2.group_no(grNo).ii_time_span(ii_f);
-%             this_time_span=handles_out2.group_no(grNo).time_span_euclid(ii_f,1:this_ii_tspan);
-% 
-%             for ii_tsp=1:ii_tspan
-%                 if time_span(ii_tsp)<this_time_span(1)
-%                     these_per_corr(ii_f,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_correct_predict(ii_f,1);
-% 
-%                 else
-%                     if time_span(ii_tsp)>this_time_span(end)
-%                         these_per_corr(ii_f,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_correct_predict(ii_f,end);
-%                     else
-%                         ii_0=find(this_time_span<=time_span(ii_tsp),1,'last');
-%                         ii_1=find(this_time_span>time_span(ii_tsp),1,'first');
-%                         these_per_corr(ii_f,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_correct_predict(ii_f,ii_0)+...
-%                             (handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_correct_predict(ii_f,ii_1)-handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_correct_predict(ii_f,ii_0))...
-%                             *(time_span(ii_tsp)-this_time_span(ii_0))/(this_time_span(ii_1)-this_time_span(ii_0));
-%                     end
-%                 end
-%             end
-% 
-%         end
-% 
-%     end
-% 
-%     %For some reason whe have a subset of sessions with zero accuracy
-%     vetted_these_per_corr=[];
-%     ii_s=0;
-%     for ii_sessions=1:size(these_per_corr,1)
-%         if sum(these_per_corr(ii_sessions,:)==0)<200
-%             ii_s=ii_s+1;
-%             vetted_these_per_corr(ii_s,:)=these_per_corr(ii_sessions,:);
-%         end
-%     end
-% 
-%     these_per_corr=[];
-%     these_per_corr=vetted_these_per_corr;
-% 
-%     if size(these_per_corr,1)>2
-% 
-%         CIpv = bootci(1000, @mean, these_per_corr);
-%         meanpv=mean(these_per_corr,1);
-%         CIpv(1,:)=meanpv-CIpv(1,:);
-%         CIpv(2,:)=CIpv(2,:)-meanpv;
-% 
-% 
-%         [hlpvl, hppvl] = boundedline(time_span',mean(these_per_corr,1)', CIpv', 'b');
-%     else
-%         if size(these_per_corr,1)>1
-%             plot(time_span',mean(these_per_corr,1)', 'b');
-%         else
-%             plot(time_span',these_per_corr', 'b');
-%         end
-% 
-%     end
-% 
-%     for ii_session=1:size(these_per_corr,1)
-%         plot(time_span',smoothdata(these_per_corr(ii_session,:)','gaussian',100),'Color',[120/255 140/255 255/255],'LineWidth',1)
-%     end
-% 
-%     plot(time_span',mean(these_per_corr,1)', 'b','LineWidth',1.5);
-% 
-%     ylim([0.3 1.2])
-%     this_ylim=ylim;
-%         plot([0 0],this_ylim,'-k')
-%     if no_pcorr==1
-%         xlim([-20 30])
-%     else
-%         xlim([-10 20])
-%     end
-%     xlabel('Time(sec)')
-% 
-% 
-%     title(['Decoding accuracy for ' grNo1_label])
-% end
+
 
 %Label prediction for S+ and S-
 per_mouse_pred=[];
@@ -2173,17 +1477,13 @@ for mouseNo=1:length(handles_out2.mouse_names)
 
         end
 
-        [ii_tspan,ii_file]=max(handles_out2.group_no(grNo).ii_time_span);
-
-        if ~isempty(ii_tspan)
+        if ~isempty(handles_out2.group_no(grNo).ii_time_span)
 
 
             %Extrapolate all points onto the longest ii_tspan
-            time_span=handles_out2.group_no(grNo).time_span_euclid(ii_file,1:ii_tspan);
-
             these_moving_mean_sm=[];
             ii_included=0;
-            time_span=handles_out2.group_no(grNo).time_span_euclid(ii_file,1:ii_tspan);
+
             these_mice=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mouseNo;
             for ii_f=1:size(handles_out2.group_no(grNo).ii_time_span,1)
                 if these_mice(ii_f)==mouseNo
@@ -2195,22 +1495,17 @@ for mouseNo=1:length(handles_out2.mouse_names)
                         this_time_span=handles_out2.group_no(grNo).time_span_euclid(ii_f,1:this_ii_tspan);
 
                         for ii_tsp=1:ii_tspan
-                            if time_span(ii_tsp)<this_time_span(1)
-                                these_moving_mean_sm(ii_included,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_moving_mean_per_trial_sm_timecourse(ii_f,1);
 
+                            if time_span(ii_tsp)>this_time_span(end)
+                                these_moving_mean_sm(ii_included,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_moving_mean_per_trial_sm_timecourse(ii_f,end);
                             else
-                                if time_span(ii_tsp)>this_time_span(end)
-                                    these_moving_mean_sm(ii_included,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_moving_mean_per_trial_sm_timecourse(ii_f,end);
-                                else
-                                    ii_0=find(this_time_span<=time_span(ii_tsp),1,'last');
-                                    ii_1=find(this_time_span>time_span(ii_tsp),1,'first');
-                                    these_moving_mean_sm(ii_included,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_moving_mean_per_trial_sm_timecourse(ii_f,ii_0)+...
-                                        (handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_moving_mean_per_trial_sm_timecourse(ii_f,ii_1)-handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_moving_mean_per_trial_sm_timecourse(ii_f,ii_0))...
-                                        *(time_span(ii_tsp)-this_time_span(ii_0))/(this_time_span(ii_1)-this_time_span(ii_0));
-                                end
+                                ii_0=find(this_time_span<=time_span(ii_tsp),1,'last');
+                                ii_1=find(this_time_span>time_span(ii_tsp),1,'first');
+                                these_moving_mean_sm(ii_included,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_moving_mean_per_trial_sm_timecourse(ii_f,ii_0)+...
+                                    (handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_moving_mean_per_trial_sm_timecourse(ii_f,ii_1)-handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_moving_mean_per_trial_sm_timecourse(ii_f,ii_0))...
+                                    *(time_span(ii_tsp)-this_time_span(ii_0))/(this_time_span(ii_1)-this_time_span(ii_0));
                             end
                         end
-
                     end
 
                 end
@@ -2245,7 +1540,6 @@ for mouseNo=1:length(handles_out2.mouse_names)
             per_mouse_pred.group(grNo).mouse(mouseNo).t_mean__moving_mean_sm=time_span';
 
             %Extrapolate all points onto the longest ii_tspan
-            time_span=handles_out2.group_no(grNo).time_span_euclid(ii_file,1:ii_tspan);
 
             these_moving_mean_sp=[];
             ii_included=0;
@@ -2259,10 +1553,7 @@ for mouseNo=1:length(handles_out2.mouse_names)
                         this_time_span=handles_out2.group_no(grNo).time_span_euclid(ii_f,1:this_ii_tspan);
 
                         for ii_tsp=1:ii_tspan
-                            if time_span(ii_tsp)<this_time_span(1)
-                                these_moving_mean_sp(ii_included,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_moving_mean_per_trial_sp_timecourse(ii_f,1);
-
-                            else
+                         
                                 if time_span(ii_tsp)>this_time_span(end)
                                     these_moving_mean_sp(ii_included,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_moving_mean_per_trial_sp_timecourse(ii_f,end);
                                 else
@@ -2275,7 +1566,6 @@ for mouseNo=1:length(handles_out2.mouse_names)
                             end
                         end
 
-                    end
                 end
             end
 
@@ -2337,7 +1627,7 @@ for mouseNo=1:length(handles_out2.mouse_names)
 end
 
  
-%Plot the overall predictions calculated from per mouse decoding
+%Plot the predictions calculated from per mouse decoding
 for grNo=these_groups_out
 
     ii_m_included=0;
@@ -2412,384 +1702,7 @@ for grNo=these_groups_out
     end
 
 end
-% 
-% %Plot the posterior probabilities for Sp (scores(:,2) and Sm (scores(:,1))
-% for iiMLalgo=handles.MLalgo_to_use
-%     figureNo=figureNo+1;
-%     try
-%         close(figureNo)
-%     catch
-%     end
-% 
-%     hFig = figure(figureNo);
-% 
-%     set(hFig, 'units','normalized','position',[.05 .1 .3 .6])
-% 
-%     ii_plot=0;
-%     for grNo=1:length(these_groups)
-% 
-%         [ii_tspan,ii_file]=max(handles_out2.group_no(grNo).ii_time_span);
-% 
-%         if ~isempty(ii_tspan)
-%             try
-%                 %                 time_span=handles_out2.group_no(grNo).time_span_euclid(1,1:ii_tspan);
-% 
-%                 ii_plot=ii_plot+1;
-%                 subplot(6,2,ii_plot)
-%                 hold on
-% 
-%                 %Extrapolate all points onto the longest ii_tspan
-%                 time_span=handles_out2.group_no(grNo).time_span_euclid(ii_file,1:ii_tspan);
-% 
-%                 this_mean_per_trial_scores=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_per_trial_scores_sp;
-%                 these_mean_per_trial_scores=zeros(size(this_mean_per_trial_scores,1),size(this_mean_per_trial_scores,2),ii_tspan);
-%                 these_scores_sm=zeros(size(this_mean_per_trial_scores,1),ii_tspan);
-%                 these_scores_sp=zeros(size(this_mean_per_trial_scores,1),ii_tspan);
-% 
-%                 for ii_f=1:size(handles_out2.group_no(grNo).ii_time_span,1)
-%                     if ii_f==ii_file
-%                         these_mean_per_trial_scores=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_per_trial_scores_sp(ii_file,:,1:ii_tspan);
-%                     else
-%                         this_ii_tspan=handles_out2.group_no(grNo).ii_time_span(ii_f);
-%                         this_time_span=handles_out2.group_no(grNo).time_span_euclid(ii_f,1:this_ii_tspan);
-% 
-%                         for ii_tsp=1:ii_tspan
-%                             if time_span(ii_tsp)<this_time_span(1)
-%                                 these_mean_per_trial_scores(ii_f,:,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_per_trial_scores_sp(ii_f,:,1);
-% 
-%                             else
-%                                 if time_span(ii_tsp)>this_time_span(end)
-%                                     these_mean_per_trial_scores(ii_f,:,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_per_trial_scores_sp(ii_f,:,end);
-%                                 else
-%                                     ii_0=find(this_time_span<=time_span(ii_tsp),1,'last');
-%                                     ii_1=find(this_time_span>time_span(ii_tsp),1,'first');
-%                                     these_mean_per_trial_scores(ii_f,:,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_per_trial_scores_sp(ii_f,:,ii_0)+...
-%                                         (handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_per_trial_scores_sp(ii_f,:,ii_1)-handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_per_trial_scores_sp(ii_f,:,ii_0))...
-%                                         *(time_span(ii_tsp)-this_time_span(ii_0))/(this_time_span(ii_1)-this_time_span(ii_0));
-%                                 end
-%                             end
-%                         end
-% 
-%                     end
-% 
-%                 end
-% 
-%                 %                 this_mean_per_trial_scores_sp=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_per_trial_scores_sp;
-%                 %                 this_mean_per_trial_scores_sp=this_mean_per_trial_scores_sp(:,:,1:length(time_span));
-% 
-% 
-%                 these_scores_sm(:,:)=these_mean_per_trial_scores(:,1,:);
-%                 these_scores_sp(:,:)=these_mean_per_trial_scores(:,2,:);
-% 
-%                 if size(these_scores_sm,1)>2
-% 
-%                     CIsm = bootci(1000, @mean, these_scores_sm);
-% 
-%                     meansm=mean(these_scores_sm,1);
-%                     CIsm(1,:)=meansm-CIsm(1,:);
-%                     CIsm(2,:)=CIsm(2,:)-meansm;
-% 
-% 
-%                     [hlsm, hpsm] = boundedline(time_span',mean(these_scores_sm,1)', CIsm', 'cmap',[158/255 31/255 99/255]);
-% 
-%                 else
-%                     plot(time_span',these_scores_sm', '-','Color',[158/255 31/255 99/255]);
-%                 end
-% 
-%                 %                 these_scores_sp=zeros(size(this_mean_per_trial_scores_sp,1),size(this_mean_per_trial_scores_sp,3));
-%                 %                 these_scores_sp(:,:)=this_mean_per_trial_scores_sp(:,2,:);
-% 
-%                 if size(these_scores_sp,1)>2
-%                     CIsp = bootci(1000, @mean, these_scores_sp);
-%                     meansp=mean(these_scores_sp,1);
-%                     CIsp(1,:)=meansp-CIsp(1,:);
-%                     CIsp(2,:)=CIsp(2,:)-meansp;
-% 
-%                     [hlsp, hpsp] = boundedline(time_span',mean(these_scores_sp,1)', CIsp', 'cmap',[0 114/255 178/255]);
-%                 else
-%                     plot(time_span',these_scores_sp', '-','Color',[0 114/255 178/255]);
-%                 end
-% 
-% 
-%                 if (size(these_scores_sp,1)>2)&(size(these_scores_sm,1)>2)
-%                     plot(time_span',mean(these_scores_sm,1)','-','Color',[158/255 31/255 99/255],'DisplayName','S-')
-%                     plot(time_span',mean(these_scores_sp,1)', '-','Color',[0 114/255 178/255],'DisplayName','S+');
-%                 end
-% 
-%                 text(50,0.75,'S-','Color',[158/255 31/255 99/255])
-%                 text(50,0.65,'S+','Color',[0 114/255 178/255])
-% 
-%                 ylim([0 1])
-%                 title(['S+ ' handles.group_names{these_groups(grNo)}])
-%                 xlabel('Time(sec)')
-%                 ylabel('Posterior p')
-% 
-%                 ii_plot=ii_plot+1;
-%                 subplot(6,2,ii_plot)
-%                 hold on
-% 
-%                 %                 this_mean_per_trial_scores_sm=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_per_trial_scores_sm;
-%                 %                 this_mean_per_trial_scores_sm=this_mean_per_trial_scores_sm(:,:,1:length(time_span));
-%                 %
-%                 %                 these_scores_sm=zeros(size(this_mean_per_trial_scores_sm,1),size(this_mean_per_trial_scores_sm,3));
-%                 %                 these_scores_sm(:,:)=this_mean_per_trial_scores_sm(:,1,:);
-% 
-%                 this_mean_per_trial_scores=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_per_trial_scores_sm;
-%                 these_mean_per_trial_scores=zeros(size(this_mean_per_trial_scores,1),size(this_mean_per_trial_scores,2),ii_tspan);
-%                 these_scores_sm=zeros(size(this_mean_per_trial_scores,1),ii_tspan);
-%                 these_scores_sp=zeros(size(this_mean_per_trial_scores,1),ii_tspan);
-% 
-%                 for ii_f=1:size(handles_out2.group_no(grNo).ii_time_span,1)
-%                     if ii_f==ii_file
-%                         these_mean_per_trial_scores=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_per_trial_scores_sm(ii_file,:,1:ii_tspan);
-%                     else
-%                         this_ii_tspan=handles_out2.group_no(grNo).ii_time_span(ii_f);
-%                         this_time_span=handles_out2.group_no(grNo).time_span_euclid(ii_f,1:this_ii_tspan);
-% 
-%                         for ii_tsp=1:ii_tspan
-%                             if time_span(ii_tsp)<this_time_span(1)
-%                                 these_mean_per_trial_scores(ii_f,:,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_per_trial_scores_sm(ii_f,:,1);
-% 
-%                             else
-%                                 if time_span(ii_tsp)>this_time_span(end)
-%                                     these_mean_per_trial_scores(ii_f,:,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_per_trial_scores_sm(ii_f,:,end);
-%                                 else
-%                                     ii_0=find(this_time_span<=time_span(ii_tsp),1,'last');
-%                                     ii_1=find(this_time_span>time_span(ii_tsp),1,'first');
-%                                     these_mean_per_trial_scores(ii_f,:,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_per_trial_scores_sm(ii_f,:,ii_0)+...
-%                                         (handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_per_trial_scores_sm(ii_f,:,ii_1)-handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_per_trial_scores_sm(ii_f,:,ii_0))...
-%                                         *(time_span(ii_tsp)-this_time_span(ii_0))/(this_time_span(ii_1)-this_time_span(ii_0));
-%                                 end
-%                             end
-%                         end
-% 
-%                     end
-% 
-%                 end
-% 
-%                 these_scores_sm(:,:)=these_mean_per_trial_scores(:,1,:);
-%                 these_scores_sp(:,:)=these_mean_per_trial_scores(:,2,:);
-% 
-%                 if size(these_scores_sm,1)>2
-%                     CIsm = bootci(1000, @mean, these_scores_sm);
-%                     meansm=mean(these_scores_sm,1);
-%                     CIsm(1,:)=meansm-CIsm(1,:);
-%                     CIsm(2,:)=CIsm(2,:)-meansm;
-% 
-%                     [hlsm, hpsm] = boundedline(time_span',mean(these_scores_sm,1)', CIsm', 'cmap',[158/255 31/255 99/255]);
-%                 else
-%                     plot(time_span',these_scores_sm', '-','Color',[158/255 31/255 99/255]);
-%                 end
-% 
-% %                 these_scores_sp=zeros(size(this_mean_per_trial_scores_sm,1),size(this_mean_per_trial_scores_sm,3));
-% %                 these_scores_sp(:,:)=this_mean_per_trial_scores_sm(:,2,:);
-% 
-%                 if size(these_scores_sp,1)>2
-%                     CIsp = bootci(1000, @mean, these_scores_sp);
-%                     meansp=mean(these_scores_sp,1);
-%                     CIsp(1,:)=meansp-CIsp(1,:);
-%                     CIsp(2,:)=CIsp(2,:)-meansp;
-% 
-%                     [hlsp, hpsp] = boundedline(time_span',mean(these_scores_sp,1)', CIsp', 'cmap',[0 114/255 178/255]);
-%                 else
-%                     plot(time_span',these_scores_sp', '-','Color',[0 114/255 178/255]);
-%                 end
-% 
-% 
-% 
-%                 if (size(these_scores_sp,1)>2)&(size(these_scores_sm,1)>2)
-%                     plot(time_span',mean(these_scores_sm,1)','-','Color',[158/255 31/255 99/255],'DisplayName','S-')
-%                     plot(time_span',mean(these_scores_sp,1)', '-','Color',[0 114/255 178/255],'DisplayName','S+');
-%                 end
-% 
-%                 text(50,0.75,'S-','Color',[158/255 31/255 99/255])
-%                 text(50,0.65,'S+','Color',[0 114/255 178/255])
-% 
-%                 ylim([0 1])
-%                 title(['S- ' handles.group_names{these_groups(grNo)}])
-%                 xlabel('Time(sec)')
-%                 ylabel('Posterior p')
-%             catch
-%             end
-%         end
-%     end
-%     sgtitle(['Posterior probability for ' handles_out2.classifier_names{iiMLalgo} ])
-% end
-% 
 
-% 
-% %Average decoding accuracy first and last session
-% try
-%     for iiMLalgo=handles.MLalgo_to_use
-%         figureNo = figureNo + 1;
-%         try
-%             close(figureNo)
-%         catch
-%         end
-%         hFig=figure(figureNo);
-%         hold on
-% 
-%         ax=gca;ax.LineWidth=3;
-%         set(hFig, 'units','normalized','position',[.2 .2 .3 .3])
-% 
-%         length_corr=[];
-%         for mouseNo=1:size(first_last,1)
-%             length_corr(mouseNo)=length(handles_out2.mouse_no(mouseNo).ii_thr(ii_thr).MLalgo(iiMLalgo).first_mean_correct_predict);
-%         end
-% 
-%         first_mean_correct_predict=zeros(size(first_last,1),max(length_corr));
-%         for mouseNo=1:size(first_last,1)
-%             first_mean_correct_predict(mouseNo,1:length_corr(mouseNo))=handles_out2.mouse_no(mouseNo).ii_thr(ii_thr).MLalgo(iiMLalgo).first_mean_correct_predict;
-%         end
-% 
-%         these_per_corr=first_mean_correct_predict;
-%         this_time_spanf=zeros(1,size(these_per_corr,2));
-%         this_time_spanf(1)=time_span(1);
-%         dt=time_span(2)-time_span(1);
-%         for ii=2:length(this_time_spanf)
-%             this_time_spanf(ii)=this_time_spanf(ii-1)+dt;
-%         end
-% 
-% 
-%         if size(these_per_corr,1)>2
-% 
-%             CIpv = bootci(1000, @mean, these_per_corr);
-%             meanpv=mean(these_per_corr,1);
-%             CIpv(1,:)=meanpv-CIpv(1,:);
-%             CIpv(2,:)=CIpv(2,:)-meanpv;
-% 
-% 
-%             [hlpvl, hppvl] = boundedline(this_time_spanf',mean(these_per_corr,1)', CIpv', 'm');
-%         else
-%             if size(these_per_corr,1)>1
-%                 plot(this_time_spanf',mean(these_per_corr,1)', 'm');
-%             else
-%                 plot(this_time_spanf',these_per_corr', 'm');
-%             end
-% 
-%         end
-% 
-% 
-% 
-% 
-%         length_corr=[];
-%         for mouseNo=1:size(first_last,1)
-%             length_corr(mouseNo)=length(handles_out2.mouse_no(mouseNo).ii_thr(ii_thr).MLalgo(iiMLalgo).last_mean_correct_predict);
-%         end
-% 
-%         last_mean_correct_predict=zeros(size(first_last,1),max(length_corr));
-%         for mouseNo=1:size(first_last,1)
-%             last_mean_correct_predict(mouseNo,1:length_corr(mouseNo))=handles_out2.mouse_no(mouseNo).ii_thr(ii_thr).MLalgo(iiMLalgo).last_mean_correct_predict;
-%         end
-% 
-%         these_per_corr=last_mean_correct_predict;
-%         this_time_span=zeros(1,size(these_per_corr,2));
-%         this_time_span(1)=time_span(1);
-%         for ii=2:length(this_time_span)
-%             this_time_span(ii)=this_time_span(ii-1)+dt;
-%         end
-% 
-%         if size(these_per_corr,1)>2
-% 
-%             CIpv = bootci(1000, @mean, these_per_corr);
-%             meanpv=mean(these_per_corr,1);
-%             CIpv(1,:)=meanpv-CIpv(1,:);
-%             CIpv(2,:)=CIpv(2,:)-meanpv;
-% 
-% 
-%             [hlpvl, hppvl] = boundedline(this_time_span',mean(these_per_corr,1)', CIpv', 'b');
-%         else
-%             if size(these_per_corr,1)>1
-%                 plot(this_time_span',mean(these_per_corr,1)', 'b');
-%             else
-%                 plot(this_time_span',these_per_corr', 'b');
-%             end
-% 
-%         end
-% 
-%         text(20,0.8,'First','Color','m')
-%         text(20,0.9,'Last','Color','b')
-%         plot(this_time_spanf',mean(first_mean_correct_predict,1)', 'm');
-%         ylabel('Accuracy')
-%         xlabel('Time(sec)')
-%         title(['Accuracy ' handles_out2.classifier_names{iiMLalgo}])
-%     end
-% catch
-% end
-% 
-% try
-%     %Decoding accuracy first and last session per mouse
-%     for iiMLalgo=handles.MLalgo_to_use
-%         figureNo = figureNo + 1;
-%         try
-%             close(figureNo)
-%         catch
-%         end
-%         hFig=figure(figureNo);
-%         hold on
-% 
-%         ax=gca;ax.LineWidth=3;
-%         set(hFig, 'units','normalized','position',[.2 .2 .3 .7])
-% 
-% 
-%         length_corr=[];
-%         for mouseNo=1:size(first_last,1)
-%             length_corr(mouseNo)=length(handles_out2.mouse_no(mouseNo).ii_thr(ii_thr).MLalgo(iiMLalgo).first_mean_correct_predict);
-%         end
-% 
-%         first_mean_correct_predict=zeros(size(first_last,1),max(length_corr));
-%         for mouseNo=1:size(first_last,1)
-%             first_mean_correct_predict(mouseNo,1:length_corr(mouseNo))=handles_out2.mouse_no(mouseNo).ii_thr(ii_thr).MLalgo(iiMLalgo).first_mean_correct_predict;
-%         end
-% 
-%         these_per_corr=first_mean_correct_predict;
-%         this_time_spanf=zeros(1,size(these_per_corr,2));
-%         this_time_spanf(1)=time_span(1);
-%         dt=time_span(2)-time_span(1);
-%         for ii=2:length(this_time_spanf)
-%             this_time_spanf(ii)=this_time_spanf(ii-1)+dt;
-%         end
-% 
-% 
-%         length_corr=[];
-%         for mouseNo=1:size(first_last,1)
-%             length_corr(mouseNo)=length(handles_out2.mouse_no(mouseNo).ii_thr(ii_thr).MLalgo(iiMLalgo).last_mean_correct_predict);
-%         end
-% 
-%         last_mean_correct_predict=zeros(size(first_last,1),max(length_corr));
-%         for mouseNo=1:size(first_last,1)
-%             last_mean_correct_predict(mouseNo,1:length_corr(mouseNo))=handles_out2.mouse_no(mouseNo).ii_thr(ii_thr).MLalgo(iiMLalgo).last_mean_correct_predict;
-%         end
-% 
-%         these_per_corr=last_mean_correct_predict;
-%         this_time_span=zeros(1,size(these_per_corr,2));
-%         this_time_span(1)=time_span(1);
-%         for ii=2:length(this_time_span)
-%             this_time_span(ii)=this_time_span(ii-1)+dt;
-%         end
-% 
-%         %Now plot them
-%         for mouseNo=1:size(first_last,1)
-%             subplot(size(first_last,1),1,mouseNo)
-%             hold on
-%             plot(this_time_spanf',first_mean_correct_predict(mouseNo,:),'-m')
-%             plot(this_time_span',last_mean_correct_predict(mouseNo,:),'-b')
-% 
-% 
-%             if mouseNo==1
-%                 text(20,0.8,'First','Color','m')
-%                 text(20,0.9,'Last','Color','b')
-%             end
-% 
-%             ylabel('Accuracy')
-%             xlabel('Time(sec)')
-%             title(['Accuracy ' handles_out2.mouse_names{mouseNo}])
-%         end
-% 
-%         sgtitle(['Accuracy ' handles_out2.classifier_names{iiMLalgo}])
-%     end
-% catch
-% end
  
 out_file=[choiceBatchPathName choiceFileName];
 out_file=[out_file(1:end-2) '.mat'];

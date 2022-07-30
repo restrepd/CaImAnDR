@@ -12,22 +12,22 @@ if exist('handles_choices')==0
     
     post_shift=0;
     
-    trial_time_from=-5; %-10
-    trial_time_to=60; %30
+    trial_time_from=-10; %-10
+    trial_time_to=20; %30
 
     
-    MLalgo_to_use=6;
-    p_threshold=1; %This limits the ROIs used in the decoding model to those whose p value in a ttest for the two odors in <=p_threshold
+%     MLalgo_to_use=6;
+    p_threshold=1.1; %This limits the ROIs used in the decoding model to those whose p value in a ttest for the two odors in <=p_threshold
     dt_p_threshold=20; %Time to be used after the odor on for the p_threshold t_test
     show_figures=1; %Show the figures
     convert_z=2; %0, do not convert, 1= z=x/std, 2= per trial z=(x-x_pre)/std
-    pre_time=5; %Used to calcuate x_pre
+    pre_time=[-5 -1]; %Used to calcuate x_pre
 else
     pre_perPathName=handles_choices.pre_per_PathName;
     pre_perFileName=handles_choices.pre_per_FileName;
     k_fold=handles_choices.k_fold;
     post_shift=handles_choices.post_shift;
-    MLalgo_to_use=handles_choices.MLalgo_to_use;
+%     MLalgo_to_use=handles_choices.MLalgo_to_use;
     pre_time=handles_choices.pre_time;
 end
 
@@ -51,7 +51,7 @@ handles_out.pre_perFileName=pre_perFileName;
 handles_out.pre_perPathName=pre_perPathName;
 handles_out.post_shift=post_shift;
 handles_out.pre_time=pre_time;
-handles_out.MLalgo_to_use=MLalgo_to_use;
+% handles_out.MLalgo_to_use=MLalgo_to_use;
 
 figNo=0;
 
@@ -145,7 +145,7 @@ while (at_end==0)
         if (no_points_after+this_ii+next_ii<length(epochs))&(this_ii+next_ii-no_points_before>0)
             trNo=trNo+1;
              if convert_z==2
-                mean_trace_before=mean(traces(:,this_ii+next_ii+no_points_before-ii_pre:this_ii+next_ii+no_points_before),2);
+                mean_trace_before=mean(traces(:,this_ii+next_ii+no_points_before+ii_pre(1):this_ii+next_ii+no_points_before+ii_pre(2)),2);
                 mean_trace_before=repmat(mean_trace_before,1,size(traces(:,this_ii+next_ii:this_ii+next_ii+no_points_before+no_points_after-1),2));
                 these_std_traces=repmat(std_traces,1,size(traces(:,this_ii+next_ii:this_ii+next_ii+no_points_before+no_points_after-1),2));
                 measurements_per_trial(1:no_points_before+no_points_after,:,trNo)=((traces(:,this_ii+next_ii:this_ii+next_ii+no_points_before+no_points_after-1)...
@@ -186,7 +186,7 @@ while (at_end==0)
         if (no_points_after+this_ii+next_ii<length(epochs))&(this_ii+next_ii-no_points_before>0)
             trNo=trNo+1;
             if convert_z==2
-                mean_trace_before=mean(traces(:,this_ii+next_ii+no_points_before-ii_pre:this_ii+next_ii+no_points_before),2);
+                mean_trace_before=mean(traces(:,this_ii+next_ii+no_points_before+ii_pre(1):this_ii+next_ii+no_points_before+ii_pre(2)),2);
                 mean_trace_before=repmat(mean_trace_before,1,size(traces(:,this_ii+next_ii:this_ii+next_ii+no_points_before+no_points_after-1),2));
                 these_std_traces=repmat(std_traces,1,size(traces(:,this_ii+next_ii:this_ii+next_ii+no_points_before+no_points_after-1),2));
                 measurements_per_trial(1:no_points_before+no_points_after,:,trNo)=((traces(:,this_ii+next_ii:this_ii+next_ii+no_points_before+no_points_after-1)...
