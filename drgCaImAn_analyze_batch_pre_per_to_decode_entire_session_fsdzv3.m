@@ -24,7 +24,7 @@ moving_mean_n=10;
 %Which threshold value should we use?
 ii_thr=1;
 
-is_Fabio=2;
+is_Fabio=0;
 
 switch is_Fabio
     case 0
@@ -753,6 +753,7 @@ if ~isempty(ii_tspan)
 end
 
 %Do reversed
+try
 grNo=grNo2;
 
 [ii_tspan,ii_file]=max(handles_out2.group_no(grNo).ii_time_span);
@@ -818,7 +819,8 @@ if ~isempty(ii_tspan)
     this_ylim=ylim;
         plot([0 0],this_ylim,'-k')
 end
-
+catch
+end
 % ylim([-10 10])
 
     xlim([-10 20])

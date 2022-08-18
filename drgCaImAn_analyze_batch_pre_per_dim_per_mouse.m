@@ -1,4 +1,4 @@
-%drgCaImAn_analyze_batch_pre_per_dim_per_mouse
+%drgCaImAn_analyze_batch_pre_per_dim_per_mousemouse
 close all
 clear all
 

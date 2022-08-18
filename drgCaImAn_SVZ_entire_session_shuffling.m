@@ -132,7 +132,7 @@ if show_figures==1
     ylim([-y_shift*0.2 (no_traces+2)*y_shift])
     xlabel('time(sec)')
     title(['All dFF timecourses ' num2str(size(traces,1)) ' ROIs'])
-endii_p_threshold
+end
 
 %epochs is a vector of the length of time that gives information on
 %behavior

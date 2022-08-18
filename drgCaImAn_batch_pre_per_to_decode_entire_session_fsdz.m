@@ -1,7 +1,7 @@
 function drgCaImAn_batch_pre_per_to_decode_entire_session_fsdz(choiceBatchPathName,choiceFileName)
 %Note: fitcnet will not work in Matlab versions earlier than 2021a
 
-   
+    
 
 if nargin==0
     [choiceFileName,choiceBatchPathName] = uigetfile({'drgCaImAn_LDAfsdz_choices*.m'},'Select the .m file with all the choices for analysis');
@@ -96,7 +96,7 @@ if all_files_present==1
         handles_choices.post_shift=handles.post_shift;
         handles_choices.pre_time=handles.pre_time;
         handles_choices.ii_cost=handles.ii_cost;
- 
+  
         for ii_thr=1:length(handles.p_threshold)
              
            handles_choices.p_threshold=handles.p_threshold(ii_thr);
