@@ -1,5 +1,5 @@
 %drgCaImAn_analyze_batch_pre_per_dim_per_mousemouse
-close all
+close all force
 clear all
 
 
@@ -380,7 +380,10 @@ glm_ii=0;
 id_ii=0;
 input_data=[];
 
-for grNo=2:no_pcorr*length(these_groups)
+these_mean_dim_proficient=[];
+ii_proficient=0;
+
+for grNo=[2 3 4 6 7 8]
 
     ii_m_included=0;
     these_dim=[];
@@ -462,6 +465,11 @@ for grNo=2:no_pcorr*length(these_groups)
 
         for ii_session=1:size(these_mean_dim,1)
             plot(time_span',smoothdata(these_mean_dim(ii_session,:)','gaussian',100),'Color',[100/255 100/255 100/255],'LineWidth',1)
+            if (grNo==4)||(grNo==8)
+                ii_proficient=ii_proficient+1;
+                these_mean_dim_proficient(ii_proficient,:)=these_mean_dim(ii_session,:);
+                time_span_proficient=time_span;
+            end
         end
 
         plot(time_span',mean(these_mean_dim,1)', 'k','LineWidth',1.5);
@@ -511,7 +519,8 @@ rand_offset=0.8;
 
 bar_offset=0;
 
-for grNo=2:no_pcorr*length(these_groups)
+%Note I am not plotting reversed <40%
+for grNo=[2 3 4 6 7 8]
 
 
 
@@ -541,24 +550,24 @@ for grNo=2:no_pcorr*length(these_groups)
 
     bar_offset=bar_offset+1;
 end
-xticks([1.5:3:22.5])
+xticks([1.5:3:21])
 labels='xticklabels({';
-for ii_label=1:length(these_groups)
-    for ii_pcorr=1:no_pcorr
-        labels=[labels '''' handles.group_names{these_groups(ii_label)} per_names{ii_pcorr} ''', '];
-    end
+for ii_label=[2 3 4 6 7 8]
+    labels=[labels '''' fr_per_names{ii_label} ''', '];
 end
 labels=[labels(1:end-2) '})'];
 eval(labels)
+text(14,9,'Pre-odor','Color',[80/255 194/255 255/255],'FontSize',16)
+text(14,8,'Odor','Color',[0 114/255 178/255],'FontSize',16)
 title(['Dimensionality'])
 ylabel('Dimensionality')
 
-xlim([0 24])
+xlim([0 18])
 
 
-%Perform the glm
-fprintf(1, ['\nglm for decoding accuracy\n'])
-fprintf(fileID, ['\nglm for decoding accuracy\n']);
+%Perform the glm 
+fprintf(1, ['\nglm for dimensionality with separate forward and reversed\n'])
+fprintf(fileID, ['\nglm for dimensionality with separate forward and reversed\n']);
 
 tbl = table(glm_dim.data',glm_dim.fwd_rev',glm_dim.pcorr',glm_dim.window',...
     'VariableNames',{'accuracy','forward_vs_reversed','percent_correct','window'});
@@ -605,6 +614,54 @@ switch is_Fabio
     otherwise
 
 end
+
+%Plot the timecourse for proficient
+figureNo = figureNo + 1;
+try
+    close(figureNo)
+catch
+end
+hFig=figure(figureNo);
+hold on
+
+ax=gca;ax.LineWidth=3;
+set(hFig, 'units','normalized','position',[.2 .2 .3 .3])
+
+
+CIpv = bootci(1000, @mean, these_mean_dim_proficient);
+meanpv=mean(these_mean_dim_proficient,1);
+CIpv(1,:)=meanpv-CIpv(1,:);
+CIpv(2,:)=CIpv(2,:)-meanpv;
+
+
+[hlpvl, hppvl] = boundedline(time_span',mean(these_mean_dim_proficient,1)', CIpv', 'k');
+
+for ii_session=1:size(these_mean_dim_proficient,1)
+    plot(time_span',smoothdata(these_mean_dim_proficient(ii_session,:)','gaussian',100),'Color',[100/255 100/255 100/255],'LineWidth',1)
+end
+
+plot(time_span',mean(these_mean_dim_proficient,1)', 'k','LineWidth',1.5);
+
+%         ylim([0.3 1.2])
+ylim([0 15])
+this_ylim=ylim;
+
+
+
+%Odor on markers
+plot([0 0],this_ylim,'-k')
+odorhl=plot([0 delta_odor],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-k','LineWidth',5);
+plot([delta_odor delta_odor],this_ylim,'-k')
+
+%Reinforcement markers
+plot([delta_odor_on_reinf_on delta_odor_on_reinf_on],this_ylim,'-r')
+reinfhl=plot([delta_odor_on_reinf_on delta_odor_on_reinf_on+delta_reinf],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-r','LineWidth',5);
+plot([delta_odor_on_reinf_on+delta_reinf delta_odor_on_reinf_on+delta_reinf],this_ylim,'-r')
+
+
+xlim([-8 15])
+
+title(['Dimensionality timecourse for proficient mice'])
 
 
 %Plot a bar graph of dimensionality combining fwd and rev
@@ -688,6 +745,8 @@ labels='xticklabels({';
 
 labels=[labels(1:end-2) '})'];
 eval(labels)
+text(0.5,9,'Pre-odor','Color',[80/255 194/255 255/255],'FontSize',16)
+text(0.5,8,'Odor','Color',[0 114/255 178/255],'FontSize',16)
 title(['Dimensionality'])
 ylabel('Dimensionality')
 
@@ -695,8 +754,8 @@ xlim([0 9])
 
 
 %Perform the glm
-fprintf(1, ['\nglm for dimensionality\n'])
-fprintf(fileID, ['\nglm for dimensionality\n']);
+fprintf(1, ['\nglm for dimensionality combined forward and reversed\n'])
+fprintf(fileID, ['\nglm for dimensionality combined forward and reversed\n']);
 
 tbl = table(glm_dim.data',glm_dim.pcorr',glm_dim.window',...
     'VariableNames',{'dimensionality','percent_correct','window'});

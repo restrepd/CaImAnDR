@@ -1,4 +1,4 @@
-function handles_out=drgCaImAn_dPCA_stim_and_dec_batch(handles_choices)
+function handles_out=drgCaImAn_dPCA_stim_only_batch(handles_choices)
 %This program performs a demixed principal component analysis (dPCA) 
 %according to Kobak et al eLife 2016 DOI: 10.7554/eLife.10989
 %
@@ -50,18 +50,26 @@ do_dPCA=0; %dPCA is not performed, all the function does is to process the pre_p
 dPCA_input=1; %1 processes the pre_per file, 2 simulates Romo, 3 simulates go-no go
 
 
-fr_per_names{1}='Fwd <40%%';
-fr_per_names{2}='Fwd 40-65%%';
-fr_per_names{3}='Fwd 65-80%%';
-fr_per_names{4}='Fwd >=80%%';
-fr_per_names{5}='Rev <40%%';
-fr_per_names{6}='Rev 40-65%%';
-fr_per_names{7}='Rev 65-80%%';
-fr_per_names{8}='Rev >=80%%';
+fr_per_names{1}='Fwd <40%';
+fr_per_names{2}='Fwd 40-65%';
+fr_per_names{3}='Fwd 65-80%';
+fr_per_names{4}='Fwd >=80%';
+fr_per_names{5}='Rev <40%';
+fr_per_names{6}='Rev 40-65%';
+fr_per_names{7}='Rev 65-80%';
+fr_per_names{8}='Rev >=80%';
+
+per_names{1}='40-65%';
+per_names{2}='65-80%';
+per_names{3}='>=80%';
 
 delta_odor=4.127634e+00;
 delta_odor_on_reinf_on=4.415787e+00;
 delta_reinf=4.078266e-01;
+
+%Time tinterval for shifting time base due to slow olfactometer computer
+t_shift=0.61;
+
 
 %Parallel batch processing for each file
 all_files_present=1;
@@ -104,7 +112,7 @@ if all_files_present==1
     all_handles=[];
     all_Es=[];
     all_grNos=[];
-    allPcorr=[];
+    allPcorr_per_file=[];
     all_mice=[];
     all_Ns=[];
     all_t=[];
@@ -124,11 +132,13 @@ if all_files_present==1
 
         handles_choices.do_dPCA=do_dPCA; %dPCA is not performed, all the function does is to process the pre_per data to use in the dPCA code below
         handles_choices.dPCA_input=dPCA_input; %1 processes the pre_per file, 2 simulates Romo, 3 simulates go-no go
+        handles_choices.convert_z=2; %This ensures that the components are the same before odor on
 
-        all_handles(fileNo).handles_out=drgCaImAn_dPCA_stim_and_dec(handles_choices);
+%         all_handles(fileNo).handles_out=drgCaImAn_dPCA_stim_and_dec(handles_choices);
+        all_handles(fileNo).handles_out=drgCaImAn_get_dFF_per_trial(handles_choices);
 
         pCorr=all_handles(fileNo).handles_out.percent_correct;
-        allPcorr=[allPcorr pCorr];
+        allPcorr_per_file=[allPcorr_per_file pCorr];
  
         if fileNo==1
             ii_mouse=1;
@@ -194,60 +204,111 @@ end
                 maxE=max(all_Es((all_grNos==grNo)&(all_mice==mouseNo)));
                 ii_included=0;
                 allN=sum(all_Ns((all_grNos==grNo)&(all_mice==mouseNo)));
+                pcorr_per_n=zeros(1,allN);
 
                 %Note: These data were acquired at different rates. Here they are all
                 %resampled to a dt of 0.03 sec
                 dt_res=0.03;
                 time_span=t_from:dt_res:t_to;
                 T=length(time_span);
-                firingRates=NaN(allN,S,D,T,maxE);
-                trialNum=zeros(allN,S,D);
+                firingRates=NaN(allN,S,T,maxE);
+                trialNum=zeros(allN,S);
                 this_n=0;
 
 
                 for fileNo=first_file:length(handles.FileName_pre_per)
                     if (all_grNos(fileNo)==grNo)&(all_mice(fileNo)==mouseNo)
                         ii_included=ii_included+1;
-                        these_firingRates=all_handles(fileNo).handles_out.firingRates;
-                        this_ii_tspan=all_t(fileNo).T;
-                        this_time_span=all_t(fileNo).time;
+                        
+                        these_firingRates_d=all_handles(fileNo).handles_out.firingRates;
+                        %Collapse decisions into stimuli
+                        these_firingRates=NaN(size(these_firingRates_d,1),S,size(these_firingRates_d,4),size(these_firingRates_d,5));
+                        
                         N=all_Ns(fileNo);
+                        
                         for n=1:N
                             for s=1:S
                                 for d=1:D
                                     for trNo=1:all_t(fileNo).trialNum(n,s,d)
-                                        these_FR=zeros(1,length(time_span));
-
-                                        for ii_tsp=1:length(time_span)
-                                            if time_span(ii_tsp)<this_time_span(1)
-                                                these_FR(ii_tsp)=these_firingRates(n,s,d,1,trNo);
-                                            else
-                                                if time_span(ii_tsp)>this_time_span(end)
-                                                    these_FR(ii_tsp)=these_firingRates(n,s,d,this_ii_tspan,trNo);
-                                                else
-                                                    ii_0=find(this_time_span<=time_span(ii_tsp),1,'last');
-                                                    ii_1=find(this_time_span>time_span(ii_tsp),1,'first');
-                                                    these_FR(ii_tsp)=these_firingRates(n,s,d,ii_0,trNo)+...
-                                                        (these_firingRates(n,s,d,ii_1,trNo)-these_firingRates(n,s,d,ii_0,trNo))*...
-                                                        (time_span(ii_tsp)-this_time_span(ii_0))/(this_time_span(ii_1)-this_time_span(ii_0));
-                                                end
+                                        if d==2
+                                            trNo_zero=all_t(fileNo).trialNum(n,s,1);
+                                        else
+                                            trNo_zero=0;
+                                        end
+                                        for ii_tsp=1:size(these_firingRates_d,4)
+                                            if ~isnan(these_firingRates_d(n,s,d,ii_tsp,trNo))
+                                                these_firingRates(n,s,ii_tsp,trNo+trNo_zero)=these_firingRates_d(n,s,d,ii_tsp,trNo);
                                             end
                                         end
- 
-                                        firingRates(this_n+n,s,d,1:T,trNo)=these_FR;
-                                        trialNum(this_n+n,s,d)=all_t(fileNo).trialNum(n,s,d);
                                     end
                                 end
                             end
                         end
+
+                        
+                        all_trialNum=zeros(N,S);
+                        for n=1:N
+                            for s=1:S
+                                all_trialNum(n,s)=all_t(fileNo).trialNum(n,s,1)+all_t(fileNo).trialNum(n,s,2);
+                            end
+                        end
+
+                        this_ii_tspan=all_t(fileNo).T;
+                        this_time_span=all_t(fileNo).time;
+                        N=all_Ns(fileNo);
+                        
+                        for n=1:N
+                            for s=1:S
+                                for trNo=1:all_trialNum(n,s)
+                                    these_FR=zeros(1,length(time_span));
+
+                                    for ii_tsp=1:length(time_span)
+                                        if time_span(ii_tsp)<this_time_span(1)
+                                            these_FR(ii_tsp)=these_firingRates(n,s,1,trNo);
+                                        else
+                                            if time_span(ii_tsp)>this_time_span(end)
+                                                these_FR(ii_tsp)=these_firingRates(n,s,this_ii_tspan,trNo);
+                                            else
+                                                ii_0=find(this_time_span<=time_span(ii_tsp),1,'last');
+                                                ii_1=find(this_time_span>time_span(ii_tsp),1,'first');
+                                                these_FR(ii_tsp)=these_firingRates(n,s,ii_0,trNo)+...
+                                                    (these_firingRates(n,s,ii_1,trNo)-these_firingRates(n,s,ii_0,trNo))*...
+                                                    (time_span(ii_tsp)-this_time_span(ii_0))/(this_time_span(ii_1)-this_time_span(ii_0));
+                                            end
+                                        end
+                                    end
+
+                                    %Now do the time shift
+                                    no_shift=ceil(t_shift/(time_span(2)-time_span(1)));
+
+                                    if all_handles(fileNo).handles_out.shift_time==1
+                                        if no_shift>0
+                                            these_FR(no_shift+1:end)=these_FR(1:end-no_shift);
+                                            these_FR(1:no_shift)=these_FR(no_shift);
+                                        else
+                                            these_FR(1:end-no_shift)=these_FR(no_shift+1:end);
+                                            these_FR(1:end-no_shift+1:end)=these_FR(no_shift);
+                                        end
+                                    end
+
+
+                                    firingRates(this_n+n,s,1:T,trNo)=these_FR;
+                                    trialNum(this_n+n,s)=all_trialNum(n,s);
+                                end
+                            end
+                            pcorr_per_n(this_n+n)=allPcorr_per_file(fileNo);
+                        end
                         this_n=this_n+n;
                     end
                 end
-                %Now do dPCA
+
+
                
 
-                % firingRatesAverage: N x S x D x T
-                firingRatesAverage = nanmean(firingRates, 5);
+                %Now do dPCA
+               
+                % firingRatesAverage: N x S x T
+                firingRatesAverage = nanmean(firingRates, 4);
                 firingRatesAverage(isnan(firingRatesAverage))=0; %This is key when there are zero trials for some s,d combinations.
 
                 numComp=10; %Components to be extracted from data by dpca
@@ -283,9 +344,10 @@ end
                     % They could be grouped as follows:
                     %    combinedParams = {{1, [1 2]}, {2}};
 
-                    combinedParams = {{1, [1 3]}, {2, [2 3]}, {3}, {[1 2], [1 2 3]}};
-                    margNames = {'Stimulus', 'Decision', 'Condition-independent', 'S/D Interaction'};
-                    margColours = [23 100 171; 187 20 25; 150 150 150; 114 97 171]/256;
+
+                    combinedParams = {{1, [1 2]}, {2}};
+                    margNames = {'Stimulus', 'Stimulus-independent'};
+                    margColours = [23 100 171; 187 20 25]/256;
 
                     % Time events of interest (e.g. stimulus onset/offset, cues etc.)
                     % They are marked on the plots with vertical lines
@@ -294,9 +356,7 @@ end
                     % check consistency between trialNum and firingRates
                     for n = 1:size(firingRates,1)
                         for s = 1:size(firingRates,2)
-                            for d = 1:size(firingRates,3)
-                                assert(isempty(find(isnan(firingRates(n,s,d,:,1:trialNum(n,s,d))), 1)), 'Something is wrong!')
-                            end
+                            assert(isempty(find(isnan(firingRates(n,s,:,1:trialNum(n,s))), 1)), 'Something is wrong!')
                         end
                     end
 
@@ -324,10 +384,71 @@ end
                         'timeEvents', timeEvents,               ...
                         'timeMarginalization', 3, ...
                         'legendSubplot', 16,...
-                        'ylims',[20 20 20 20]);
+                        'ylims',[20 20 20 20], ...
+                        'xlims',[-5 15], ...
+                        'displaySumStimComps',1);
 
-                    t=sgtitle(['Demixed PCA for mouse No ' num2str(mouseNo) ' ' fr_per_names{grNo}]);
+                    if process_pcorr==1
+                        t=sgtitle(['Demixed PCA for mouse No ' num2str(mouseNo) ' ' fr_per_names{grNo}]);
+                    else
+                        t=sgtitle(['Demixed PCA for mouse No ' num2str(mouseNo) ' entire dataset']);
+                    end
                     t.HorizontalAlignment='left';
+
+                    %Now calculate the components using the decoder matrix W
+                    if process_pcorr==0
+                        for grNo=1:3
+                            
+                            switch grNo
+                                case 1
+                                    ns_included=(pcorr_per_n>=45)&(pcorr_per_n<=65);
+                                case 2
+                                    ns_included=(pcorr_per_n>65)&(pcorr_per_n<80);
+                                case 3
+                                    ns_included=(pcorr_per_n>=80);
+                            end
+
+                            alln_ii=1:length(ns_included);
+                            ii_ns_included=alln_ii(ns_included);
+                            ns_excluded=~ns_included;
+                            ii_ns_excluded=alln_ii(ns_excluded);
+
+                            thesefiringRatesAverage=firingRatesAverage;
+                            ii_inc=0;
+                            for n=1:allN
+                                if sum(n==ii_ns_excluded)>0
+                                    ii_inc=ii_inc+1;
+                                    if ii_inc>length(ii_ns_included)
+                                        ii_inc=1;
+                                    end
+                                    for s=1:S
+                                        for ii_tsp=1:length(time_span)
+                                            thesefiringRatesAverage(n,s,ii_tsp)=firingRatesAverage(ii_inc,s,ii_tsp);
+                                        end
+                                    end
+                                end
+                            end
+
+
+                            dpca_handles=dpca_plot_drg(thesefiringRatesAverage, W, V, @dpca_plot_default_drg, ...
+                                'explainedVar', explVar, ...
+                                'marginalizationNames', margNames, ...
+                                'marginalizationColours', margColours, ...
+                                'whichMarg', whichMarg,                 ...
+                                'time', time,                        ...
+                                'timeEvents', timeEvents,               ...
+                                'timeMarginalization', 3, ...
+                                'legendSubplot', 16,...
+                                'ylims',[20 20 20 20], ...
+                                'xlims',[-5 15], ...
+                                'displaySumStimComps',1);
+
+
+                            t=sgtitle(['Demixed PCA for mouse No ' num2str(mouseNo) ' ' per_names{grNo}]);
+
+                            t.HorizontalAlignment='left';
+                        end
+                    end
 
                     %% Step 4: dPCA with regularization did not work because many of theneurons have zero trials for some conditions
     
@@ -373,6 +494,6 @@ end
         end
     end
 end
-
+ 
 
 pffft=1;

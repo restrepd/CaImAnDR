@@ -20,7 +20,7 @@ if exist('handles_choices')==0
     post_time=5; %The decoding model will be trained with all points in post_time sec interval starting post_shift secs after odor on
     post_shift=0; %Set to 0 if you want to train with odor on points
     pre_time=5; %Used to calculate the decoding accuracy pre_time sec before post_shift
-    MLalgo_to_use=[1]; %Vector with the decoding algorithms you want to use
+    MLalgo_to_use=[6]; %Vector with the decoding algorithms you want to use
     ii_cost=3;
     p_threshold=1; %This limits the ROIs used in the decoding model to those whose p value in a ttest for the two odors in <=p_threshold
     dt_p_threshold=20; %Time to be used after the odor on for the p_threshold t_test
@@ -90,6 +90,12 @@ handles_out.post_shift=post_shift;
 handles_out.pre_time=pre_time;
 handles_not_out.MLalgo_to_use=MLalgo_to_use;
 
+if exist('first_digital_in_time_rhd')~=0
+    handles_out.first_digital_in_ii=first_digital_in_ii;
+    handles_out.first_digital_in_time_rhd=first_digital_in_time_rhd;
+    handles_out.next_lick_in_time_rhd=next_lick_in_time_rhd;
+    handles_out.first_imge_ttl_time_rhd=first_imge_ttl_time_rhd;
+end
 figNo=0;
 
 %time has the time for the dF/F traces(ROI,time)
@@ -709,7 +715,7 @@ if show_figures==1
     plot(time_span',KLdivergence', 'Color',[238/255 111/255 179/255]);
     
     
-    sh2
+   
     title(['KL divergence'])
     xlabel('Time(sec)')
     ylabel('KL divergence')

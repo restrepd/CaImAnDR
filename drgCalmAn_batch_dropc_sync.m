@@ -1395,7 +1395,17 @@ for fileNo=handles_choice.first_file:handles_choice.no_files
         try_catch_status(fileNo).ME=ME;
         save_name_catch=[handles_choice.PathNamecsv{fileNo} fnameca(1:end-4) '_try_catch.mat'];
         save(save_name_catch,'try_catch_status')
-    end
+     end
+
+
+     %Save the rhd times
+
+     save_name=[handles_choice.PathNamecsv{fileNo} fnameca(1:end-4) '_rhd_times.mat'];
+
+
+     %splus_traces(handles_out.no_sp_trials*no_traces,no_timepoints), order is  for trial 1: ROI1, ROI2, etc.. ROIend, trial 2:
+
+     save(save_name, 'odor_on_times_rhd','FV_times_rhd','odor_off_times_rhd')
 end
 
 
