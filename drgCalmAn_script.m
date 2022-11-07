@@ -9,7 +9,7 @@ addpath(genpath('utilities'));
 addpath(genpath('deconvolution'));
 
 % Get image path and filename from user
-[fname,pname,nCancel] = uigetfile({'*.tif;*.tiff'},'Select the TIMELAPSE file...');
+[fname,pname,nCancel] = uigetfile({'*.tif;*.tiff;*.mat'},'Select the TIMELAPSE file...');
 if nCancel
     inputPath = [pname,fname];
     pnameStart = pname;
@@ -21,7 +21,7 @@ end
 nam=[pname fname];
  
 sframe=1;						% user input: first frame to read (optional, default 1)
-num2read=10000;					% user input: how many frames to read   (optional, default until the end)
+num2read=100000;					% user input: how many frames to read   (optional, default until the end)
 Y = read_file(nam,sframe,num2read);
  
 %Y = Y - min(Y(:)); 
@@ -81,36 +81,15 @@ d = d1*d2;                                          % total number of pixels
 % p = 2;           % order of AR dynamics
 % fr=1/0.29815; %Acquisition rate of the microscope in log file (1/seconds)
 % decay_time=0.14;    % GCaMP6f decay time
-
-%Fabio's confocal parameters       
-K=500;               % number of components to be found
-tau = 5;            % 5 std of gaussian kernel (size of neuron) 
-p = 2;           % order of AR dynamics
-fr=2; %Acquisition rate of the microscope in log file (1/seconds)
-decay_time=0.14;    % GCaMP6f decay time
-
-% decay_time=1.8;     %GCaMP6s decay time
-
-options = CNMFSetParms(...   
-    'd1',d1,'d2',d2,...                         % dimensionality of the FOV
-    'p',p,...                                   % order of AR dynamics    
-    'gSig',tau,...                              % half size of neuron
-    'merge_thr',0.80,...                        % merging threshold  
-    'nb',2,...                                  % number of background components    
-    'min_SNR',3,...                             % minimum SNR threshold
-    'space_thresh',0.5,...                      % space correlation threshold
-    'cnn_thr',0.2,...                           % threshold for CNN classifier   
-    'fr',fr,...                                  % frame rate acquisition in Hz
-    'decay_time',decay_time, ...
-    'init_method', 'greedy'...              % initialization method ('greedy','greedy_corr','sparse_NMF','HALS') (default: 'greedy')
-    );
- 
-% %2P-FCM
-% K = 6;          % number of components to be found
-% tau = 5;       % std of gaussian kernel (size of neuron) 
-% p = 2;
-% fr=1.08;      % frame rate acquisition in Hz
-% decay_time=1.8; %GCaMP6s decay time
+% 
+% %Fabio's confocal parameters       
+% K=500;               % number of components to be found
+% tau = 5;            % 5 std of gaussian kernel (size of neuron) 
+% p = 2;           % order of AR dynamics
+% fr=2; %Acquisition rate of the microscope in log file (1/seconds)
+% decay_time=0.14;    % GCaMP6f decay time
+% 
+% % decay_time=1.8;     %GCaMP6s decay time
 % 
 % options = CNMFSetParms(...   
 %     'd1',d1,'d2',d2,...                         % dimensionality of the FOV
@@ -118,12 +97,33 @@ options = CNMFSetParms(...
 %     'gSig',tau,...                              % half size of neuron
 %     'merge_thr',0.80,...                        % merging threshold  
 %     'nb',2,...                                  % number of background components    
-%     'min_SNR',2,...                             % minimum SNR threshold
+%     'min_SNR',3,...                             % minimum SNR threshold
 %     'space_thresh',0.5,...                      % space correlation threshold
 %     'cnn_thr',0.2,...                           % threshold for CNN classifier   
 %     'fr',fr,...                                  % frame rate acquisition in Hz
-%     'decay_time',decay_time ...
+%     'decay_time',decay_time, ...
+%     'init_method', 'greedy'...              % initialization method ('greedy','greedy_corr','sparse_NMF','HALS') (default: 'greedy')
 %     );
+ 
+%2P-FCM
+K = 100;          % number of components to be found
+tau = 10;       % std of gaussian kernel (size of neuron) 
+p = 2;
+fr=20;      % frame rate acquisition in Hz
+decay_time=0.14; %GCaMP6s decay time
+
+options = CNMFSetParms(...   
+    'd1',d1,'d2',d2,...                         % dimensionality of the FOV
+    'p',p,...                                   % order of AR dynamics    
+    'gSig',tau,...                              % half size of neuron
+    'merge_thr',0.80,...                        % merging threshold  
+    'nb',2,...                                  % number of background components    
+    'min_SNR',2,...                             % minimum SNR threshold
+    'space_thresh',0.5,...                      % space correlation threshold
+    'cnn_thr',0.2,...                           % threshold for CNN classifier   
+    'fr',fr,...                                  % frame rate acquisition in Hz
+    'decay_time',decay_time ...
+    );
 
 
 %% Data pre-processing
