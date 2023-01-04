@@ -15,6 +15,8 @@ clear all
 do_warp=0;     %1=warped components from a reference file
 um_per_pixel=1.745;
 
+dt_warning=0.1; %If dt>dt_warning a warning message is shown and the large dts are discarded
+
 %Other default variables
 plot_raw=1; %The default is raw
 ref_win=[-5 -1.5];
@@ -466,10 +468,22 @@ for fileNo=handles_choice.first_file:handles_choice.no_files
             time(jj)=mean(image_times(ii:ii+no_scans_per_image-1));
             ii=ii+no_scans_per_image;
         end
+  
+        all_dts=time(2:end)-time(1:end-1);
+        warning_status=0;
+        if sum(all_dts>dt_warning)>0 
+            fprintf(1, ['\nWARNING:File number ' num2str(fileNo) ' has long TTL dts!!!\n']);
+            last_long_dt=find(all_dts>dt_warning,1,'last');
+            time=time(last_long_dt+1:end);
+            warning_status=1;
+        end
 
         time=time(1:size(traces,2));
+        offset_time=time(1);
+        time=time-time(1); %Offset the time to zero
+        handles.dropcData_rhd.epochTime=handles.dropcData_rhd.epochTime-offset_time; %Offset the time to zero
         dt=mean(time(2:end)-time(1:end-1));
-
+ 
 %         %Plot the licks recorded by the INTAN (adc_in)
 %         time_rhd=([1:length(lick_in)]/acq_rate)+delta_t_rhd;
 %         pct998=prctile(lick_in,99.8);
@@ -1449,8 +1463,12 @@ for fileNo=handles_choice.first_file:handles_choice.no_files
             'y_shift','traces','time_rhd','lick_in','no_images','handles_out',...
             'lda_input_timecourse','lda_event','time_to_eventLDA','dHit_lick_traces'...
             ,'dCR_lick_traces','dMiss_lick_traces','dFA_lick_traces','time','epochs','digital_in'...
-            , 'no_scans_per_image','first_digital_in_time_rhd','next_lick_in_time_rhd','first_imge_ttl_time_rhd')
+            , 'no_scans_per_image','first_digital_in_time_rhd','next_lick_in_time_rhd'...
+            ,'first_imge_ttl_time_rhd','warning_status')
 
+
+        percent_correct=100*(Hitii_lick+CRii_lick)/no_odor_trials;
+        fprintf(1, '\npercent correct = %d for %d trials\n',percent_correct,no_odor_trials);
 
         try_catch_status(fileNo).saved=1;
 
@@ -1588,7 +1606,7 @@ for fileNo=handles_choice.first_file:handles_choice.no_files
         else
             savefig([fnameca(1:end-4) '_dropc_batch_Fig5.fig'])
         end
-
+ 
         %Plot lick frequency
         figNo=figNo+1;
         try
@@ -1689,6 +1707,8 @@ for fileNo=handles_choice.first_file:handles_choice.no_files
         %         save(save_name_catch,'try_catch_status')
         %     end
         pffft=1;
+
+        fprintf(1, ['\nProcessing done for ' handles_choice.csvFileName{fileNo} '\n\n']);
 end
 
 

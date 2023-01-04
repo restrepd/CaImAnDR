@@ -129,7 +129,7 @@ end
 
 %Post points
 Nall=size(traces,1);
-dt=time(2)-time(1);
+dt=median(time(2:end)-time(1:end-1));
 no_points_post=floor(post_time/dt);
 no_points_post_shift=floor(post_shift/dt);
 no_points_pre=floor(pre_time/dt);

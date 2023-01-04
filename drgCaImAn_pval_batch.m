@@ -761,6 +761,12 @@ if all_files_present==1
             min_ii=ii_p;
             if this_p<handles_out.file(fileNo).output_data_odor_Sp.pFDR
                 %         if min_p<handles_out.file(fileNo).output_data_odor_Sp.pFDR
+                %get the dF/F
+                dFFsplus=zeros(length(time_span),trialNum(min_ii,1));
+                dFFsplus(:,:)=firingRates(min_ii,1,:,1:trialNum(min_ii,1));
+                dFFsminus=zeros(length(time_span),trialNum(min_ii,2));
+                dFFsminus(:,:)=firingRates(min_ii,2,:,1:trialNum(min_ii,2));
+
                 if show_figures==1
 
                     try
@@ -775,12 +781,7 @@ if all_files_present==1
 
                     hold on
 
-                    %get the dF/F
 
-                    dFFsplus=zeros(length(time_span),trialNum(min_ii,1));
-                    dFFsplus(:,:)=firingRates(min_ii,1,:,1:trialNum(min_ii,1));
-                    dFFsminus=zeros(length(time_span),trialNum(min_ii,2));
-                    dFFsminus(:,:)=firingRates(min_ii,2,:,1:trialNum(min_ii,2));
 
                     try
                         %S-
@@ -1671,90 +1672,93 @@ if all_files_present==1
             end
 
             if sum(ROIs_included)>0
-
-                %S+
-                figureNo=figureNo+1;
                 try
-                    close(figureNo)
+                    %S+
+                    figureNo=figureNo+1;
+                    try
+                        close(figureNo)
+                    catch
+                    end
+
+                    hFig = figure(figureNo);
+
+                    set(hFig, 'units','normalized','position',[.05 .1 .3 .8])
+                    hold on
+
+
+
+                    sorted_handles_out.all_div_dFFsplus=[];
+                    ii_included=0;
+                    for ii=1:handles_out.all_div_ii_dFF
+                        if ROIs_included(ii)
+                            ii_included=ii_included+1;
+                            sorted_handles_out.all_div_dFFsplus(ii_included,:)=handles_out.all_div_dFFsplus(outperm(ii),:);
+                        end
+                    end
+
+                    time_span_mat=repmat(time_span,ii_included,1);
+                    ROI_mat=repmat(1:ii_included,length(time_span),1)';
+
+                    pcolor(time_span_mat,ROI_mat,sorted_handles_out.all_div_dFFsplus)
+                    colormap fire
+                    shading flat
+
+                    caxis([prctile(handles_out.all_div_dFFspm(:),1) prctile(handles_out.all_div_dFFspm(:),99)])
+
+                    for ii_te=1:length(timeEvents)
+                        plot([timeEvents(ii_te) timeEvents(ii_te)],[0 handles_out.all_div_ii_dFF],'-r')
+                    end
+
+                    xlim([-7 15])
+                    ylim([1 ii_included])
+                    title(['S+ ' per_names{grNo+1}])
+                    xlabel('Time (sec)')
+                    ylabel('ROI number')
+
+                    %S-
+                    figureNo=figureNo+1;
+                    try
+                        close(figureNo)
+                    catch
+                    end
+
+                    hFig = figure(figureNo);
+
+                    set(hFig, 'units','normalized','position',[.05 .1 .3 .8])
+                    hold on
+
+
+
+                    sorted_handles_out.all_div_dFFsminus=[];
+                    ii_included=0;
+                    for ii=1:handles_out.all_div_ii_dFF
+                        if ROIs_included(ii)
+                            ii_included=ii_included+1;
+                            sorted_handles_out.all_div_dFFsminus(ii_included,:)=handles_out.all_div_dFFsminus(outperm(ii),:);
+                        end
+                    end
+
+                    time_span_mat=repmat(time_span,ii_included,1);
+                    ROI_mat=repmat(1:ii_included,length(time_span),1)';
+
+                    pcolor(time_span_mat,ROI_mat,sorted_handles_out.all_div_dFFsminus)
+                    colormap fire
+                    shading flat
+
+                    caxis([prctile(handles_out.all_div_dFFspm(:),1) prctile(handles_out.all_div_dFFspm(:),99)])
+
+                    for ii_te=1:length(timeEvents)
+                        plot([timeEvents(ii_te) timeEvents(ii_te)],[0 handles_out.all_div_ii_dFF],'-r')
+                    end
+
+                    xlim([-7 15])
+                    ylim([1 ii_included])
+                    title(['S- ' per_names{grNo+1}])
+                    xlabel('Time (sec)')
+                    ylabel('ROI number')
+
                 catch
                 end
-
-                hFig = figure(figureNo);
-
-                set(hFig, 'units','normalized','position',[.05 .1 .3 .8])
-                hold on
-
-
-
-                sorted_handles_out.all_div_dFFsplus=[];
-                ii_included=0;
-                for ii=1:handles_out.all_div_ii_dFF
-                    if ROIs_included(ii)
-                        ii_included=ii_included+1;
-                        sorted_handles_out.all_div_dFFsplus(ii_included,:)=handles_out.all_div_dFFsplus(outperm(ii),:);
-                    end
-                end
-
-                time_span_mat=repmat(time_span,ii_included,1);
-                ROI_mat=repmat(1:ii_included,length(time_span),1)';
-
-                pcolor(time_span_mat,ROI_mat,sorted_handles_out.all_div_dFFsplus)
-                colormap fire
-                shading flat
-
-                caxis([prctile(handles_out.all_div_dFFspm(:),1) prctile(handles_out.all_div_dFFspm(:),99)])
-
-                for ii_te=1:length(timeEvents)
-                    plot([timeEvents(ii_te) timeEvents(ii_te)],[0 handles_out.all_div_ii_dFF],'-r')
-                end
-
-                xlim([-7 15])
-                ylim([1 ii_included])
-                title(['S+ ' per_names{grNo+1}])
-                xlabel('Time (sec)')
-                ylabel('ROI number')
-
-                %S-
-                figureNo=figureNo+1;
-                try
-                    close(figureNo)
-                catch
-                end
-
-                hFig = figure(figureNo);
-
-                set(hFig, 'units','normalized','position',[.05 .1 .3 .8])
-                hold on
-
-
-
-                sorted_handles_out.all_div_dFFsminus=[];
-                ii_included=0;
-                for ii=1:handles_out.all_div_ii_dFF
-                    if ROIs_included(ii)
-                        ii_included=ii_included+1;
-                        sorted_handles_out.all_div_dFFsminus(ii_included,:)=handles_out.all_div_dFFsminus(outperm(ii),:);
-                    end
-                end
-
-                time_span_mat=repmat(time_span,ii_included,1);
-                ROI_mat=repmat(1:ii_included,length(time_span),1)';
-
-                pcolor(time_span_mat,ROI_mat,sorted_handles_out.all_div_dFFsminus)
-                colormap fire
-                shading flat
-
-                caxis([prctile(handles_out.all_div_dFFspm(:),1) prctile(handles_out.all_div_dFFspm(:),99)])
-
-                for ii_te=1:length(timeEvents)
-                    plot([timeEvents(ii_te) timeEvents(ii_te)],[0 handles_out.all_div_ii_dFF],'-r')
-                end
-
-                xlim([-7 15])
-                ylim([1 ii_included])
-                title(['S- ' per_names{grNo+1}])
-                xlabel('Time (sec)')
-                ylabel('ROI number')
             end
         end
 

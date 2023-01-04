@@ -132,7 +132,7 @@ end
 
 %Post points
 Nall=size(traces,1);
-dt=time(2)-time(1);
+dt=median(time(2:end)-time(1:end-1));
 ii_pre=ceil(pre_time/dt);
 ii_p_threshold=ceil(dt_p_threshold/dt);
 no_points_before=floor(-trial_time_from/dt);

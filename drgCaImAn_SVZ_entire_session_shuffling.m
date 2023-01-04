@@ -90,12 +90,6 @@ handles_out.post_shift=post_shift;
 handles_out.pre_time=pre_time;
 handles_not_out.MLalgo_to_use=MLalgo_to_use;
 
-if exist('first_digital_in_time_rhd')~=0
-    handles_out.first_digital_in_ii=first_digital_in_ii;
-    handles_out.first_digital_in_time_rhd=first_digital_in_time_rhd;
-    handles_out.next_lick_in_time_rhd=next_lick_in_time_rhd;
-    handles_out.first_imge_ttl_time_rhd=first_imge_ttl_time_rhd;
-end
 figNo=0;
 
 %time has the time for the dF/F traces(ROI,time)
@@ -153,7 +147,7 @@ end
           
 %Post points
 Nall=size(traces,1);
-dt=time(2)-time(1);
+dt=median(time(2:end)-time(1:end-1));
 ii_p_threshold=ceil(dt_p_threshold/dt);
 no_points_post=floor(post_time/dt);
 no_points_post_shift=floor(post_shift/dt);

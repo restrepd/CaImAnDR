@@ -147,7 +147,7 @@ end
 
 %Post points
 Nall=size(traces,1);
-dt=time(2)-time(1);
+dt=median(time(2:end)-time(1:end-1));
 ii_p_threshold=ceil(dt_p_threshold/dt);
 no_points_post=floor(post_time/dt);
 no_points_post_shift=floor(post_shift/dt);
