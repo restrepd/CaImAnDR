@@ -1,4 +1,4 @@
-%% drgCaImAn_batch_dropc_ttl_sync_par_mmfsds.m
+%% drgCaImAn_batch_dropc_ttl_sync_par_PID.m
 %
 % Needs as an input the cvs file from Fabio or the EXTRACT output
 % This code uses the ttl output of the multiphoton microscope to
@@ -111,11 +111,11 @@ for fileNo=handles_choice.first_file:handles_choice.no_files
         no_images=sz_traces(2);
 
         fprintf(1, ['\ndrgCaImAn_dropc run for ' handles_choice.csvFileName{fileNo} '\n\n']);
-
+  
         %Read the dropc file
         handles=[];
         load([handles_choice.PathName{fileNo} handles_choice.spmFileName{fileNo}])
-
+ 
         %Read the rhd file
         adc_in=[];
         digital_in=[];
@@ -123,7 +123,8 @@ for fileNo=handles_choice.first_file:handles_choice.no_files
         
         lick_ch=3;
         image_ttl_ch=5;
-        [adc_in,digital_in,acq_rate]=drg_read_Intan_RHD2000_file([handles_choice.PathName{fileNo} handles_choice.rhdFileName{fileNo}],[lick_ch image_ttl_ch]);
+        PID_ch=6;
+        [adc_in,digital_in,acq_rate]=drg_read_Intan_RHD2000_file([handles_choice.PathName{fileNo} handles_choice.rhdFileName{fileNo}],[lick_ch image_ttl_ch PID_ch]);
 
         digital_in=bitand(digital_in,2+4+8+16);
 
@@ -134,6 +135,9 @@ for fileNo=handles_choice.first_file:handles_choice.no_files
 
         lick_in=zeros(1,size(adc_in,2));
         lick_in(1,:)=adc_in(1,:);
+
+        PID_in=zeros(1,size(adc_in,2));
+        PID_in(1,:)=adc_in(3,:);
         
         time_rhd=([1:length(lick_in)]/acq_rate);
 
@@ -479,7 +483,9 @@ for fileNo=handles_choice.first_file:handles_choice.no_files
             warning_status=1;
         end
 
-        time=time(1:size(traces,2));
+        if size(traces,2)<length(time)
+            time=time(1:size(traces,2));
+        end
 %         offset_time=time(1);
 %         time=time-time(1); %Offset the time to zero
 %         handles.dropcData_rhd.epochTime=handles.dropcData_rhd.epochTime-offset_time; %Offset the time to zero
@@ -567,7 +573,11 @@ for fileNo=handles_choice.first_file:handles_choice.no_files
         %Plot the traces
         for trNo=1:no_traces
             % for trNo=1:20
-            plot(time(1:size(traces,2)),traces(trNo,:)+y_shift*(trNo+1),'-k','LineWidth',1)
+            if (size(traces,2)<length(time))
+                plot(time(1:size(traces,2)),traces(trNo,:)+y_shift*(trNo+1),'-k','LineWidth',1)
+            else
+                plot(time,traces(trNo,1:length(time))+y_shift*(trNo+1),'-k','LineWidth',1)
+            end
         end
 
         ylim([-y_shift*0.2 (no_traces+2)*y_shift])
@@ -693,6 +703,8 @@ for fileNo=handles_choice.first_file:handles_choice.no_files
                 sp_odor_response=[];
                 splus_traces=[];
                 spii=0;
+                spii_rhd=0;
+                smii_rhd=0;
                 spii_lick=0;
                 smii=0;
                 smii_lick=0;
@@ -705,6 +717,9 @@ for fileNo=handles_choice.first_file:handles_choice.no_files
                 which_trace_sm=[];
                 splus_lick_traces=[];
                 sminus_lick_traces=[];
+                splus_PID_traces=[];
+                sminus_PID_traces=[];
+
 
 
                 %lda input
@@ -822,6 +837,8 @@ for fileNo=handles_choice.first_file:handles_choice.no_files
                                 &(time<=handles.dropcData_rhd.epochTime(epoch+1));
                             snip_mask=(time>=handles.dropcData_rhd.epochTime(epoch)-dt_before+dt_odor_onset)...
                                 &(time<=handles.dropcData_rhd.epochTime(epoch)+dt_after+dt_odor_onset);
+                            snip_mask_rhd=(time_rhd>=handles.dropcData_rhd.epochTime(epoch)-dt_before+dt_odor_onset)...
+                                &(time_rhd<=handles.dropcData_rhd.epochTime(epoch)+dt_after+dt_odor_onset);
                             ref_mask=(time>=handles.dropcData_rhd.epochTime(epoch)+ref_win(1))...
                                 &(time<=handles.dropcData_rhd.epochTime(epoch)+ref_win(2));
                             per_ii=per_ii+1;
@@ -853,6 +870,10 @@ for fileNo=handles_choice.first_file:handles_choice.no_files
                                 no_spm_odor_trials=no_spm_odor_trials+1;
                                 handles_out.trialNo(smii_lick+1).trianNo=no_spm_odor_trials;
                                 handles_out.no_spm_odor_trials=no_spm_odor_trials;
+
+                                this_PID_trace=PID_in(snip_mask_rhd);
+                                spii_rhd=spii_rhd+1;
+                                splus_PID_traces(spii_rhd,1:sum(snip_mask_rhd))=this_PID_trace;
 
                                 trace_num=0;
                                 for trNo=1:no_traces
@@ -896,6 +917,11 @@ for fileNo=handles_choice.first_file:handles_choice.no_files
                                 no_spm_odor_trials=no_spm_odor_trials+1;
                                 handles_out.trialNo(smii_lick+1).trianNo=no_spm_odor_trials;
                                 handles_out.no_spm_odor_trials=no_spm_odor_trials;
+
+                                
+                                this_PID_trace=PID_in(snip_mask_rhd);
+                                smii_rhd=smii_rhd+1;
+                                sminus_PID_traces(smii_rhd,1:sum(snip_mask_rhd))=this_PID_trace;
 
                                 trace_num=0;
                                 for trNo=1:no_traces
@@ -1229,15 +1255,24 @@ for fileNo=handles_choice.first_file:handles_choice.no_files
         hFig = figure(figNo);
  
         hold on
-        CI = bootci(1000, @mean, fv_traces);
-        meanfv=mean(fv_traces,1);
-        CI(1,:)=meanfv-CI(1,:);
-        CI(2,:)=CI(2,:)-meanfv;
-        [hl1, hp1] = boundedline(time_to_event',mean(fv_traces,1)', CI', 'r');
+
+        try
+            CI = bootci(1000, @mean, fv_traces);
+            meanfv=mean(fv_traces,1);
+            CI(1,:)=meanfv-CI(1,:);
+            CI(2,:)=CI(2,:)-meanfv;
+            [hl1, hp1] = boundedline(time_to_event',mean(fv_traces,1)', CI', 'r');
+        catch
+            plot(time_to_event',mean(fv_traces,1)', '-r');
+        end
+ 
         plot([0 0],[0 max(mean(fv_traces,1)')+max(CI(:))],'-k')
         pct5=prctile(mean(fv_traces,1),5);
         pct95=prctile(mean(fv_traces,1),95);
-        ylim([pct5-0.2*(pct95-pct5) pct95+0.2*(pct95-pct5)])
+        try
+            ylim([pct5-0.2*(pct95-pct5) pct95+0.2*(pct95-pct5)])
+        catch
+        end
         xlabel('Time (sec)')
         ylabel('dF/F')
         title('Ca changes aligned to final valve diversion')
@@ -1245,45 +1280,50 @@ for fileNo=handles_choice.first_file:handles_choice.no_files
         if do_warp==1
             savefig([fnameca(1:end-4) '_dropc_warp_Fig2.fig'])
         else
-            savefig([fnameca(1:end-4) '_dropc_batch_Fig2.fig'])
+            savefig([fnameca(1:end-4) '_dropc_FV.fig'])
         end
 
+        try
 
-        %S+, S-, all snips
-        CIsm = bootci(1000, @mean, sminus_traces);
-        meansm=mean(sminus_traces,1);
-        CIsm(1,:)=meansm-CIsm(1,:);
-        CIsm(2,:)=CIsm(2,:)-meansm;
+            %S+, S-, all snips
+            CIsm = bootci(1000, @mean, sminus_traces);
+            meansm=mean(sminus_traces,1);
+            CIsm(1,:)=meansm-CIsm(1,:);
+            CIsm(2,:)=CIsm(2,:)-meansm;
 
-        CIsp = bootci(1000, @mean, splus_traces);
-        meansp=mean(splus_traces,1);
-        CIsp(1,:)=meansp-CIsp(1,:);
-        CIsp(2,:)=CIsp(2,:)-meansp;
-
-
-        for ii=1:smii_lick
-            dsminus_lick_traces(ii,:)=decimate(sminus_lick_traces(ii,:)',20)';
+            CIsp = bootci(1000, @mean, splus_traces);
+            meansp=mean(splus_traces,1);
+            CIsp(1,:)=meansp-CIsp(1,:);
+            CIsp(2,:)=CIsp(2,:)-meansp;
+        catch
         end
-        pct99=max(dsminus_lick_traces(:));
-        pct1=prctile(dsminus_lick_traces(:),1);
-        dsminus_lick_traces=(dsminus_lick_traces/(pct99-pct1))+4;
-        CIsmlick = bootci(1000, @mean, dsminus_lick_traces);
-        meansmlick=mean(dsminus_lick_traces,1);
-        CIsmlick(1,:)=meansmlick-CIsmlick(1,:);
-        CIsmlick(2,:)=CIsmlick(2,:)-meansmlick;
 
-        for ii=1:spii_lick
-            dsplus_lick_traces(ii,:)=decimate(splus_lick_traces(ii,:)',20)';
+        try
+
+            for ii=1:smii_lick
+                dsminus_lick_traces(ii,:)=decimate(sminus_lick_traces(ii,:)',20)';
+            end
+            pct99=max(dsminus_lick_traces(:));
+            pct1=prctile(dsminus_lick_traces(:),1);
+            dsminus_lick_traces=(dsminus_lick_traces/(pct99-pct1))+4;
+            CIsmlick = bootci(1000, @mean, dsminus_lick_traces);
+            meansmlick=mean(dsminus_lick_traces,1);
+            CIsmlick(1,:)=meansmlick-CIsmlick(1,:);
+            CIsmlick(2,:)=CIsmlick(2,:)-meansmlick;
+
+            for ii=1:spii_lick
+                dsplus_lick_traces(ii,:)=decimate(splus_lick_traces(ii,:)',20)';
+            end
+            pct99=prctile(dsplus_lick_traces(:),99);
+            pct1=prctile(dsplus_lick_traces(:),1);
+            dsplus_lick_traces=(dsplus_lick_traces/(pct99-pct1))+5.5;
+            CIsplick = bootci(1000, @mean, dsplus_lick_traces);
+            meansplick=mean(dsplus_lick_traces,1);
+            CIsplick(1,:)=meansplick-CIsplick(1,:);
+            CIsplick(2,:)=CIsplick(2,:)-meansplick;
+
+        catch
         end
-        pct99=prctile(dsplus_lick_traces(:),99);
-        pct1=prctile(dsplus_lick_traces(:),1);
-        dsplus_lick_traces=(dsplus_lick_traces/(pct99-pct1))+5.5;
-        CIsplick = bootci(1000, @mean, dsplus_lick_traces);
-        meansplick=mean(dsplus_lick_traces,1);
-        CIsplick(1,:)=meansplick-CIsplick(1,:);
-        CIsplick(2,:)=CIsplick(2,:)-meansplick;
-
-
         figNo=figNo+1;
         try
             close(figNo)
@@ -1302,13 +1342,21 @@ for fileNo=handles_choice.first_file:handles_choice.no_files
         handles_out.time_to_eventSm=time_to_eventSm;
         handles_out.time_to_eventSp=time_to_eventSp;
 
+        dt_rhd=mean(time_rhd(2:end)-time_rhd(1:end-1));
+        time_to_event_PIDsp=[1:size(splus_PID_traces,2)]*dt_rhd-dt_before;
+        time_to_event_PIDsm=[1:size(sminus_PID_traces,2)]*dt_rhd-dt_before;
+                
+
+
         pct1=prctile([mean(sminus_traces,1)'; mean(splus_traces(:,1:szSp(2)),1)'],1);
         pct99=prctile([mean(sminus_traces,1)'; mean(splus_traces(:,1:szSp(2)),1)'],99);
 
 
-
-        [hlsm, hpsm] = boundedline(time_to_eventSm',mean(sminus_traces,1)', CIsm', 'b');
-        [hlsp, hpsp] = boundedline(time_to_eventSp',mean(splus_traces,1)', CIsp', 'r');
+        try
+            [hlsm, hpsm] = boundedline(time_to_eventSm',mean(sminus_traces,1)', CIsm', 'b');
+            [hlsp, hpsp] = boundedline(time_to_eventSp',mean(splus_traces,1)', CIsp', 'r');
+        catch
+        end
 
         %Odor on markers
         plot([0 0],[pct1-0.1*(pct99-pct1) pct99+0.1*(pct99-pct1)],'-k')
@@ -1326,13 +1374,82 @@ for fileNo=handles_choice.first_file:handles_choice.no_files
         legend([hlsp hlsm odorhl reinfhl],'S+','S-','Odor','Reinforcement')
         xlabel('Time (sec)')
         ylabel('dF/F')
-        ylim([pct1-0.2*(pct99-pct1) pct99+0.2*(pct99-pct1)])
+
+        try
+            ylim([pct1-0.2*(pct99-pct1) pct99+0.2*(pct99-pct1)])
+        catch
+        end
+
         xlim([-10 19.8])
 
         if do_warp==1
-            savefig([fnameca(1:end-4) '_dropc_warp_Fig3.fig'])
+            savefig([fnameca(1:end-4) '_dropc_warp_odor.fig'])
         else
-            savefig([fnameca(1:end-4) '_dropc_batch_Fig3.fig'])
+            savefig([fnameca(1:end-4) '_dropc_odor.fig'])
+        end
+
+         figNo=figNo+1;
+        try
+            close(figNo)
+        catch
+        end
+
+        hFig = figure(figNo);
+
+        hold on
+
+
+        pct1=prctile([mean(sminus_PID_traces,1)'; mean(splus_PID_traces,1)'],1);
+        pct99=prctile([mean(sminus_PID_traces,1)'; mean(splus_PID_traces,1)'],99);
+
+%         try
+%             CIsm = bootci(1000, @mean, sminus_PID_traces);
+%             meansm=mean(sminus_PID_traces,1);
+%             CIsm(1,:)=meansm-CIsm(1,:);
+%             CIsm(2,:)=CIsm(2,:)-meansm;
+% 
+%             [hlsm, hpsm] = boundedline(time_to_event_PIDsm',mean(splus_PID_traces,1)', CIsm', 'b');
+%         catch
+            plot(time_to_event_PIDsp',mean(splus_PID_traces,1)', '-b');
+%         end
+
+
+%         try
+%             CIsp = bootci(1000, @mean, sminus_PID_traces);
+%             meansp=mean(sminus_PID_traces,1);
+%             CIsp(1,:)=meansp-CIsp(1,:);
+%             CIsp(2,:)=CIsp(2,:)-meansp;
+%             [hlsp, hpsp] = boundedline(time_to_event_PIDsp',mean(sminus_PID_traces,1)', CIsp', 'r');
+%         catch
+            plot(time_to_event_PIDsm',mean(sminus_PID_traces,1)', '-r');
+%         end
+
+        %Odor on markers
+        plot([0 0],[pct1-0.1*(pct99-pct1) pct99+0.1*(pct99-pct1)],'-k')
+        odorhl=plot([0 mean(delta_odor)],[pct1-0.1*(pct99-pct1) pct1-0.1*(pct99-pct1)],'-k','LineWidth',5);
+        plot([mean(delta_odor) mean(delta_odor)],[pct1-0.1*(pct99-pct1) pct99+0.1*(pct99-pct1)],'-k')
+
+        %Reinforcement markers
+        plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on)],[pct1-0.1*(pct99-pct1) pct99+0.1*(pct99-pct1)],'-r')
+        reinfhl=plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on)+mean(delta_reinf)],[pct1-0.1*(pct99-pct1) pct1-0.1*(pct99-pct1)],'-r','LineWidth',5);
+        plot([mean(delta_odor_on_reinf_on)+mean(delta_reinf) mean(delta_odor_on_reinf_on)+mean(delta_reinf)],[pct1-0.1*(pct99-pct1) pct99+0.1*(pct99-pct1)],'-r')
+
+
+
+        title("PID changes aligned to odor onset")
+        legend([hlsp hlsm odorhl reinfhl],'S+','S-','Odor','Reinforcement')
+        xlabel('Time (sec)')
+        ylabel('dF/F')
+        try
+        ylim([pct1-0.2*(pct99-pct1) pct99+0.2*(pct99-pct1)])
+        catch
+        end
+        xlim([-10 19.8])
+
+           if do_warp==1
+            savefig([fnameca(1:end-4) '_dropc_warp_PID.fig'])
+        else
+            savefig([fnameca(1:end-4) '_dropc_PID.fig'])
         end
 
         %Hit, CR, et al
@@ -1465,7 +1582,8 @@ for fileNo=handles_choice.first_file:handles_choice.no_files
             'lda_input_timecourse','lda_event','time_to_eventLDA','dHit_lick_traces'...
             ,'dCR_lick_traces','dMiss_lick_traces','dFA_lick_traces','time','epochs','digital_in'...
             , 'no_scans_per_image','first_digital_in_time_rhd','next_lick_in_time_rhd'...
-            ,'first_imge_ttl_time_rhd','warning_status')
+            ,'first_imge_ttl_time_rhd','warning_status','sminus_PID_traces','splus_PID_traces',...
+            'time_to_event_PIDsp','time_to_event_PIDsm','time_to_eventSp','time_to_eventSm')
 
 
         percent_correct=100*(Hitii_lick+CRii_lick)/no_odor_trials;
@@ -1536,180 +1654,186 @@ for fileNo=handles_choice.first_file:handles_choice.no_files
             savefig([fnameca(1:end-4) '_dropc_batch_Fig4.fig'])
         end
 
-        %Plot the licks
-        figNo=figNo+1;
-        try
-            close(figNo)
-        catch
-        end
-
-        hFig = figure(figNo);
-
-        hold on
-
-        for ii=1:allii_lick
-            dall_lick_traces(ii,:)=decimate(all_lick_traces(ii,:)',20)';
-        end
-        szalllick=size(dall_lick_traces);
-        time_licks=([1:szalllick(2)]/(acq_rate/20))-dt_before;
-        per99=prctile(dall_lick_traces(:),99.9);
-        per1=prctile(dall_lick_traces(:),1);
-
-        mean_Hit_licks=zeros(1,szalllick(2));
-        mean_Miss_licks=zeros(1,szalllick(2));
-        mean_FA_licks=zeros(1,szalllick(2));
-        mean_CR_licks=zeros(1,szalllick(2));
-
-        y_shift=0;
-
-        %Plot CR lick traces
-        for ii=1:CRii_lick
-            dCR_lick_traces(ii,:)=decimate(CR_lick_traces(ii,:)',20)';
-            plot(time_licks,dCR_lick_traces(ii,:)+y_shift,'-b')
-            mean_CR_licks(1,:)= mean_CR_licks(1,:) + ((dCR_lick_traces(ii,:)-per1)/(per99-per1));
-            y_shift=y_shift+1.2*(per99-per1);
-        end
-
-        %Plot FA lick traces
-        for ii=1:FAii_lick
-            dFA_lick_traces(ii,:)=decimate(FA_lick_traces(ii,:)',20)';
-            plot(time_licks,dFA_lick_traces(ii,:)+y_shift,'-m')
-            mean_FA_licks(1,:)= mean_FA_licks(1,:) + ((dFA_lick_traces(ii,:)-per1)/(per99-per1));
-            y_shift=y_shift+1.2*(per99-per1);
-        end
-
-        %Plot Miss lick traces
-        for ii=1:Missii_lick
-            dMiss_lick_traces(ii,:)=decimate(Miss_lick_traces(ii,:)',20)';
-            plot(time_licks,dMiss_lick_traces(ii,:)+y_shift,'-c')
-            mean_Miss_licks(1,:)= mean_Miss_licks(1,:) + ((dMiss_lick_traces(ii,:)-per1)/(per99-per1));
-            y_shift=y_shift+1.2*(per99-per1);
-        end
-
-        %PLot Hit lick traces
-        for ii=1:Hitii_lick
-            dHit_lick_traces(ii,:)=decimate(Hit_lick_traces(ii,:)',20)';
-            plot(time_licks,dHit_lick_traces(ii,:)+y_shift,'-r')
-            mean_Hit_licks(1,:)= mean_Hit_licks(1,:) + ((dHit_lick_traces(ii,:)-per1)/(per99-per1));
-            y_shift=y_shift+1.2*(per99-per1);
-        end
-
-        %Odor on markers
-        plot([0 0],[0 y_shift],'-k')
-        plot([mean(delta_odor) mean(delta_odor)],[0 y_shift],'-k')
-
-        %Reinforcement markers
-        plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on)],[0 y_shift],'-r')
-        plot([mean(delta_odor_on_reinf_on)+mean(delta_reinf) mean(delta_odor_on_reinf_on)+mean(delta_reinf)],[0 y_shift],'-r')
-
-        if do_warp==1
-            savefig([fnameca(1:end-4) '_dropc_warp_Fig5.fig'])
-        else
-            savefig([fnameca(1:end-4) '_dropc_batch_Fig5.fig'])
-        end
- 
-        %Plot lick frequency
-        figNo=figNo+1;
-        try
-            close(figNo)
-        catch
-        end
-
-        hFig = figure(figNo);
-
-        hold on
-        time_licks=([1:length(Hitlick_freq)]*dt_lick)-dt_before;
-        plot(time_licks,Hitlick_freq,'-r')
-        plot(time_licks,Misslick_freq,'-c')
-        plot(time_licks,CRlick_freq,'-b')
-        plot(time_licks,FAlick_freq,'-m')
-
-        title('Lick frequency, r=Hit, c=Miss, b=CR, m=FA')
-        xlabel('Time (sec)')
-        ylabel('Lick frequency (Hz)')
-
-        if do_warp==1
-            savefig([fnameca(1:end-4) '_dropc_warp_Fig6.fig'])
-        else
-            savefig([fnameca(1:end-4) '_dropc_batch_Fig6.fig'])
-        end
-
-
-        %Get lick p values
-        try
-            dt_lick_pval=0.1;
-            no_pvals=0;
-            p_val_Hit_CR=[];
-            for ii=1:dt_lick_pval*acq_rate:sum(rhd_mask)-dt_lick_pval*acq_rate
-                %Hit vs CR
-                this_CR=zeros(CRii_lick,1);
-                for jj=1:CRii_lick
-                    if sum(CR_lick_traces(jj,ii:ii+dt_lick_pval*acq_rate)>threshold_lick)>=1
-                        this_CR(jj,1)=1;
-                    else
-                        this_CR(jj,1)=0;
-                    end
-                end
-
-                this_Hit=zeros(Hitii_lick,1);
-                for jj=1:Hitii_lick
-                    if sum(Hit_lick_traces(jj,ii:ii+dt_lick_pval*acq_rate)>threshold_lick)>=1
-                        this_Hit(jj,1)=1;
-                    else
-                        this_Hit(jj,1)=0;
-                    end
-                end
-
-                no_pvals=no_pvals+1;
-
-                if (~isempty(this_CR))&(~isempty(this_CR))
-                    p_val_Hit_CR(no_pvals)=ranksum(this_CR,this_Hit);
-                else
-                    p_val_Hit_CR(no_pvals)=1;
-                end
-
-                %ranksum gives NaN if the values are all the same
-                if isnan(p_val_Hit_CR(no_pvals))
-                    p_val_Hit_CR(no_pvals)=1;
-                end
-
-            end
-
-            time_p_lick=[-dt_before+(dt_lick_pval/2):dt_lick_pval:dt_after-(dt_lick_pval)];
-
-
-            figNo=figNo+1;
-            try
-                close(figNo)
-            catch
-            end
-
-            hFig = figure(figNo);
-
-            plot(time_p_lick,log10(p_val_Hit_CR))
-            hold on
-            plot([time_p_lick(1) time_p_lick(end)],[log10(0.05) log10(0.05)])
-            title('log(p value) for the difference in licks Hit vs CR')
-            xlabel('Time (sec)')
-            ylabel('log10(p value)')
-            if do_warp==1
-                savefig([fnameca(1:end-4) '_dropc_warp_Fig7.fig'])
-            else
-                savefig([fnameca(1:end-4) '_dropc_batch_Fig7.fig'])
-            end
-        catch
-        end
-        save_name_catch=[handles_choice.PathNamecsv{fileNo} fnameca(1:end-4) '_try_catch.mat'];
-        save(save_name_catch,'try_catch_status')
-        %     catch ME
-        %         try_catch_status(fileNo).processed=0;
-        %         try_catch_status(fileNo).ME=ME;
-        %         save_name_catch=[handles_choice.PathNamecsv{fileNo} fnameca(1:end-4) '_try_catch.mat'];
-        %         save(save_name_catch,'try_catch_status')
-        %     end
-        pffft=1;
+%         %Plot the licks
+%         figNo=figNo+1;
+%         try
+%             close(figNo)
+%         catch
+%         end
+% 
+%         hFig = figure(figNo);
+% 
+%         hold on
+% 
+%         for ii=1:allii_lick
+%             dall_lick_traces(ii,:)=decimate(all_lick_traces(ii,:)',20)';
+%         end
+%         szalllick=size(dall_lick_traces);
+%         time_licks=([1:szalllick(2)]/(acq_rate/20))-dt_before;
+%         per99=prctile(dall_lick_traces(:),99.9);
+%         per1=prctile(dall_lick_traces(:),1);
+% 
+%         mean_Hit_licks=zeros(1,szalllick(2));
+%         mean_Miss_licks=zeros(1,szalllick(2));
+%         mean_FA_licks=zeros(1,szalllick(2));
+%         mean_CR_licks=zeros(1,szalllick(2));
+% 
+%         y_shift=0;
+% 
+%         %Plot CR lick traces
+%         for ii=1:CRii_lick
+%             dCR_lick_traces(ii,:)=decimate(CR_lick_traces(ii,:)',20)';
+%             plot(time_licks,dCR_lick_traces(ii,:)+y_shift,'-b')
+%             mean_CR_licks(1,:)= mean_CR_licks(1,:) + ((dCR_lick_traces(ii,:)-per1)/(per99-per1));
+%             y_shift=y_shift+1.2*(per99-per1);
+%         end
+% 
+%         %Plot FA lick traces
+%         for ii=1:FAii_lick
+%             dFA_lick_traces(ii,:)=decimate(FA_lick_traces(ii,:)',20)';
+%             plot(time_licks,dFA_lick_traces(ii,:)+y_shift,'-m')
+%             mean_FA_licks(1,:)= mean_FA_licks(1,:) + ((dFA_lick_traces(ii,:)-per1)/(per99-per1));
+%             y_shift=y_shift+1.2*(per99-per1);
+%         end
+% 
+%         %Plot Miss lick traces
+%         for ii=1:Missii_lick
+%             dMiss_lick_traces(ii,:)=decimate(Miss_lick_traces(ii,:)',20)';
+%             plot(time_licks,dMiss_lick_traces(ii,:)+y_shift,'-c')
+%             mean_Miss_licks(1,:)= mean_Miss_licks(1,:) + ((dMiss_lick_traces(ii,:)-per1)/(per99-per1));
+%             y_shift=y_shift+1.2*(per99-per1);
+%         end
+% 
+%         %PLot Hit lick traces
+%         for ii=1:Hitii_lick
+%             dHit_lick_traces(ii,:)=decimate(Hit_lick_traces(ii,:)',20)';
+%             plot(time_licks,dHit_lick_traces(ii,:)+y_shift,'-r')
+%             mean_Hit_licks(1,:)= mean_Hit_licks(1,:) + ((dHit_lick_traces(ii,:)-per1)/(per99-per1));
+%             y_shift=y_shift+1.2*(per99-per1);
+%         end
+% 
+%         %Odor on markers
+%         plot([0 0],[0 y_shift],'-k')
+%         plot([mean(delta_odor) mean(delta_odor)],[0 y_shift],'-k')
+% 
+%         %Reinforcement markers
+%         plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on)],[0 y_shift],'-r')
+%         plot([mean(delta_odor_on_reinf_on)+mean(delta_reinf) mean(delta_odor_on_reinf_on)+mean(delta_reinf)],[0 y_shift],'-r')
+% 
+%         if do_warp==1
+%             savefig([fnameca(1:end-4) '_dropc_warp_Fig5.fig'])
+%         else
+%             savefig([fnameca(1:end-4) '_dropc_batch_Fig5.fig'])
+%         end
+%  
+%         %Plot lick frequency
+%         figNo=figNo+1;
+%         try
+%             close(figNo)
+%         catch
+%         end
+% 
+%         hFig = figure(figNo);
+% 
+%         hold on
+%         time_licks=([1:length(Hitlick_freq)]*dt_lick)-dt_before;
+%         plot(time_licks,Hitlick_freq,'-r')
+%         plot(time_licks,Misslick_freq,'-c')
+%         plot(time_licks,CRlick_freq,'-b')
+%         plot(time_licks,FAlick_freq,'-m')
+% 
+%         title('Lick frequency, r=Hit, c=Miss, b=CR, m=FA')
+%         xlabel('Time (sec)')
+%         ylabel('Lick frequency (Hz)')
+% 
+%         if do_warp==1
+%             savefig([fnameca(1:end-4) '_dropc_warp_Fig6.fig'])
+%         else
+%             savefig([fnameca(1:end-4) '_dropc_batch_Fig6.fig'])
+%         end
+% 
+% 
+%         %Get lick p values
+%         try
+%             dt_lick_pval=0.1;
+%             no_pvals=0;
+%             p_val_Hit_CR=[];
+%             for ii=1:dt_lick_pval*acq_rate:sum(rhd_mask)-dt_lick_pval*acq_rate
+%                 %Hit vs CR
+%                 this_CR=zeros(CRii_lick,1);
+%                 for jj=1:CRii_lick
+%                     if sum(CR_lick_traces(jj,ii:ii+dt_lick_pval*acq_rate)>threshold_lick)>=1
+%                         this_CR(jj,1)=1;
+%                     else
+%                         this_CR(jj,1)=0;
+%                     end
+%                 end
+% 
+%                 this_Hit=zeros(Hitii_lick,1);
+%                 for jj=1:Hitii_lick
+%                     if sum(Hit_lick_traces(jj,ii:ii+dt_lick_pval*acq_rate)>threshold_lick)>=1
+%                         this_Hit(jj,1)=1;
+%                     else
+%                         this_Hit(jj,1)=0;
+%                     end
+%                 end
+% 
+%                 no_pvals=no_pvals+1;
+% 
+%                 if (~isempty(this_CR))&(~isempty(this_CR))
+%                     p_val_Hit_CR(no_pvals)=ranksum(this_CR,this_Hit);
+%                 else
+%                     p_val_Hit_CR(no_pvals)=1;
+%                 end
+% 
+%                 %ranksum gives NaN if the values are all the same
+%                 if isnan(p_val_Hit_CR(no_pvals))
+%                     p_val_Hit_CR(no_pvals)=1;
+%                 end
+% 
+%             end
+% 
+%             time_p_lick=[-dt_before+(dt_lick_pval/2):dt_lick_pval:dt_after-(dt_lick_pval)];
+% 
+% 
+%             figNo=figNo+1;
+%             try
+%                 close(figNo)
+%             catch
+%             end
+% 
+%             hFig = figure(figNo);
+% 
+%             plot(time_p_lick,log10(p_val_Hit_CR))
+%             hold on
+%             plot([time_p_lick(1) time_p_lick(end)],[log10(0.05) log10(0.05)])
+%             title('log(p value) for the difference in licks Hit vs CR')
+%             xlabel('Time (sec)')
+%             ylabel('log10(p value)')
+%             if do_warp==1
+%                 savefig([fnameca(1:end-4) '_dropc_warp_Fig7.fig'])
+%             else
+%                 savefig([fnameca(1:end-4) '_dropc_batch_Fig7.fig'])
+%             end
+%         catch
+%         end
+%         save_name_catch=[handles_choice.PathNamecsv{fileNo} fnameca(1:end-4) '_try_catch.mat'];
+%         save(save_name_catch,'try_catch_status')
+%         %     catch ME
+%         %         try_catch_status(fileNo).processed=0;
+%         %         try_catch_status(fileNo).ME=ME;
+%         %         save_name_catch=[handles_choice.PathNamecsv{fileNo} fnameca(1:end-4) '_try_catch.mat'];
+%         %         save(save_name_catch,'try_catch_status')
+%         %     end
+%         pffft=1;
 
         fprintf(1, ['\nProcessing done for ' handles_choice.csvFileName{fileNo} '\n\n']);
+
+        %Save the rhd times
+
+     save_name=[handles_choice.PathNamecsv{fileNo} fnameca(1:end-4) '_rhd_times.mat'];
+
+     save(save_name, 'odor_on_times_rhd','FV_times_rhd','odor_off_times_rhd')
 end
 
 

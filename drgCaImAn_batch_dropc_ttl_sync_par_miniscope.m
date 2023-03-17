@@ -1,4 +1,4 @@
-%% drgCaImAn_batch_dropc_ttl_sync_par_mmfsds.m
+%% drgCaImAn_batch_dropc_ttl_sync_par_miniscope.m
 %
 % Needs as an input the cvs file from Fabio or the EXTRACT output
 % This code uses the ttl output of the multiphoton microscope to
@@ -120,20 +120,105 @@ for fileNo=handles_choice.first_file:handles_choice.no_files
         adc_in=[];
         digital_in=[];
         acq_rate=[];
-        
-        lick_ch=3;
-        image_ttl_ch=5;
-        [adc_in,digital_in,acq_rate]=drg_read_Intan_RHD2000_file([handles_choice.PathName{fileNo} handles_choice.rhdFileName{fileNo}],[lick_ch image_ttl_ch]);
 
+        % Assignement of INTAN channels by Fabio
+        % CH0 => left miniscope TTL, adc_in 1
+        % CH1 -> Lick, adc_in 2
+        % CH2 -> OFF
+        % CH3 -> right miniscope TTL (trigger for olfactometer), adc_in 3
+        % CH4 -> Video Sync TTL, adc_in 4
+        % CH5 to CH7 -> OFF
+
+%         lick_ch=2;
+%         left_image_ttl_ch=1;
+%         right_image_ttl_ch=4; %3
+%         video_ttl_ch=5; %4
+ 
+        [adc_in,digital_in,acq_rate,amplifier_data_out,board_adc_channels]=drg_read_Intan_RHD2000_fabio_file([handles_choice.PathName{fileNo} handles_choice.rhdFileName{fileNo}]);
+  
         digital_in=bitand(digital_in,2+4+8+16);
 
         
+        %Figure out which are the image ttl and lick channels
+        min_frac=[];
+        for chno=1:length(board_adc_channels)
+            frac_above=sum(adc_in(chno,:)>1.5)/size(adc_in,2);
+            frac_below=1-frac_above;
+            if frac_above<frac_below
+                min_frac(chno)=frac_above;
+            else
+                min_frac(chno)=frac_below;
+            end
+        end
+
+        sort_mat=zeros(length(board_adc_channels),2);
+        sort_mat(:,2)=1:length(board_adc_channels);
+        sort_mat(:,1)=min_frac;
+
+        sorted_mat=sortrows(sort_mat);
+
+        %This is the lick channel
+        lick_ch=sorted_mat(length(board_adc_channels)-2,2);
+
+        %Now figure out which one is image_ttl vs. video_ttl
+        half_ii=ceil(size(adc_in,2)/2);
+
+        ttl_ch1=sorted_mat(length(board_adc_channels),2);
+        no_ttl_edges1=0;
+        these_ttl1=adc_in(ttl_ch1,half_ii:half_ii+acq_rate);
+
+        ttl_ch2=sorted_mat(length(board_adc_channels)-1,2);
+        no_ttl_edges2=0;
+        these_ttl2=adc_in(ttl_ch2,half_ii:half_ii+acq_rate);
+
+        %Find edges for ttl_ch1
+        ii=1;
+        at_end=0;
+        while at_end==0
+            if these_ttl1(ii)<1.5
+                next_ii=find(these_ttl1(ii+1:end)>1.5,1,"first");
+            else
+                next_ii=find(these_ttl1(ii+1:end)<1.5,1,"first");
+            end
+            if ~isempty(next_ii)
+                no_ttl_edges1=no_ttl_edges1+1;
+                ii=ii+next_ii;
+            else
+                at_end=1;
+            end
+        end
+
+        %Find edges for ttl_ch2
+        ii=1;
+        at_end=0;
+        while at_end==0
+            if these_ttl2(ii)<1.5
+                next_ii=find(these_ttl2(ii+1:end)>1.5,1,"first");
+            else
+                next_ii=find(these_ttl2(ii+1:end)<1.5,1,"first");
+            end
+            if ~isempty(next_ii)
+                no_ttl_edges2=no_ttl_edges2+1;
+                ii=ii+next_ii;
+            else
+                at_end=1;
+            end
+        end
+
+        if no_ttl_edges1<no_ttl_edges2
+            image_ttl_ch=ttl_ch1;
+            video_ttl_ch=ttl_ch2;
+        else
+            image_ttl_ch=ttl_ch2;
+            video_ttl_ch=ttl_ch1;
+        end
+
 
         image_ttl=zeros(1,size(adc_in,2));
-        image_ttl(1,:)=adc_in(2,:);
+        image_ttl(1,:)=adc_in(image_ttl_ch,:);
 
         lick_in=zeros(1,size(adc_in,2));
-        lick_in(1,:)=adc_in(1,:);
+        lick_in(1,:)=adc_in(lick_ch,:);
         
         time_rhd=([1:length(lick_in)]/acq_rate);
 
@@ -142,50 +227,7 @@ for fileNo=handles_choice.first_file:handles_choice.no_files
         next_lick_in_time_rhd=time_rhd(find(lick_in(first_digital_in_ii:end)>1.5,1,'first')+first_digital_in_ii);
         first_imge_ttl_time_rhd=time_rhd(find(image_ttl>1.5,1,'first'));
 
-        pffft=1;
-% 
-%         %Plot the onset of TTL
-%         figNo=figNo+1;
-%         try
-%             close(figNo)
-%         catch
-%         end
-% 
-%         hFig = figure(figNo);
-%         set(hFig, 'units','normalized','position',[.05 .1 .85 .3])
-% 
-%         plot(time_rhd(340000:400000),image_ttl(340000:400000))
-%         title('TTL')
-%         xlabel('Time (sec)')
-% 
-%         %Align the metadata
-%         figNo=figNo+1;
-%         try
-%             close(figNo)
-%         catch
-%         end
-% 
-%         hFig = figure(figNo);
-%         set(hFig, 'units','normalized','position',[.05 .1 .85 .3])
-% 
-%         plot(time_rhd(340000:400000),digital_in(340000:400000))
-%         title('olfactometer metadata')
-%         xlabel('Time (sec)')
-% 
-%          %Align the licks
-%         figNo=figNo+1;
-%         try
-%             close(figNo)
-%         catch
-%         end
-% 
-%         hFig = figure(figNo);
-%         set(hFig, 'units','normalized','position',[.05 .1 .85 .3])
-% 
-%         plot(time_rhd(340000:400000),lick_in(340000:400000))
-%         title('licks')
-%         xlabel('Time (sec)')
-        
+ 
 
 
         %Find the rhd times for the olfactometer metadata in digital_in
@@ -423,27 +465,22 @@ for fileNo=handles_choice.first_file:handles_choice.no_files
             at_end=0;
             ii=1;
 
-            %move forward if this is was already counted as TTL
-            if jj>1
-                if (image_times_par(jj-1).image_ttl(end)>1.5)&(image_times_par(jj).image_ttl(ii)>1.5)
-                    ii_next=find(image_times_par(jj).image_ttl(ii:end)<1.5,1,'first');
-                    ii=ii+ii_next-1;
-                end
-            end
-
             while at_end==0
-                ii_next=find(image_times_par(jj).image_ttl(ii:end)>1.5,1,'first');
+                if image_times_par(jj).image_ttl(ii)>1.5
+                    ii_next=find(image_times_par(jj).image_ttl(ii:end)<1.5,1,'first');
+                else
+                    ii_next=find(image_times_par(jj).image_ttl(ii:end)>1.5,1,'first');
+                end
+
+
+
                 if ~isempty(ii_next)
 
                     %found TTL
                     image_out(jj).ii_image=image_out(jj).ii_image+1;
-                    ii=ii+ii_next-1;
+                    ii=ii+ii_next;
                     image_out(jj).image_times_par(image_out(jj).ii_image)=ii/acq_rate;
-
-                    %Find the end of the TTL
-                    ii_next=find(image_times_par(jj).image_ttl(ii:end)<1.5,1,'first');
-                    ii=ii+ii_next-1;
-
+                    
                 else
                     at_end=1;
                 end
@@ -484,37 +521,15 @@ for fileNo=handles_choice.first_file:handles_choice.no_files
 %         time=time-time(1); %Offset the time to zero
 %         handles.dropcData_rhd.epochTime=handles.dropcData_rhd.epochTime-offset_time; %Offset the time to zero
         dt=mean(time(2:end)-time(1:end-1));
-  
-%         %Plot the licks recorded by the INTAN (adc_in)
-%         time_rhd=([1:length(lick_in)]/acq_rate)+delta_t_rhd;
-%         pct998=prctile(lick_in,99.8);
-%         pct1=prctile(lick_in,1);
-%         norm_fact=0.8*y_shift/(pct998-pct1);
-% 
-%         plot(time_rhd(time_rhd>0),lick_in(time_rhd>0)*norm_fact)
-% 
-%         %Plot the traces
-%         time=[1:no_images]*dt;
-%         for trNo=1:no_traces
-%             % for trNo=1:20
-%             plot(time,traces(trNo,:)+y_shift*trNo,'-k','LineWidth',1)
-%         end
 
-     
-% 
-%         ylim([-y_shift*0.2 (no_traces+2)*y_shift])
-%  
-% 
-%         xlabel('time (s)')
-%         ylabel('deltaF/F')
-%         title(fnameca(1:end-4), 'Interpreter', 'none')
-%  
-%         if do_warp==1
-%             savefig([fnameca(1:end-4) '_dropc_warp_Fig1.fig'])
-%         else
-%             savefig([fnameca(1:end-4) '_dropc_batch_Fig1.fig'])
-%         end
-%         
+        %This is what I did in the past
+%         time=time(1:size(traces,2));
+%         offset_time=time(1);
+%         time=time-time(1); %Offset the time to zero
+%         handles.dropcData_rhd.epochTime=handles.dropcData_rhd.epochTime-offset_time; %Offset the time to zero
+%         dt=mean(time(2:end)-time(1:end-1));
+  
+
         %Now plot the traces aligned through image TTL and digital input to the
         %INTAN
 
