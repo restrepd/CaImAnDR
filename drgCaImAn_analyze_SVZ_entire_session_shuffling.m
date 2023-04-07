@@ -6,7 +6,7 @@ function handles_out2=drgCaImAn_analyze_SVZ_entire_session_shuffling(handles_cho
 % produce reliable results because of overtraining, use
 % processing_algoritm=3, that was vetted for our manuscript
 %
-% 
+%  
 % the input is a pre_per file version 2
 if exist('handles_choices')==0
     clear all
@@ -20,7 +20,7 @@ if exist('handles_choices')==0
 %     post_time=5; %The decoding model will be trained with all points in post_time sec interval starting post_shift secs after odor on
 %     post_shift=0; %Set to 0 if you want to train with odor on points
 %     pre_time=5; %Used to calculate the decoding accuracy pre_time sec before post_shift
-    iiMLalgo=1; %Vector with the decoding algorithms you want to use
+    iiMLalgo=6; %Vector with the decoding algorithms you want to use
 %     ii_cost=3;
     p_threshold=1.1; %This limits the ROIs used in the decoding model to those whose p value in a ttest for the two odors in <=p_threshold
 %     dt_p_threshold=20; %Time to be used after the odor on for the p_threshold t_test
@@ -46,7 +46,7 @@ end
 warning('off')
 
 figNo=0;
-
+ 
 % convert_z=1; %Convert dFF traces to z
 % dt_span=40; %Seconds shown before and after odor on in the figures
 % moving_mean_n=30; %Points used to calculate moving mean for the prediction label figure
@@ -68,6 +68,11 @@ classifier_names{3}='Naive Bayes Classifier';
 classifier_names{4}='Neural Network';
 classifier_names{5}='Decision tree';
 classifier_names{6}='Binomial glm';
+
+
+delta_odor=4.127634e+00;
+delta_odor_on_reinf_on=4.415787e+00;
+delta_reinf=4.078266e-01;
 
 %Plot the mean timecourse for S+ and S-, Euclidean distance and KL
 %divergence
@@ -148,6 +153,9 @@ fprintf(1, ['Shuffled training accuracy for ' classifier_names{iiMLalgo} ' is %d
     ,accuracy_tr_sh,accuracy_tr_wta_sh);
 fprintf(1, ['Training accuracy for shuffled per trial for ' classifier_names{iiMLalgo} ' is %d, wta accuracy is %d\n']...
     ,accuracy_tr_sh2,accuracy_tr_wta_sh2);
+fprintf(1, ['Percent correct for behavior  is %d\n'],...
+    handles_out.ii_out(1).handles_out.percent_correct);
+
 
 %Plot the timecourses for accuracy and label
  
@@ -174,9 +182,8 @@ if show_figures==1
     
     hFig = figure(figNo);
     
-    set(hFig, 'units','normalized','position',[.05 .1 .3 .3])
+    set(hFig, 'units','normalized','position',[.05 .1 .4 .4])
     
-    subplot(2,1,1)
     hold on
     
     CIsm = bootci(1000, @mean, moving_mean_per_trial_sm_timecourse);
@@ -194,18 +201,61 @@ if show_figures==1
     
     [hlsp, hpsp] = boundedline(time_span',mean(moving_mean_per_trial_sp_timecourse,1)', CIsp', 'cmap',[0 114/255 178/255]);
     
-    plot(time_span',mean(moving_mean_per_trial_sm_timecourse,1)','-','Color',[158/255 31/255 99/255],'DisplayName','S-','LineWidth',1.5)
-    plot(time_span',mean(moving_mean_per_trial_sp_timecourse,1)', '-','Color',[0 114/255 178/255],'DisplayName','S+','LineWidth',1.5);
+    plot(time_span',mean(moving_mean_per_trial_sm_timecourse,1)','-','Color',[158/255 31/255 99/255],'DisplayName','S-')
+    plot(time_span',mean(moving_mean_per_trial_sp_timecourse,1)', '-','Color',[0 114/255 178/255],'DisplayName','S+');
     
     text(30,0.75,'S-','Color',[158/255 31/255 99/255])
     text(30,0.85,'S+','Color',[0 114/255 178/255])
     
-    ylim([0 1])
+    ylim([0 1.1])
+    xlim([-7 15])
     title(['Label prediction per trial for ' classifier_names{iiMLalgo} ' and p threshold ' num2str(p_threshold)])
     xlabel('Time(sec)')
     ylabel('Label prediction, S+=1, S-=0')
+
+    figNo=figNo+1;
+    try
+        close(figNo)
+    catch
+    end
+
+    hFig = figure(figNo);
+
+    set(hFig, 'units','normalized','position',[.05 .1 .4 .7])
+    hold on
     
-    subplot(2,1,2)
+    y_shift=0;
+    for ii=1:size(moving_mean_per_trial_sm_timecourse,1)
+        plot(time_span',moving_mean_per_trial_sm_timecourse(ii,:)+y_shift,'Color',[158/255 31/255 99/255]);
+        y_shift=y_shift+1.5;
+    end
+
+     for ii=1:size(moving_mean_per_trial_sp_timecourse,1)
+        plot(time_span',moving_mean_per_trial_sp_timecourse(ii,:)+y_shift,'Color',[0 114/255 178/255]);
+        y_shift=y_shift+1.5;
+    end
+    
+    plot(time_span',mean(this_correct_predict_sh,1)','-k','DisplayName','Shuffled')
+    plot(time_span',mean(this_correct_predict,1)', '-','Color',[0 114/255 178/255]);
+    
+    text(30,0.75,'Shuffled','Color','k')
+    text(30,0.85,'S+ vs S-','Color',[0 114/255 178/255])
+    
+    
+    xlim([-7 15])
+    title(['Prediction for each trial for ' classifier_names{iiMLalgo}])
+    xlabel('Time(sec)')
+    ylabel('Prediction')
+    
+    figNo=figNo+1;
+    try
+        close(figNo)
+    catch
+    end
+    
+    hFig = figure(figNo);
+    
+    set(hFig, 'units','normalized','position',[.05 .1 .4 .4])
     hold on
     
     CIsm = bootci(1000, @mean, this_correct_predict_sh);
@@ -222,18 +272,45 @@ if show_figures==1
     CIsm(2,:)=CIsm(2,:)-meansm;
     
     [hlsm, hpsm] = boundedline(time_span',mean(this_correct_predict,1)', CIsm', 'cmap',[0 114/255 178/255]);
-    
+
     plot(time_span',mean(this_correct_predict_sh,1)','-k','DisplayName','Shuffled')
     plot(time_span',mean(this_correct_predict,1)', '-','Color',[0 114/255 178/255]);
-    
+
     text(30,0.75,'Shuffled','Color','k')
     text(30,0.85,'S+ vs S-','Color',[0 114/255 178/255])
-    
-    ylim([0 1])
-    title(['Accuracy per trial for ' classifier_names{iiMLalgo}])
+
+    ylim([0 1.1])
+    this_ylim=ylim;
+    %Place epoch markers
+
+    %FV
+    rectangle(Position=[-1.5,this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)),1.5,0.03*(this_ylim(2)-this_ylim(1))], FaceColor=[0.9 0.9 0.9], EdgeColor=[0.9 0.9 0.9])
+    plot([-1.5 -1.5],[this_ylim],'-','Color',[0.5 0.5 0.5])
+
+    %Odor
+    rectangle(Position=[0,this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)),mean(delta_odor),0.03*(this_ylim(2)-this_ylim(1))], FaceColor=[0 0 0], EdgeColor=[0 0 0])
+    plot([0 0],[this_ylim],'-k')
+    plot([mean(delta_odor) mean(delta_odor)],[this_ylim],'-k')
+
+    %Reinforcement
+    rectangle(Position=[mean(delta_odor_on_reinf_on),this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)),mean(delta_reinf),0.03*(this_ylim(2)-this_ylim(1))], FaceColor=[1 0 0], EdgeColor=[1 0 0])
+    plot([mean(delta_odor_on_reinf_on)+mean(delta_reinf) mean(delta_odor_on_reinf_on)+mean(delta_reinf)],[this_ylim],'-r')
+    plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on)],[this_ylim],'-r')
+
+
+
+    xlim([-7 15])
+    title(['Accuracy for ' classifier_names{iiMLalgo}])
     xlabel('Time(sec)')
     ylabel('Accuracy')
+
     
+
+    odor_window=[2 4.1]; %Note: This is the time window I use in drgCaImAn_analyze_batch_pre_per_to_decode_per_mouse_v2
+    odor_acc=mean(meansm((time_span>=odor_window(1))&(time_span<=odor_window(2))));
+    fprintf(1, ['Accuracy for odor window  is %d\n'],...
+    odor_acc);
+
     %Plot the posterior probabilities for Sp (scores,:,2) and Sm (scores(:,1))
     figNo=figNo+1;
     try
@@ -373,11 +450,11 @@ if show_figures==1
     plot(time,moving_mean_label_traces_sh,'-m','LineWidth',1)
     
     for ii=1:length(sp_times)
-        plot([sp_times(ii) sp_times(ii)],[0 1],'-r','LineWidth',2)
+        plot([sp_times(ii) sp_times(ii)],[0 1],'-r')
     end
     
      for ii=1:length(sm_times)
-        plot([sm_times(ii) sm_times(ii)],[0 1],'-b','LineWidth',2)
+        plot([sm_times(ii) sm_times(ii)],[0 1],'-b')
      end
     
 
@@ -402,7 +479,65 @@ if show_figures==1
     
     sgtitle(['Label prediction for entire session for ' classifier_names{iiMLalgo} ' and p threshold ' num2str(p_threshold)])
     
+    %Now find the changes in prediction that take place between trials
+    per95=prctile(moving_mean_label_traces_sh2(:),95);
+    per5=prctile(moving_mean_label_traces_sh2(:),5);
+    all_trial_times=[sp_times sm_times];
+    all_trial_times=sortrows(all_trial_times');
 
+    window_dt=[-7 15];
+    spontaneous_trial_times=[];
+    spontaneous_delta_prediction=[];
+    before_spontaneous_spm=[];
+    after_spontaneous_spm=[];
+    time_before=[];
+    dt_from_before=[];
+    ii_spontaneous=0;
+    pre_time=2;
+
+    for ii_trial=1:2:length(all_trial_times)-2
+        %find the next trial
+        this_ii=find(time>all_trial_times(ii_trial)+delta_odor,1,'first');
+        if ~isempty(this_ii)
+            %Now find the first baseline period
+            delta_ii=find(moving_mean_label_traces(this_ii:end) < per5,1,'first');
+            if ~isempty(delta_ii)
+                if time(this_ii+delta_ii-1)<all_trial_times(ii_trial+2)
+                    %Find the increase
+                    delta_ii2=find(moving_mean_label_traces(this_ii+delta_ii-1:end) > per95,1,'first');
+                    
+                    if time(this_ii+delta_ii-1+delta_ii2-2)<all_trial_times(ii_trial+2)-pre_time
+                        ii_spontaneous=ii_spontaneous+1;
+                        spontaneous_trial_times(ii_spontaneous)=time(this_ii+delta_ii-1+delta_ii2-2);
+                        time_before(ii_spontaneous)=all_trial_times(ii_trial);
+                        dt_from_before(ii_spontaneous)=spontaneous_trial_times(ii_spontaneous)-time_before(ii_spontaneous);
+
+                        if sum(sp_times==time_before(ii_spontaneous))>0
+                            before_spontaneous_spm(ii_spontaneous)=1;
+                        else
+                            before_spontaneous_spm(ii_spontaneous)=0;
+                        end
+
+                        if ii_trial+2<=length(all_trial_times)
+                            if sum(sp_times==all_trial_times(ii_trial+2))>0
+                                after_spontaneous_spm(ii_spontaneous)=1;
+                            else
+                                after_spontaneous_spm(ii_spontaneous)=0;
+                            end
+                        else
+                            after_spontaneous_spm(ii_spontaneous)=NaN;
+                        end
+
+                        spontaneous_delta_prediction(ii_spontaneous,:)=moving_mean_label_traces((time>=-7+spontaneous_trial_times(ii_spontaneous))&(time<=15+spontaneous_trial_times(ii_spontaneous)));
+
+                        pffft=1;
+                    end
+                end
+            end
+        end
+    end
+
+    %Plot label predictions alone
     figNo=figNo+1;
     try
         close(figNo)
@@ -411,7 +546,6 @@ if show_figures==1
 
     hFig = figure(figNo);
 
-     ax=gca;ax.LineWidth=3;
     set(hFig, 'units','normalized','position',[.05 .1 .85 .3])
 
     hold on
@@ -426,29 +560,78 @@ if show_figures==1
     %                 [hlsm, hpsm] = boundedline(time',mean(moving_mean_label_traces_sh2,1)', CIsm', 'cmap',[80/255 194/255 255/255]);
     %
 
-    per95=prctile(moving_mean_label_traces_sh2(:),95);
-    per5=prctile(moving_mean_label_traces_sh2(:),5);
+   
     CIsh=[mean(moving_mean_label_traces_sh2(:))-per5 per95-mean(moving_mean_label_traces_sh2(:))]';
     [hlCR, hpCR] = boundedline([time(1) time(end)],[mean(moving_mean_label_traces_sh2(:)) mean(moving_mean_label_traces_sh2(:))], CIsh', 'cmap',[80/255 194/255 255/255]);
 
 
     %                 plot(time,moving_mean_label_traces_sh,'-','Color',[80/255 194/255 255/255])
-    plot(time,moving_mean_label_traces,'-k','LineWidth',0.5)
+    plot(time,moving_mean_label_traces,'-k','LineWidth',1)
 
     for ii=1:length(sp_times)
-        plot([sp_times(ii) sp_times(ii)],[-0.1 1.1],'Color',[0 114/255 178/255],'LineWidth',2)
+        plot([sp_times(ii) sp_times(ii)],[0 1],'-r')
     end
 
     for ii=1:length(sm_times)
-        plot([sm_times(ii) sm_times(ii)],[-0.1 1.1],'Color',[158/255 31/255 99/255],'LineWidth',2)
+        plot([sm_times(ii) sm_times(ii)],[0 1],'-b')
     end
     %                 plot(time,moving_mean_label_traces_sh(1,:),'-b')
 
     ylim([-0.2 1.2])
-    text(50,1.1,'S+','Color',[0 114/255 178/255])
-    text(150,1.1,'S-','Color',[158/255 31/255 99/255])
     title(['Label prediction for entire session for ' classifier_names{iiMLalgo} ' and p threshold ' num2str(p_threshold)])
 
+    %Plot the spontaneous between trial dFF
+    figNo=figNo+1;
+    try
+        close(figNo)
+    catch
+    end
+
+    hFig = figure(figNo);
+
+    set(hFig, 'units','normalized','position',[.05 .1 .85 .3])
+
+    hold on
+
+
+    %                 CIsm = bootci(1000, @mean, moving_mean_label_traces_sh2);
+    %                 meansm=mean(moving_mean_label_traces_sh2,1);
+    %                 CIsm(1,:)=meansm-CIsm(1,:);
+    %                 CIsm(2,:)=CIsm(2,:)-meansm;
+    %
+    %                 %S- Proficient
+    %                 [hlsm, hpsm] = boundedline(time',mean(moving_mean_label_traces_sh2,1)', CIsm', 'cmap',[80/255 194/255 255/255]);
+    %
+
+    dt=time(2)-time(1);
+    this_time_span=[-7:dt:15];
+    this_time_span=this_time_span(1:size(spontaneous_delta_prediction,2));
+    
+   
+    hold on
+    
+    CIsm = bootci(1000, @mean, spontaneous_delta_prediction);
+    meansm=mean(spontaneous_delta_prediction,1);
+    CIsm(1,:)=meansm-CIsm(1,:);
+    CIsm(2,:)=CIsm(2,:)-meansm;
+    
+    [hlsm, hpsm] = boundedline(this_time_span',mean(spontaneous_delta_prediction,1)', CIsm', 'cmap',[0/255 0/255 0/255]);
+    
+    for ii=1:size(spontaneous_delta_prediction,1)
+        plot(this_time_span',spontaneous_delta_prediction(ii,:),  'Color',[150/255 150/255 150/255])
+    end
+    
+    
+    text(30,0.75,'S-','Color',[158/255 31/255 99/255])
+    text(30,0.85,'S+','Color',[0 114/255 178/255])
+    
+    ylim([0 1.1])
+    xlim([-7 15])
+    title(['Label prediction spontaneous between trials for ' classifier_names{iiMLalgo} ' and p threshold ' num2str(p_threshold)])
+    xlabel('Time(sec)')
+    ylabel('Label prediction')
+
+ 
 
     figNo=figNo+1;
     try
@@ -483,6 +666,28 @@ if show_figures==1
     [p, Q]= chi2test([sum(label_traces==1), sum(label_traces==0); sum(label_traces_sh==1), sum(label_traces_sh==0)]);
     
     title(['Histogram for labels, Chi squared p value = ' num2str(p)])
+
+    %Histogram for all points
+     figNo=figNo+1;
+    try
+        close(figNo)
+    catch
+    end
+    
+    hFig = figure(figNo);
+    
+    set(hFig, 'units','normalized','position',[.05 .1 .3 .3])
+    
+    hold on
+    
+    edges=[0:0.1:1];
+
+    histogram(moving_mean_label_traces,edges)
+    hold on 
+    histogram(moving_mean_label_traces_sh,edges)
+
+    
+    title(['Histogram for labels ' ])
     
     
 end

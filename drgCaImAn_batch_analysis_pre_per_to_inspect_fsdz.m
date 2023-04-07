@@ -343,11 +343,12 @@ if all_files_present==1
         hold on
 
         CIeu = bootci(1000, @mean, per_mouse_delta_zdist_euclid_within');
-        meaneu=mean(per_mouse_delta_zdist_euclid',1);
+        meaneu=mean(per_mouse_delta_zdist_euclid_within',1);
         CIeu(1,:)=meaneu-CIeu(1,:);
         CIeu(2,:)=CIeu(2,:)-meaneu;
 
         [hlsp, hpsp] = boundedline(trimmed_time_span',meaneu', CIeu', 'cmap',[150/255 150/255 150/255]);
+        meaneu_w=meaneu;
  
         CIeu = bootci(1000, @mean, per_mouse_delta_zdist_euclid');
         meaneu=mean(per_mouse_delta_zdist_euclid',1);
@@ -355,6 +356,7 @@ if all_files_present==1
         CIeu(2,:)=CIeu(2,:)-meaneu;
 
         [hlsp, hpsp] = boundedline(trimmed_time_span',meaneu', CIeu', 'cmap',[0/255 0/255 0/255]);
+        meaneu_b=meaneu;
 
         CIeu = bootci(1000, @mean, per_mouse_delta_zdist_euclid'-per_mouse_delta_zdist_euclid_within');
         meaneu=mean(per_mouse_delta_zdist_euclid'-per_mouse_delta_zdist_euclid_within',1);
@@ -362,6 +364,9 @@ if all_files_present==1
         CIeu(2,:)=CIeu(2,:)-meaneu;
 
         [hlsp, hpsp] = boundedline(trimmed_time_span',meaneu', CIeu', 'cmap',[244/255 165/255 30/255]);
+
+        plot(trimmed_time_span',meaneu_w','Color',[150/255 150/255 150/255]);
+        plot(trimmed_time_span',meaneu_b','Color',[0/255 0/255 0/255]);
 
         this_ylim=ylim;
 
@@ -2105,7 +2110,7 @@ if all_files_present==1
     tbl = table(glm_LR.data',glm_LR.pcorr',glm_LR.window',glm_LR.spm',...
         'VariableNames',{'mean_LR','p_correct','time_window','sp_vs_sm'});
     mdl = fitglm(tbl,'mean_LR~p_correct+time_window+sp_vs_sm+p_correct*time_window*sp_vs_sm'...
-        ,'CategoricalVars',[2,3,4])(3)
+        ,'CategoricalVars',[2,3,4])
 
 
     txt = evalc('mdl');

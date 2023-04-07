@@ -21,7 +21,10 @@ fileID = fopen([choiceBatchPathName 'drgCaImAn_analyze_batch_pre_per_to_decode_p
 no_files=handles.no_files;
 moving_mean_n=10;
 
-
+time_periods_eu=[-5 -3;
+    -2.5 -1.5;
+    -1 0;
+    2 4.1];
 
 %Which threshold value should we use?
 ii_thr=4;
@@ -819,6 +822,7 @@ for mouseNo=1:length(handles_out2.mouse_names)
             end
 
             per_mouse_acc.group(grNo).mouse(mouseNo).mean_accuracy_sh=mean(these_per_corr,1)';
+            per_mouse_acc.group(grNo).mouse(mouseNo).accuracy_sh=these_per_corr;
             per_mouse_acc.group(grNo).mouse(mouseNo).t_mean_accuracy_sh=time_span';
 
             these_per_corr=[];
@@ -889,6 +893,7 @@ for mouseNo=1:length(handles_out2.mouse_names)
             end
 
             per_mouse_acc.group(grNo).mouse(mouseNo).mean_accuracy=mean(these_per_corr,1)';
+            per_mouse_acc.group(grNo).mouse(mouseNo).accuracy=these_per_corr;
             per_mouse_acc.group(grNo).mouse(mouseNo).t_mean_accuracy=time_span';
 
             if show_per_mouse==1
@@ -1263,10 +1268,19 @@ if is_Fabio==0
     bar_offset=0;
     
     %Time windows
-    pre_t=[-1 0];
-    odor_t=[3.1 4.1];
-    reinf_t=[4.5 5.5];
+%     pre_t=[-1 0];
+%     odor_t=[3.1 4.1];
+%     reinf_t=[4.5 5.5];
+
+    pre_t=[-2.5 -1.5];
+    odor_t=[-1 0];
+    reinf_t=[2 4.1];
     
+    time_periods_eu=[-5 -3;
+    -2.5 -1.5;
+    -1 0;
+    2 4.1];
+
     edges=[0:0.05:1];
     rand_offset=0.7;
     
@@ -1278,7 +1292,7 @@ if is_Fabio==0
     per_corr_set_label{2}='65-80%%';
     per_corr_set_label{3}='>80%%';
     
-    for group_set_no=1:3
+    for group_set_no=[1 3]
         
         ii_m_included=0;
         these_mean_accuracy=[];
@@ -1388,19 +1402,18 @@ if is_Fabio==0
         end
         
     end
-    
-    xticks([0 1 2 3 5 6 7 8 10 11 12 13 ])
-    xticklabels({'Shuffled','Pre','Odor','Reinforcement','Shuffled','Pre','Odor','Reinforcement','Shuffled','Pre','Odor','Reinforcement'...
-        })
+     
+    xticks([0 1 2 3 5 6 7 8 ])
+    xticklabels({'Shuffled','PreFV','PreOdor','Odor','Shuffled','PreFV','PreOdor','Odor'})
     xtickangle(45)
     title(['Prediction accuracy for ' handles_out2.classifier_names{iiMLalgo}])
     ylabel('Accuracy')
     ylim([0.4 1.1])
-    xlim([-1 15])
+    xlim([-1 9])
     
-    text(1,1,'0-65%')
-    text(6,1,'65-80%')
-    text(11,1,'>80%')
+%     text(1,1,'45-65%')
+%     text(6,1,'65-80%')
+%     text(11,1,'>80%')
     
     %Perform the glm
     fprintf(1, ['\nglm for decoding accuracy\n'])
@@ -1430,21 +1443,21 @@ if is_Fabio==0
     
     [output_data] = drgMutiRanksumorTtest(input_acc_data, fileID,0);
     
-    %Nested ANOVAN
-    %https://www.mathworks.com/matlabcentral/answers/491365-within-between-subjects-in-anovan
-    nesting=[0 0 0; ... % This line indicates that group factor is not nested in any other factor.
-        0 0 0; ... % This line indicates that perCorr is not nested in any other factor.
-        1 1 0];    % This line indicates that mouse_no (the last factor) is nested under group, perCorr and event
-    % (the 1 in position 1 on the line indicates nesting under the first factor).
-    figureNo=figureNo+1;
-    
-    [p anovanTbl stats]=anovan(glm_acc.data,{glm_acc.pcorr glm_acc.window glm_acc.mouse_nos},...
-        'model','interaction',...
-        'nested',nesting,...
-        'varnames',{'percent_correct','window','mouse_no'});
-    
-    fprintf(fileID, ['\n\nNested ANOVAN for decoding accuracy\n']);
-    drgWriteANOVANtbl(anovanTbl,fileID);
+%     %Nested ANOVAN
+%     %https://www.mathworks.com/matlabcentral/answers/491365-within-between-subjects-in-anovan
+%     nesting=[0 0 0; ... % This line indicates that group factor is not nested in any other factor.
+%         0 0 0; ... % This line indicates that perCorr is not nested in any other factor.
+%         1 1 0];    % This line indicates that mouse_no (the last factor) is nested under group, perCorr and event
+%     % (the 1 in position 1 on the line indicates nesting under the first factor).
+%     figureNo=figureNo+1;
+%     
+%     [p anovanTbl stats]=anovan(glm_acc.data,{glm_acc.pcorr glm_acc.window glm_acc.mouse_nos},...
+%         'model','interaction',...
+%         'nested',nesting,...
+%         'varnames',{'percent_correct','window','mouse_no'});
+%     
+%     fprintf(fileID, ['\n\nNested ANOVAN for decoding accuracy\n']);
+%     drgWriteANOVANtbl(anovanTbl,fileID);
     fprintf(fileID, '\n\n');
     
 end
