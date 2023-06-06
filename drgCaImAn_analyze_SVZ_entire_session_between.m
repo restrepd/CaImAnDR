@@ -7,7 +7,7 @@ function handles_out3=drgCaImAn_analyze_SVZ_entire_session_between(handles_choic
 % processing_algoritm=3, that was vetted for our manuscript
 %
 %
-% the input is a pre_per file version 2
+% the input is a pre_per file version 2 
 if exist('handles_choices')==0
     clear all
     close all

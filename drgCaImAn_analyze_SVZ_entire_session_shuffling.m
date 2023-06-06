@@ -53,7 +53,7 @@ figNo=0;
 % no_shuffles=10; %Number of shuffles for per trial shuffling
 
 load([pre_perPathName pre_perFileName])
-fprintf(1, ['\ndrgCaImAn_analyze_SVZ_entire_session run for ' pre_perFileName '\n\n']);
+fprintf(1, ['\ndrgCaImAn_analyze_SVZ_entire_session_shuffling run for ' pre_perFileName '\n\n']);
 % fprintf(1, 'post_time = %d, p_threshold= %d, post_shift= %d, cost %d\n',post_time,p_threshold,post_shift, ii_cost);
 
 % if convert_z==1

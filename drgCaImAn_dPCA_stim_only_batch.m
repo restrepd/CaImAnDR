@@ -68,15 +68,22 @@ prof_labels{1}='naive';
 prof_labels{2}='intermediate';
 prof_labels{3}='proficient';
 
-time_periods_eu=[-5 -3;
-    -2.5 -1.5;
-    -1 0;
-    2 4.1];
+% time_periods_eu=[-5 -3;
+%     -2.5 -1.5;
+%     -1 0;
+%     2 4.1];
 
-period_labels{1}='Baseline';
-period_labels{2}='PreFV';
-period_labels{3}='PreOdor';
-period_labels{4}='Odor';
+odor_eu_no=2;
+
+time_periods_eu=[
+            -1 0;
+            3.1 4.1;
+            4.4 5.4];
+
+% period_labels{1}='Baseline';
+period_labels{1}='Pre';
+period_labels{2}='Odor';
+period_labels{3}='Reinf';
 
 
 delta_odor=4.127634e+00;
@@ -151,7 +158,7 @@ if all_files_present==1
         handles_choices.convert_z=2; %This ensures that the components are the same before odor on
 
         %         all_handles(fileNo).handles_out=drgCaImAn_dPCA_stim_and_dec(handles_choices);
-        all_handles(fileNo).handles_out=drgCaImAn_get_dFF_per_trial(handles_choices);
+        all_handles(fileNo).handles_out=drgCaImAn_get_dFF_per_trialv2(handles_choices);
 
         pCorr=all_handles(fileNo).handles_out.percent_correct;
         allPcorr_per_file=[allPcorr_per_file pCorr];
@@ -525,7 +532,7 @@ mean_odor_sp_component=[];
 for mouseNo=1:ii_mouse
     this_sp_component=[];
     this_sp_component=handles_dpca.perpCorr.mouse(mouseNo).group(3).handles_out.sum_stimulus_comp(2,:);
-    mean_odor_sp_component(mouseNo)=mean(this_sp_component((time>=time_periods_eu(4,1))&(time<=time_periods_eu(4,2))));
+    mean_odor_sp_component(mouseNo)=mean(this_sp_component((time>=time_periods_eu(odor_eu_no,1))&(time<=time_periods_eu(odor_eu_no,2))));
     mean_odor_sp_component(mouseNo)=mean_odor_sp_component(mouseNo)/abs(mean_odor_sp_component(mouseNo));
 end
 
@@ -749,7 +756,7 @@ bar_offset_ind=0;
 for grNo=[1 3]
 
     %Calculate the mean for each mouse for each time period
-    for ii_t_period=1:4
+    for ii_t_period=1:size(time_periods_eu,1)
         per_mouse_meanstimdPCA_sp=[];
         per_mouse_meanstimdPCA_sm=[];
         per_mouse_meanindPCA_sp=[];
@@ -880,17 +887,19 @@ end
 
 %stim
 figure(figNo-1)
-xticks([1.5 3.5 5.5 7.5 10.5 12.5 14.5 16.5])
-xticklabels({'Base','PreFV','PreOd','Odor','Base','PreFV','PreOd','Odor'})
+xticks([1.5 3.5 5.5 8.5 10.5 12.5])
+xticklabels({'Pre','Odor','Reinf','Pre','Odor','Reinf'})
 ylim([-30 15])
+xlim([0 14])
 ylabel('dPCA component (AU)')
 title('dPCA stimulus component')
 
 %independent
 figure(figNo)
-xticks([1.5 3.5 5.5 7.5 10.5 12.5 14.5 16.5])
-xticklabels({'Base','PreFV','PreOd','Odor','Base','PreFV','PreOd','Odor'})
+xticks([1.5 3.5 5.5 8.5 10.5 12.5])
+xticklabels({'Pre','Odor','Reinf','Pre','Odor','Reinf'})
 ylim([-30 15])
+xlim([0 14])
 ylabel('dPCA component (AU)')
 title('dPCA stimulus-independent component')
 

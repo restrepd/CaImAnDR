@@ -1,4 +1,4 @@
-function handles_out=drgCaImAn_get_dFF_per_trial(handles_choices)
+function handles_out=drgCaImAn_get_dFF_per_trialv2(handles_choices)
 %This program performs a demixed principal component analysis (dPCA) 
 %according to Kobak et al eLife 2016 DOI: 10.7554/eLife.10989
 %
@@ -239,7 +239,7 @@ ii=0;
 
 while (at_end==0)
     next_ii=find((epochs(this_ii+1:end)==8)|(epochs(this_ii+1:end)==9),1,'first');
-    delta_ii_sm=find(epochs(this_ii+next_ii_sm:end)~=epochs(this_ii+next_ii_sm),1,'first');
+    delta_ii_sm=find(epochs(this_ii+next_ii:end)~=epochs(this_ii+next_ii),1,'first');
     if ~isempty(next_ii)
         %This is S-
 

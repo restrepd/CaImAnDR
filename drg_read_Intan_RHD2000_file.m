@@ -479,7 +479,7 @@ for ch_out=adc_channels_out
     ii_out=ii_out+1;
     adc_in(ii_out,:)=board_adc_data(ch_out,:);
 end
-
+ 
 acq_rate=frequency_parameters.board_adc_sample_rate;
 
 amplifier_data_out=zeros(16,size(amplifier_data,2));

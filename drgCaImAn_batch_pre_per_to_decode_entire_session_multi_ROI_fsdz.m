@@ -1,14 +1,15 @@
 function drgCaImAn_batch_pre_per_to_decode_entire_session_multi_ROI_fsdz(choiceBatchPathName,choiceFileName)
 %Note: fitcnet will not work in Matlab versions earlier than 2021a
 
-
+close all
+clear all
 
 
 if nargin==0
     [choiceFileName,choiceBatchPathName] = uigetfile({'drgCaImAn_LDAfsdz_choices*.m'},'Select the .m file with all the choices for analysis');
 end
 
-fprintf(1, ['\ndrgCaImAn_batch_pre_per_to_LDA_fsdz run for ' choiceFileName '\n\n']);
+fprintf(1, ['\ndrgCaImAn_batch_pre_per_to_decode_entire_session_multi_ROI_fsdz for ' choiceFileName '\n\n']);
 
 tempDirName=['temp' choiceFileName(12:end-2)];
 
@@ -16,6 +17,10 @@ addpath(choiceBatchPathName)
 eval(['handles=' choiceFileName(1:end-2) ';'])
 handles.choiceFileName=choiceFileName;
 handles.choiceBatchPathName=choiceBatchPathName;
+
+all_no_ROIs=[1 2 5 15 2000];
+all_no_ROI_draws=[2000 40 40  40 1];
+
 
 new_no_files=handles.no_files;
 
@@ -42,7 +47,7 @@ end
 %Parallel batch processing for each file
 all_files_present=1;
 for filNum=first_file:handles.no_files
-       
+    
     
     %Make sure that all the files exist
     pre_per_FileName=handles.FileName_pre_per{filNum};
@@ -79,51 +84,61 @@ if all_files_present==1
     for fileNo=first_file:length(handles.FileName_pre_per)
         tic
         first_toc=toc;
-
         handles_out=[];
         ii_out=0;
         
         pre_per_PathName=handles.PathName_pre_per{fileNo};
         pre_per_FileName=handles.FileName_pre_per{fileNo};
+        [percent_correct] = drgCaImAnFindPercentCorrect(pre_per_PathName, pre_per_FileName);
         
-        handles_choices.pre_per_PathName=pre_per_PathName;
-        handles_choices.pre_per_FileName=pre_per_FileName;
-        handles_choices.processing_algorithm=handles.processing_algorithm;
-        handles_choices.MLalgo_to_use=handles.MLalgo_to_use;
-        handles_choices.dt_p_threshold=handles.dt_p_threshold;
-        handles_choices.show_figures=handles.show_figures;
-        handles_choices.post_time=handles.post_time;
-        handles_choices.k_fold=handles.k_fold;
-        handles_choices.post_shift=handles.post_shift;
-        handles_choices.pre_time=handles.pre_time;
-        handles_choices.ii_cost=handles.ii_cost;
-        handles_choices.no_ROI_draws=20;
- 
-        for ii_thr=1:length(handles.p_threshold)
+        if percent_correct>=80
+            %Do only for proficient
+            for ii_ROI_choices=1:length(all_no_ROIs)
+                
+                
+                
+                
+                handles_choices.pre_per_PathName=pre_per_PathName;
+                handles_choices.pre_per_FileName=pre_per_FileName;
+                handles_choices.processing_algorithm=handles.processing_algorithm;
+                handles_choices.MLalgo_to_use=handles.MLalgo_to_use;
+                handles_choices.dt_p_threshold=handles.dt_p_threshold;
+                handles_choices.show_figures=handles.show_figures;
+                handles_choices.post_time=handles.post_time;
+                handles_choices.k_fold=handles.k_fold;
+                handles_choices.post_shift=handles.post_shift;
+                handles_choices.pre_time=handles.pre_time;
+                handles_choices.ii_cost=handles.ii_cost;
+                handles_choices.no_ROI_draws=all_no_ROI_draws(ii_ROI_choices);
+                handles_choices.no_ROIs=all_no_ROIs(ii_ROI_choices);
+                
+                
+                
+                
+                handles_choices.p_threshold=1.1;
+                
+                ii_out=ii_out+1;
+                handles_out.ii_out(ii_out).handles_choices=handles_choices;
+                handles_out.ii_out(ii_out).grNo=handles.group(fileNo);
+                handles_out.ii_out(ii_out).fileNo=fileNo;
+                
+                start_toc=toc;
+                
+                handles_out.ii_out(ii_out).handles_out=drgCaImAn_SVZ_entire_session_randomROIdrawv3(handles_choices);
+                
+                fprintf(1, ['Data processed for file number %d, number of ROIs= %d\n'],fileNo,all_no_ROIs(ii_ROI_choices));
+                fprintf(1,'Processing time for number of ROIs= %d is %d hours\n',all_no_ROIs(ii_ROI_choices),(toc-first_toc)/(60*60));
+                
+            end
             
-           handles_choices.p_threshold=handles.p_threshold(ii_thr);
-            
-            ii_out=ii_out+1;
-            handles_out.ii_out(ii_out).handles_choices=handles_choices;
-            handles_out.ii_out(ii_out).grNo=handles.group(fileNo);
-            handles_out.ii_out(ii_out).fileNo=fileNo;
-            
-            start_toc=toc;
-            
-            handles_out.ii_out(ii_out).handles_out=drgCaImAn_SVZ_entire_session_randomROIdraw(handles_choices);
-            
-            fprintf(1, ['Data processed for file number %d, condition number %d\n'],fileNo,ii_thr);
-            
-            fprintf(1,'Processing time for drgCaImAn_pre_per_to_LDA_fsdz_new %d hours\n',(toc-start_toc)/(60*60));
+            %Save output file
+            handles_out.last_file_processed=fileNo;
+            handles_out.last_ii_out=ii_out;
+            handles_out.handles=handles;
+            save([pre_per_PathName pre_per_FileName(1:end-4) suffix_out],'handles_out','handles_choices','-v7.3')
+            fprintf(1, ['Processing time for file number %d= %d hours\n'],toc/(60*60));
+            fprintf(1,'\n\n\n')
         end
-        
-        fprintf(1,'\n\nProcessing time for file No %d is %d hours\n',fileNo,(toc-first_toc)/(60*60));
-        
-        %Save output file
-        handles_out.last_file_processed=fileNo;
-        handles_out.last_ii_out=ii_out;
-        handles_out.handles=handles;
-        save([handles.PathName_out pre_per_FileName(1:end-4) suffix_out],'handles_out','handles_choices','-v7.3')
     end
     
     fprintf(1, 'Total processing time %d hours\n',toc/(60*60));

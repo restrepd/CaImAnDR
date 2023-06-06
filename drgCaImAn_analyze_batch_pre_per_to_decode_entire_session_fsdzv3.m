@@ -56,7 +56,7 @@ switch is_Fabio
         %Choices for Fabio's passive odorant exposure processing
         no_pcorr=1;
         
-    case 2handles_out
+    case 2
         %Ming's passive
         grNo1=1; %female bedding
         grNo1_label='passive';

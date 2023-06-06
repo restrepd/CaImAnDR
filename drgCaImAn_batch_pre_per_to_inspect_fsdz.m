@@ -67,7 +67,8 @@ if all_files_present==1
         start_toc=toc;
 
 
-        drgCaImAn_inspect_traces_pre_pre(this_handles_choices);
+%         drgCaImAn_inspect_traces_pre_pre(this_handles_choices);
+        drgCaImAn_inspect_traces_pre_prev2(this_handles_choices);
 
 
         fprintf(1, ['Data processed for file number %d took %d minutes\n'],fileNo,(toc-start_toc)/60);

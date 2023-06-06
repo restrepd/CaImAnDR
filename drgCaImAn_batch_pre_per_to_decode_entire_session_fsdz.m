@@ -108,7 +108,9 @@ if all_files_present==1
             
             start_toc=toc;
             
-            handles_out.ii_out(ii_out).handles_out=drgCaImAn_SVZ_entire_session_shuffling(handles_choices);
+             fprintf(1, ['Started processing file number %d, condition number %d\n'],fileNo,ii_thr);
+
+            handles_out.ii_out(ii_out).handles_out=drgCaImAn_SVZ_entire_session_shufflingv2(handles_choices);
             
             fprintf(1, ['Data processed for file number %d, condition number %d\n'],fileNo,ii_thr);
             
@@ -121,7 +123,7 @@ if all_files_present==1
         handles_out.last_file_processed=fileNo;
         handles_out.last_ii_out=ii_out;
         handles_out.handles=handles;
-        save([handles.PathName_out pre_per_FileName(1:end-4) suffix_out],'handles_out','handles_choices','-v7.3')
+        save([handles.PathName_out{fileNo} pre_per_FileName(1:end-4) suffix_out],'handles_out','handles_choices','-v7.3')
     end
     
     fprintf(1, 'Total processing time %d hours\n',toc/(60*60));

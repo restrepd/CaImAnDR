@@ -2,57 +2,81 @@
 close all
 clear all
 
+is_Fabio=2;
+%0 Choices for Ming's go-no go processing
+%1 Choices for Fabio
+%2 Choices for Ming's passive
  
-[choiceFileName,choiceBatchPathName] = uigetfile({'drgCaImAn_LDAfsdz_choices*.m'},'Select the .m file with all the choices for analysis');
+[choiceFileName,choiceBatchPathName] = uigetfile({'drgCaImAn_LDAfsdz_choices*.m';'drgCaImAn_LDAfsdz_choices*.mat'},'Select the .m file with all the choices for analysis');
 
 
 fprintf(1, ['\ndrgCaImAn_analyze_batch_pre_per_to_decode_entire_session_fsdzv2 run for ' choiceFileName '\n\n']);
 
 
-tempDirName=['temp' choiceFileName(12:end-2)];
-
-addpath(choiceBatchPathName)
-eval(['handles=' choiceFileName(1:end-2) ';'])
-handles.choiceFileName=choiceFileName;
-handles.choiceBatchPathName=choiceBatchPathName;
+if strcmp(choiceFileName(end-3:end),'.mat')
+    is_mat=1;
+    tempDirName=['temp' choiceFileName(12:end-4)];
+    addpath(choiceBatchPathName)
+    eval(['handles=' choiceFileName(1:end-4) ';'])
+    handles.choiceFileName=[choiceFileName(1:end-4) '.m'];
+    handles.choiceBatchPathName=choiceBatchPathName;
+else
+    is_mat=0;
+    tempDirName=['temp' choiceFileName(12:end-2)];
+    addpath(choiceBatchPathName)
+    eval(['handles=' choiceFileName(1:end-2) ';'])
+    handles.choiceFileName=choiceFileName;
+    handles.choiceBatchPathName=choiceBatchPathName;
+end
 
 fileID = fopen([choiceBatchPathName 'drgCaImAn_analyze_batch_pre_per_to_decode_per_mouse.txt'],'w');
 
 no_files=handles.no_files;
 moving_mean_n=10;
 
-time_periods_eu=[-5 -3;
-    -2.5 -1.5;
-    -1 0;
-    2 4.1];
+time_periods_eu=[
+            -1 0;
+            3.1 4.1;
+            4.4 5.4];
 
 group_sets(1,:)=[2 6];
 group_sets(2,:)=[3 7];
 group_sets(3,:)=[4 8];
 
 %Which threshold value should we use?
-ii_thr=4;
+ii_thr=find(handles.p_threshold==1.1); %Note that I am using 1.1
 
 %Show the per mouse graphs?
 show_per_mouse=0;
 
-is_Fabio=0;
+
 
 switch is_Fabio
     case 0
-        
+
         %Choices for Ming's go-no go processing
         no_pcorr=4;
-        
+
         %groups to be shown in the zoomed figures for Ming's data
         grNo1=4; %Forward proficient
         grNo1_label='forward proficient';
         grNo2=8; %Forward proficient
         grNo2_label='reversed proficient';
-        
+
+        window_label{1}='Base';
+        window_label{2}='PreFV';
+        window_label{3}='PreOdor';
+        window_label{4}='Odor';
+
+
+        per_corr_set_label{1}='naive';
+        per_corr_set_label{2}='intermediate';
+        per_corr_set_label{3}='proficient';
+
+
     case 1
         
-        %Chaoices for Fabio
+        %Choices for Fabio
         %groups to be shown in the zoomed figures for Fabio's data
         % grNo1=1; %AAAP
         % grNo1_label='AAAP';
@@ -77,7 +101,14 @@ switch is_Fabio
         
         %Choices for Fabio's passive odorant exposure processing
         no_pcorr=1;
-        
+
+         window_label{1}='Base';
+        window_label{2}='PreFV';
+        window_label{3}='PreOdor';
+        window_label{4}='Odor';
+
+
+        per_corr_set_label{1}=''; 
         
 end
 
@@ -136,10 +167,11 @@ if no_pcorr==1
     per_names{1}='';
 end
 
+resample_time_span=[-7:0.05:15];
  
 these_groups=unique(handles.group);
 
-if exist([choiceBatchPathName choiceFileName(1:end-2) '.mat'])==0
+if is_mat==0
     %Process each file separately
     for grNo=1:no_pcorr*length(these_groups)
         handles_out2.group_no(grNo).ii_euclid=0;
@@ -179,7 +211,7 @@ if exist([choiceBatchPathName choiceFileName(1:end-2) '.mat'])==0
             end
         end
     end
- 
+  
     group_per_file=handles.group;
     handles_out2.pcorr_per_file=zeros(1,length(group_per_file));
     for fileNo=1:no_files
@@ -219,7 +251,7 @@ if exist([choiceBatchPathName choiceFileName(1:end-2) '.mat'])==0
             if (is_Fabio==1)||(is_Fabio==2)
                 ii_pCorr=1;
             end
-
+ 
             grNo=(this_grNo-1)*no_pcorr+ii_pCorr;
 
  
@@ -270,12 +302,14 @@ if exist([choiceBatchPathName choiceFileName(1:end-2) '.mat'])==0
 
                     per_trial_scores_sp=handles_out.ii_out(ii_out).handles_out.MLalgo(iiMLalgo).per_trial_scores_sp;
                     mean_per_trial_scores_sp=zeros(size(per_trial_scores_sp,2),size(per_trial_scores_sp,3));
-                    mean_per_trial_scores_sp(:,:)=mean(per_trial_scores_sp);
-                    handles_out2.group_no(grNo).ii_thr(ii_out).MLalgo(iiMLalgo).mean_per_trial_scores_sp(ii,1:2,1:size(per_trial_scores_sp,3))=mean_per_trial_scores_sp;
+                    mean_per_trial_scores_sp(:,:)=mean(per_trial_scores_sp,1);
+                    if ~isempty(per_trial_scores_sp)
+                        handles_out2.group_no(grNo).ii_thr(ii_out).MLalgo(iiMLalgo).mean_per_trial_scores_sp(ii,1:2,1:size(per_trial_scores_sp,3))=mean_per_trial_scores_sp;
+                    end
 
                     per_trial_scores_sm=handles_out.ii_out(ii_out).handles_out.MLalgo(iiMLalgo).per_trial_scores_sm;
                     mean_per_trial_scores_sm=zeros(size(per_trial_scores_sm,2),size(per_trial_scores_sm,3));
-                    mean_per_trial_scores_sm(:,:)=mean(per_trial_scores_sm);
+                    mean_per_trial_scores_sm(:,:)=mean(per_trial_scores_sm,1);
                     handles_out2.group_no(grNo).ii_thr(ii_out).MLalgo(iiMLalgo).mean_per_trial_scores_sm(ii,1:2,1:size(per_trial_scores_sm,3))=mean_per_trial_scores_sm;
 
                     handles_out2.group_no(grNo).ii_thr(ii_out).MLalgo(iiMLalgo).mouseNo(ii)=handles_out2.mouseNo_per_file(fileNo);
@@ -290,7 +324,7 @@ if exist([choiceBatchPathName choiceFileName(1:end-2) '.mat'])==0
         end
     end
 else
-    load([choiceBatchPathName choiceFileName(1:end-2) '.mat'])
+    load([choiceBatchPathName choiceFileName])
 end
 
 % %  ii_thr=length(handles.p_threshold);
@@ -751,7 +785,7 @@ for mouseNo=1:length(handles_out2.mouse_names)
         if ~isempty(handles_out2.group_no(grNo).ii_time_span)
             
             these_per_corr=[];
-
+ 
 
             %Extrapolate all points onto the longest ii_tspan
             
@@ -1038,9 +1072,14 @@ input_acc_data=[];
 bar_offset=0;
 
 %Time windows
+% pre_t=[-1 0];
+% odor_t=[3.1 4.1];
+% reinf_t=[4.5 5.5];
+
 pre_t=[-1 0];
 odor_t=[3.1 4.1];
-reinf_t=[4.5 5.5];
+reinf_t=[4.4 5.4];
+
 
 edges=[0:0.05:1];
 rand_offset=0.7;
@@ -1227,94 +1266,419 @@ fprintf(fileID,'%s\n', txt);
 
 
 switch is_Fabio
-    
+
     case 0
-        
+
         %Do the ranksum/t-test
         fprintf(1, ['\n\nRanksum or t-test p values for decoding accuracy\n'])
         fprintf(fileID, ['\n\nRanksum or t-test p values for decoding accuracy\n']);
-        
-        
+
+
         [output_data] = drgMutiRanksumorTtest(input_acc_data, fileID,0);
-        
-%         %Nested ANOVAN
-%         %https://www.mathworks.com/matlabcentral/answers/491365-within-between-subjects-in-anovan
-%         nesting=[0 0 0 0; ... % This line indicates that group factor is not nested in any other factor.
-%             0 0 0 0; ... % This line indicates that perCorr is not nested in any other factor.
-%             0 0 0 0; ... % This line indicates that event is not nested in any other factor.
-%             1 1 1 0];    % This line indicates that mouse_no (the last factor) is nested under group, perCorr and event
-%         % (the 1 in position 1 on the line indicates nesting under the first factor).
-%         figureNo=figureNo+1;
-%         
-%         [p anovanTbl stats]=anovan(glm_acc.data,{glm_acc.fwd_rev glm_acc.pcorr glm_acc.window glm_acc.mouse_nos},...
-%             'model','interaction',...
-%             'nested',nesting,...
-%             'varnames',{'forward_vs_reversed', 'percent_correct','window','mouse_no'});
-%         
-%         fprintf(fileID, ['\n\nNested ANOVAN for decoding accuracy\n']);
-%         drgWriteANOVANtbl(anovanTbl,fileID);
+
+        %         %Nested ANOVAN
+        %         %https://www.mathworks.com/matlabcentral/answers/491365-within-between-subjects-in-anovan
+        %         nesting=[0 0 0 0; ... % This line indicates that group factor is not nested in any other factor.
+        %             0 0 0 0; ... % This line indicates that perCorr is not nested in any other factor.
+        %             0 0 0 0; ... % This line indicates that event is not nested in any other factor.
+        %             1 1 1 0];    % This line indicates that mouse_no (the last factor) is nested under group, perCorr and event
+        %         % (the 1 in position 1 on the line indicates nesting under the first factor).
+        %         figureNo=figureNo+1;
+        %
+        %         [p anovanTbl stats]=anovan(glm_acc.data,{glm_acc.fwd_rev glm_acc.pcorr glm_acc.window glm_acc.mouse_nos},...
+        %             'model','interaction',...
+        %             'nested',nesting,...
+        %             'varnames',{'forward_vs_reversed', 'percent_correct','window','mouse_no'});
+        %
+        %         fprintf(fileID, ['\n\nNested ANOVAN for decoding accuracy\n']);
+        %         drgWriteANOVANtbl(anovanTbl,fileID);
         fprintf(fileID, '\n\n');
     otherwise
-        
+
 end
 
 %Plot a bar graph with merged forward and reversed and calculate statistics
-if is_Fabio==0
-    figureNo = figureNo + 1;
-    try
-        close(figureNo)
-    catch
-    end
-    hFig=figure(figureNo);
-    hold on
+switch is_Fabio
+    case 0
+        %spm go-no go for Ming's data
+        figureNo = figureNo + 1;
+        try
+            close(figureNo)
+        catch
+        end
+        hFig=figure(figureNo);
+        hold on
 
-    ax=gca;ax.LineWidth=3;
-    set(hFig, 'units','normalized','position',[.2 .2 .6 .3])
+        ax=gca;ax.LineWidth=3;
+        set(hFig, 'units','normalized','position',[.2 .2 .6 .3])
 
-    glm_acc=[];
-    glm_acc_ii=0;
+        glm_acc=[];
+        glm_acc_ii=0;
 
-    glm_acc_no_sh=[];
-    glm_acc_no_sh_ii=0;
-
-
-    id_acc_ii=0;
-    input_acc_data=[];
-
-    % for grNo=1:no_pcorr*length(these_groups)
-    bar_offset=0;
-
-    %Time windows
-    %     pre_t=[-1 0];
-    %     odor_t=[3.1 4.1];
-    %     reinf_t=[4.5 5.5];
-
-    pre_t=[-2.5 -1.5];
-    odor_t=[-1 0];
-    reinf_t=[2 4.1];
-
-    time_periods_eu=[-5 -3;
-        -2.5 -1.5;
-        -1 0;
-        2 4.1];
-
-    window_label{1}='Base';
-    window_label{2}='PreFV';
-    window_label{3}='PreOdor';
-    window_label{4}='Odor';
+        glm_acc_no_sh=[];
+        glm_acc_no_sh_ii=0;
 
 
-    edges=[0:0.05:1];
-    rand_offset=0.8;
+        id_acc_ii=0;
+        input_acc_data=[];
+
+
+        bar_offset=0;
+        %
+        %     pre_t=[-2.5 -1.5];
+        %     odor_t=[-1 0];
+        %     reinf_t=[2 4.1];
+
+        time_periods_eu=[
+            -1 0;
+            3.1 4.1;
+            4.4 5.4];
+
+
+        edges=[0:0.05:1];
+        rand_offset=0.8;
 
 
 
-    per_corr_set_label{1}='naive';
-    per_corr_set_label{2}='intermediate';
-    per_corr_set_label{3}='proficient';
+        handles_out2.all_accs=[];
+        for perCorr_no=[1 3]
+            for window_no=1:size(time_periods_eu,1)
 
-    for perCorr_no=[1 3]
-        for window_no=1:4
+                per_mouse_mean_accuracy=zeros(1,length(handles_out2.mouse_names));
+                per_mouse_mean_accuracy_sh=zeros(1,length(handles_out2.mouse_names));
+                all_session_accuracy=[];
+                all_session_accuracy_sh=[];
+
+                %Get per session and per mouse
+                ii_m_included=0;
+                for mouseNo=1:length(handles_out2.mouse_names)
+                    these_accs=[];
+                    these_accs_sh=[];
+
+                    include_mouse=0;
+                    for grNo=group_sets(perCorr_no,:)
+                        if ~isempty(per_mouse_acc.group(grNo).mouse(mouseNo).mean_accuracy)
+                            include_mouse=1;
+                            for ii_sessions=1:size(per_mouse_acc.group(grNo).mouse(mouseNo).accuracy)
+                                t_from=time_periods_eu(window_no,1);
+                                t_to=time_periods_eu(window_no,2);
+                                this_ac=mean(per_mouse_acc.group(grNo).mouse(mouseNo).accuracy(ii_sessions,(time_span>=t_from)&(time_span<=t_to)) );
+                                this_ac_sh=mean(per_mouse_acc.group(grNo).mouse(mouseNo).accuracy_sh(ii_sessions,(time_span>=t_from)&(time_span<=t_to)) );
+                                these_accs=[these_accs this_ac];
+                                these_accs_sh=[these_accs_sh this_ac_sh];
+                            end
+                        end
+                    end
+                    handles_out2.all_accs.perCorr(perCorr_no).decode_window(window_no).mouse(mouseNo).mouse_included=0;
+                    if include_mouse==1
+                        handles_out2.all_accs.perCorr(perCorr_no).decode_window(window_no).mouse(mouseNo).mouse_included=1;
+
+                        ii_m_included=ii_m_included+1;
+                        per_mouse_mean_accuracy(1,ii_m_included)=mean(these_accs);
+                        per_mouse_mean_accuracy_sh(1,ii_m_included)=mean(these_accs_sh);
+                        handles_out2.all_accs.perCorr(perCorr_no).decode_window(window_no).mouse(mouseNo).per_mouse_mean_accuracy=per_mouse_mean_accuracy;
+                        handles_out2.all_accs.perCorr(perCorr_no).decode_window(window_no).mouse(mouseNo).per_mouse_mean_accuracy_sh=per_mouse_mean_accuracy_sh;
+                        handles_out2.all_accs.perCorr(perCorr_no).decode_window(window_no).mouse(mouseNo).per_mouse_accuracy=these_accs;
+                        handles_out2.all_accs.perCorr(perCorr_no).decode_window(window_no).mouse(mouseNo).per_mouse_accuracy_sh=these_accs_sh;
+
+                        all_session_accuracy=[all_session_accuracy these_accs];
+                        all_session_accuracy_sh=[all_session_accuracy_sh these_accs_sh];
+
+                        glm_acc.data(glm_acc_ii+1:glm_acc_ii+length(these_accs_sh))=these_accs_sh;
+                        glm_acc.pcorr(glm_acc_ii+1:glm_acc_ii+length(these_accs_sh))=perCorr_no*ones(1,length(these_accs_sh));
+                        glm_acc.window(glm_acc_ii+1:glm_acc_ii+length(these_accs_sh))=window_no*ones(1,length(these_accs_sh));
+                        glm_acc.shuffled(glm_acc_ii+1:glm_acc_ii+length(these_accs_sh))=ones(1,length(these_accs_sh));
+                        glm_acc.mouse_nos(glm_acc_ii+1:glm_acc_ii+length(these_accs_sh))=mouseNo*ones(1,length(these_accs_sh));
+                        glm_acc_ii=glm_acc_ii+length(these_accs_sh);
+
+                        glm_acc.data(glm_acc_ii+1:glm_acc_ii+length(these_accs))=these_accs;
+                        glm_acc.pcorr(glm_acc_ii+1:glm_acc_ii+length(these_accs))=perCorr_no*ones(1,length(these_accs));
+                        glm_acc.window(glm_acc_ii+1:glm_acc_ii+length(these_accs))=window_no*ones(1,length(these_accs));
+                        glm_acc.shuffled(glm_acc_ii+1:glm_acc_ii+length(these_accs))=zeros(1,length(these_accs));
+                        glm_acc.mouse_nos(glm_acc_ii+1:glm_acc_ii+length(these_accs))=mouseNo*ones(1,length(these_accs));
+                        glm_acc_ii=glm_acc_ii+length(these_accs);
+
+                        glm_acc_no_sh.data(glm_acc_no_sh_ii+1:glm_acc_no_sh_ii+length(these_accs))=these_accs;
+                        glm_acc_no_sh.pcorr(glm_acc_no_sh_ii+1:glm_acc_no_sh_ii+length(these_accs))=perCorr_no*ones(1,length(these_accs));
+                        glm_acc_no_sh.window(glm_acc_no_sh_ii+1:glm_acc_no_sh_ii+length(these_accs))=window_no*ones(1,length(these_accs));
+                        glm_acc_no_sh.shuffled(glm_acc_no_sh_ii+1:glm_acc_no_sh_ii+length(these_accs))=ones(1,length(these_accs));
+                        glm_acc_no_sh.mouse_nos(glm_acc_no_sh_ii+1:glm_acc_no_sh_ii+length(these_accs))=mouseNo*ones(1,length(these_accs));
+                        glm_acc_no_sh_ii=glm_acc_no_sh_ii+length(these_accs);
+                    end
+
+                end
+
+                id_acc_ii=id_acc_ii+1;
+                input_acc_data(id_acc_ii).data=all_session_accuracy_sh;
+                input_acc_data(id_acc_ii).description=['Shuffled ' per_corr_set_label{perCorr_no} ' ' window_label{window_no}];
+
+
+                id_acc_ii=id_acc_ii+1;
+                input_acc_data(id_acc_ii).data=these_accs;
+                input_acc_data(id_acc_ii).description=[per_corr_set_label{perCorr_no} ' ' window_label{window_no}];
+
+                handles_out2.all_accs.perCorr(perCorr_no).decode_window(window_no).all_session_accuracy_sh=all_session_accuracy_sh;
+                handles_out2.all_accs.perCorr(perCorr_no).decode_window(window_no).all_session_accuracy=all_session_accuracy;
+
+                %Accuracy shuffled
+                bar(bar_offset,mean(all_session_accuracy_sh),'LineWidth', 3,'EdgeColor','none','FaceColor',[200/255 200/255 200/255])
+
+                %Violin plot
+                [mean_out, CIout]=drgViolinPoint(all_session_accuracy_sh...
+                    ,edges,bar_offset,rand_offset,'k','k',2);
+
+
+
+                bar_offset=bar_offset+1;
+
+                %Accuracy
+                bar(bar_offset,mean(all_session_accuracy),'LineWidth', 3,'EdgeColor','none','FaceColor',[120/255 120/255 120/255])
+
+                %Violin plot
+                [mean_out, CIout]=drgViolinPoint(all_session_accuracy...
+                    ,edges,bar_offset,rand_offset,'k','k',2);
+
+
+
+                for ii_mouse=1:ii_m_included
+                    plot([bar_offset-1 bar_offset],[per_mouse_mean_accuracy_sh(ii_mouse) per_mouse_mean_accuracy(ii_mouse)],'-','Color',[150/255 150/255 150/255],'LineWidth',2 )
+                end
+
+                bar_offset=bar_offset+1;
+
+
+            end
+            bar_offset=bar_offset+1;
+        end
+
+        %     xticks([1 3 5 7 9 11 13 15])
+        %     xticklabels({'Base','PreFV','PreOdor','Odor','Base','PreFV','PreOdor','Odor'})
+        xticks([0.5 2.5 4.5 7.5 9.5 11.5])
+        xticklabels({'Pre','Odor','Reinf','Pre','Odor','Reinf'})
+
+
+        title(['Prediction accuracy for ' handles_out2.classifier_names{iiMLalgo}])
+        ylabel('Accuracy')
+        ylim([0.4 1.1])
+        xlim([-1 13])
+
+        %     text(1,1,'45-65%')
+        %     text(6,1,'65-80%')
+        %     text(11,1,'>80%')
+
+        %Perform the glm including shuffled
+        fprintf(1, ['\nglm for decoding accuracy including shuffled\n'])
+        fprintf(fileID, ['\nglm for decoding accuracy including shuffled\n']);
+
+        fprintf(1, ['\nwindow 0: Base, 1:PreFV, 2:PreOdor, 3:Odor\n'])
+        fprintf(fileID, ['\nwindow 0: Base, 1:PreFV, 2:PreOdor, 3:Odor\n']);
+
+        tbl = table(glm_acc.data',glm_acc.pcorr',glm_acc.window',glm_acc.shuffled',...
+            'VariableNames',{'accuracy','percent_correct','window','shuffled'});
+        mdl = fitglm(tbl,'accuracy~percent_correct+window+shuffled+percent_correct*window*shuffled'...
+            ,'CategoricalVars',[2,3,4])
+
+
+        txt = evalc('mdl');
+        txt=regexp(txt,'<strong>','split');
+        txt=cell2mat(txt);
+        txt=regexp(txt,'</strong>','split');
+        txt=cell2mat(txt);
+
+        fprintf(fileID,'%s\n', txt);
+
+        %Perform the glm not including shuffled
+        fprintf(1, ['\nglm for decoding accuracy not including shuffled\n'])
+        fprintf(fileID, ['\nglm for decoding accuracy not including shuffled\n']);
+
+        fprintf(1, ['\nwindow 0: Base, 1:PreFV, 2:PreOdor, 3:Odor\n'])
+        fprintf(fileID, ['\nwindow 0: Base, 1:PreFV, 2:PreOdor, 3:Odor\n']);
+
+        tbl = table(glm_acc_no_sh.data',glm_acc_no_sh.pcorr',glm_acc_no_sh.window',...
+            'VariableNames',{'accuracy','percent_correct','window'});
+        mdl = fitglm(tbl,'accuracy~percent_correct+window+percent_correct*window'...
+            ,'CategoricalVars',[2,3])
+
+
+        txt = evalc('mdl');
+        txt=regexp(txt,'<strong>','split');
+        txt=cell2mat(txt);
+        txt=regexp(txt,'</strong>','split');
+        txt=cell2mat(txt);
+
+        fprintf(fileID,'%s\n', txt);
+
+
+        %Do the ranksum/t-test
+        fprintf(1, ['\n\nRanksum or t-test p values for decoding accuracy\n'])
+        fprintf(fileID, ['\n\nRanksum or t-test p values for decoding accuracy\n']);
+
+
+        [output_data] = drgMutiRanksumorTtest(input_acc_data, fileID,0);
+
+        %     %Nested ANOVAN
+        %     %https://www.mathworks.com/matlabcentral/answers/491365-within-between-subjects-in-anovan
+        %     nesting=[0 0 0; ... % This line indicates that group factor is not nested in any other factor.
+        %         0 0 0; ... % This line indicates that perCorr is not nested in any other factor.
+        %         1 1 0];    % This line indicates that mouse_no (the last factor) is nested under group, perCorr and event
+        %     % (the 1 in position 1 on the line indicates nesting under the first factor).
+        %     figureNo=figureNo+1;
+        %
+        %     [p anovanTbl stats]=anovan(glm_acc.data,{glm_acc.pcorr glm_acc.window glm_acc.mouse_nos},...
+        %         'model','interaction',...
+        %         'nested',nesting,...
+        %         'varnames',{'percent_correct','window','mouse_no'});
+        %
+        %     fprintf(fileID, ['\n\nNested ANOVAN for decoding accuracy\n']);
+        %     drgWriteANOVANtbl(anovanTbl,fileID);
+        fprintf(fileID, '\n\n');
+
+
+
+        %Plot the average accuracy timecourses calculated for neive and proficient
+        %and plot per mouse averages as well
+        %Here I plot forward and reversed together
+        for pCorr_no=[1 3]
+
+
+            these_mean_per_mouse_accuracy=[];
+            these_mean_per_mouse_accuracy_sh=[];
+            ii_m_included=0;
+
+            for mouseNo=1:length(handles_out2.mouse_names)
+                this_mouse_accuracy=[];
+                this_mouse_accuracy_sh=[];
+                ii_sessions_inc=0;
+                include_mouse=0;
+                for grNo=group_sets(pCorr_no,:)
+                    if ~isempty(per_mouse_acc.group(grNo).mouse(mouseNo).mean_accuracy)
+                        for ii_sessions=1:size(per_mouse_acc.group(grNo).mouse(mouseNo).accuracy,1)
+                            ii_sessions_inc=ii_sessions_inc+1;
+                            this_mouse_accuracy(ii_sessions_inc,:)=per_mouse_acc.group(grNo).mouse(mouseNo).accuracy(ii_sessions,:);
+                            this_mouse_accuracy_sh(ii_sessions_inc,:)=per_mouse_acc.group(grNo).mouse(mouseNo).mean_accuracy_sh;
+                        end
+                        include_mouse=1;
+                    end
+                end
+                if include_mouse==1
+                    ii_m_included=ii_m_included+1;
+                    these_mean_per_mouse_accuracy(ii_m_included,:)=mean(this_mouse_accuracy,1);
+                    these_mean_per_mouse_accuracy_sh(ii_m_included,:)=mean(this_mouse_accuracy_sh,1);
+                end
+            end
+
+
+
+
+
+
+            if size(these_mean_per_mouse_accuracy,1)>2
+
+
+                figureNo = figureNo + 1;
+                try
+                    close(figureNo)
+                catch
+                end
+                hFig=figure(figureNo);
+                hold on
+
+                ax=gca;ax.LineWidth=3;
+                set(hFig, 'units','normalized','position',[.2 .2 .3 .3])
+
+                CIpv = bootci(1000, @mean, these_mean_per_mouse_accuracy_sh);
+                meanpv=mean(these_mean_per_mouse_accuracy_sh,1);
+                CIpv(1,:)=meanpv-CIpv(1,:);
+                CIpv(2,:)=CIpv(2,:)-meanpv;
+
+                [hlpvl, hppvl] = boundedline(time_span',mean(these_mean_per_mouse_accuracy_sh,1)', CIpv', 'r');
+
+                CIpv = bootci(1000, @mean, these_mean_per_mouse_accuracy);
+                meanpv=mean(these_mean_per_mouse_accuracy,1);
+                CIpv(1,:)=meanpv-CIpv(1,:);
+                CIpv(2,:)=CIpv(2,:)-meanpv;
+
+
+                [hlpvl, hppvl] = boundedline(time_span',mean(these_mean_per_mouse_accuracy,1)', CIpv', 'k');
+
+                for ii_mouse=1:size(these_mean_per_mouse_accuracy,1)
+                    plot(time_span',smoothdata(these_mean_per_mouse_accuracy(ii_mouse,:)','gaussian',100),'Color',[100/255 100/255 100/255],'LineWidth',1)
+                end
+
+                plot(time_span',mean(these_mean_per_mouse_accuracy,1)', 'k','LineWidth',1.5);
+
+                ylim([0.3 1.2])
+                this_ylim=ylim;
+
+                %FV
+                rectangle(Position=[-1.5,this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)),1.5,0.03*(this_ylim(2)-this_ylim(1))], FaceColor=[0.9 0.9 0.9], EdgeColor=[0.9 0.9 0.9])
+                plot([-1.5 -1.5],[this_ylim],'-','Color',[0.5 0.5 0.5])
+
+
+                %Odor on markers
+                plot([0 0],this_ylim,'-k')
+                odorhl=plot([0 delta_odor],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-k','LineWidth',5);
+                plot([delta_odor delta_odor],this_ylim,'-k')
+
+                %Reinforcement markers
+                plot([delta_odor_on_reinf_on delta_odor_on_reinf_on],this_ylim,'-r')
+                reinfhl=plot([delta_odor_on_reinf_on delta_odor_on_reinf_on+delta_reinf],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-r','LineWidth',5);
+                plot([delta_odor_on_reinf_on+delta_reinf delta_odor_on_reinf_on+delta_reinf],this_ylim,'-r')
+
+
+                xlim([-10 20])
+
+
+
+                title(['Decoding accuracy calculated per mouse for ' per_corr_set_label{pCorr_no}])
+
+            end
+
+        end
+    case 2
+        %For Ming's passive
+        figureNo = figureNo + 1;
+        try
+            close(figureNo)
+        catch
+        end
+        hFig=figure(figureNo);
+        hold on
+
+        ax=gca;ax.LineWidth=3;
+        set(hFig, 'units','normalized','position',[.2 .2 .3 .3])
+
+        glm_acc=[];
+        glm_acc_ii=0;
+
+        glm_acc_no_sh=[];
+        glm_acc_no_sh_ii=0;
+
+
+        id_acc_ii=0;
+        input_acc_data=[];
+
+
+        bar_offset=0;
+        %
+        %     pre_t=[-2.5 -1.5];
+        %     odor_t=[-1 0];
+        %     reinf_t=[2 4.1];
+
+        time_periods_eu=[
+            -1 0;
+            3.1 4.1;
+            4.4 5.4];
+
+
+        edges=[0:0.05:1];
+        rand_offset=0.8;
+
+
+
+        handles_out2.all_accs=[];
+        perCorr_no=1;
+        for window_no=1:size(time_periods_eu,1)
 
             per_mouse_mean_accuracy=zeros(1,length(handles_out2.mouse_names));
             per_mouse_mean_accuracy_sh=zeros(1,length(handles_out2.mouse_names));
@@ -1328,23 +1692,31 @@ if is_Fabio==0
                 these_accs_sh=[];
 
                 include_mouse=0;
-                for grNo=group_sets(perCorr_no,:)
-                    if ~isempty(per_mouse_acc.group(grNo).mouse(mouseNo).mean_accuracy)
-                        include_mouse=1;
-                        for ii_sessions=1:size(per_mouse_acc.group(grNo).mouse(mouseNo).accuracy)
-                            t_from=time_periods_eu(window_no,1);
-                            t_to=time_periods_eu(window_no,2);
-                            this_ac=mean(per_mouse_acc.group(grNo).mouse(mouseNo).accuracy(ii_sessions,(time_span>=t_from)&(time_span<=t_to)) );
-                            this_ac_sh=mean(per_mouse_acc.group(grNo).mouse(mouseNo).accuracy_sh(ii_sessions,(time_span>=t_from)&(time_span<=t_to)) );
-                            these_accs=[these_accs this_ac];
-                            these_accs_sh=[these_accs_sh this_ac_sh];
-                        end
+                grNo=1
+                if ~isempty(per_mouse_acc.group(grNo).mouse(mouseNo).mean_accuracy)
+                    include_mouse=1;
+                    for ii_sessions=1:size(per_mouse_acc.group(grNo).mouse(mouseNo).accuracy)
+                        t_from=time_periods_eu(window_no,1);
+                        t_to=time_periods_eu(window_no,2);
+                        this_ac=mean(per_mouse_acc.group(grNo).mouse(mouseNo).accuracy(ii_sessions,(time_span>=t_from)&(time_span<=t_to)) );
+                        this_ac_sh=mean(per_mouse_acc.group(grNo).mouse(mouseNo).accuracy_sh(ii_sessions,(time_span>=t_from)&(time_span<=t_to)) );
+                        these_accs=[these_accs this_ac];
+                        these_accs_sh=[these_accs_sh this_ac_sh];
                     end
                 end
+
+                handles_out2.all_accs.perCorr(perCorr_no).decode_window(window_no).mouse(mouseNo).mouse_included=0;
                 if include_mouse==1
+                    handles_out2.all_accs.perCorr(perCorr_no).decode_window(window_no).mouse(mouseNo).mouse_included=1;
+
                     ii_m_included=ii_m_included+1;
                     per_mouse_mean_accuracy(1,ii_m_included)=mean(these_accs);
                     per_mouse_mean_accuracy_sh(1,ii_m_included)=mean(these_accs_sh);
+                    handles_out2.all_accs.perCorr(perCorr_no).decode_window(window_no).mouse(mouseNo).per_mouse_mean_accuracy=per_mouse_mean_accuracy;
+                    handles_out2.all_accs.perCorr(perCorr_no).decode_window(window_no).mouse(mouseNo).per_mouse_mean_accuracy_sh=per_mouse_mean_accuracy_sh;
+                    handles_out2.all_accs.perCorr(perCorr_no).decode_window(window_no).mouse(mouseNo).per_mouse_accuracy=these_accs;
+                    handles_out2.all_accs.perCorr(perCorr_no).decode_window(window_no).mouse(mouseNo).per_mouse_accuracy_sh=these_accs_sh;
+
                     all_session_accuracy=[all_session_accuracy these_accs];
                     all_session_accuracy_sh=[all_session_accuracy_sh these_accs_sh];
 
@@ -1381,6 +1753,8 @@ if is_Fabio==0
             input_acc_data(id_acc_ii).data=these_accs;
             input_acc_data(id_acc_ii).description=[per_corr_set_label{perCorr_no} ' ' window_label{window_no}];
 
+            handles_out2.all_accs.perCorr(perCorr_no).decode_window(window_no).all_session_accuracy_sh=all_session_accuracy_sh;
+            handles_out2.all_accs.perCorr(perCorr_no).decode_window(window_no).all_session_accuracy=all_session_accuracy;
 
             %Accuracy shuffled
             bar(bar_offset,mean(all_session_accuracy_sh),'LineWidth', 3,'EdgeColor','none','FaceColor',[200/255 200/255 200/255])
@@ -1411,91 +1785,96 @@ if is_Fabio==0
 
         end
         bar_offset=bar_offset+1;
-    end
-
-    xticks([1 3 5 7 9 11 13 15])
-    xticklabels({'Base','PreFV','PreOdor','Odor','Base','PreFV','PreOdor','Odor'})
-    title(['Prediction accuracy for ' handles_out2.classifier_names{iiMLalgo}])
-    ylabel('Accuracy')
-    ylim([0.4 1.1])
-    xlim([-1 17])
-
-    %     text(1,1,'45-65%')
-    %     text(6,1,'65-80%')
-    %     text(11,1,'>80%')
-
-    %Perform the glm including shuffled
-    fprintf(1, ['\nglm for decoding accuracy including shuffled\n'])
-    fprintf(fileID, ['\nglm for decoding accuracy including shuffled\n']);
-
-    fprintf(1, ['\nwindow 0: Base, 1:PreFV, 2:PreOdor, 3:Odor\n'])
-    fprintf(fileID, ['\nwindow 0: Base, 1:PreFV, 2:PreOdor, 3:Odor\n']);
-
-    tbl = table(glm_acc.data',glm_acc.pcorr',glm_acc.window',glm_acc.shuffled',...
-        'VariableNames',{'accuracy','percent_correct','window','shuffled'});
-    mdl = fitglm(tbl,'accuracy~percent_correct+window+shuffled+percent_correct*window*shuffled'...
-        ,'CategoricalVars',[2,3,4])
 
 
-    txt = evalc('mdl');
-    txt=regexp(txt,'<strong>','split');
-    txt=cell2mat(txt);
-    txt=regexp(txt,'</strong>','split');
-    txt=cell2mat(txt);
-
-    fprintf(fileID,'%s\n', txt);
-
-    %Perform the glm not including shuffled
-    fprintf(1, ['\nglm for decoding accuracy not including shuffled\n'])
-    fprintf(fileID, ['\nglm for decoding accuracy not including shuffled\n']);
-
-    fprintf(1, ['\nwindow 0: Base, 1:PreFV, 2:PreOdor, 3:Odor\n'])
-    fprintf(fileID, ['\nwindow 0: Base, 1:PreFV, 2:PreOdor, 3:Odor\n']);
-
-    tbl = table(glm_acc_no_sh.data',glm_acc_no_sh.pcorr',glm_acc_no_sh.window',...
-        'VariableNames',{'accuracy','percent_correct','window'});
-    mdl = fitglm(tbl,'accuracy~percent_correct+window+percent_correct*window'...
-        ,'CategoricalVars',[2,3])
+        %     xticks([1 3 5 7 9 11 13 15])
+        %     xticklabels({'Base','PreFV','PreOdor','Odor','Base','PreFV','PreOdor','Odor'})
+        xticks([0.5 2.5 4.5])
+        xticklabels({'Pre','Odor','Reinf'})
 
 
-    txt = evalc('mdl');
-    txt=regexp(txt,'<strong>','split');
-    txt=cell2mat(txt);
-    txt=regexp(txt,'</strong>','split');
-    txt=cell2mat(txt);
+        title(['Prediction accuracy for ' handles_out2.classifier_names{iiMLalgo}])
+        ylabel('Accuracy')
+        ylim([0.4 1.1])
+        xlim([-1 6])
 
-    fprintf(fileID,'%s\n', txt);
+        %     text(1,1,'45-65%')
+        %     text(6,1,'65-80%')
+        %     text(11,1,'>80%')
 
+        %Perform the glm including shuffled
+        fprintf(1, ['\nglm for decoding accuracy including shuffled\n'])
+        fprintf(fileID, ['\nglm for decoding accuracy including shuffled\n']);
 
-    %Do the ranksum/t-test
-    fprintf(1, ['\n\nRanksum or t-test p values for decoding accuracy\n'])
-    fprintf(fileID, ['\n\nRanksum or t-test p values for decoding accuracy\n']);
+        fprintf(1, ['\nwindow 0: Base, 1:PreFV, 2:PreOdor, 3:Odor\n'])
+        fprintf(fileID, ['\nwindow 0: Base, 1:PreFV, 2:PreOdor, 3:Odor\n']);
 
-
-    [output_data] = drgMutiRanksumorTtest(input_acc_data, fileID,0);
-
-    %     %Nested ANOVAN
-    %     %https://www.mathworks.com/matlabcentral/answers/491365-within-between-subjects-in-anovan
-    %     nesting=[0 0 0; ... % This line indicates that group factor is not nested in any other factor.
-    %         0 0 0; ... % This line indicates that perCorr is not nested in any other factor.
-    %         1 1 0];    % This line indicates that mouse_no (the last factor) is nested under group, perCorr and event
-    %     % (the 1 in position 1 on the line indicates nesting under the first factor).
-    %     figureNo=figureNo+1;
-    %
-    %     [p anovanTbl stats]=anovan(glm_acc.data,{glm_acc.pcorr glm_acc.window glm_acc.mouse_nos},...
-    %         'model','interaction',...
-    %         'nested',nesting,...
-    %         'varnames',{'percent_correct','window','mouse_no'});
-    %
-    %     fprintf(fileID, ['\n\nNested ANOVAN for decoding accuracy\n']);
-    %     drgWriteANOVANtbl(anovanTbl,fileID);
-    fprintf(fileID, '\n\n');
+        tbl = table(glm_acc.data',glm_acc.pcorr',glm_acc.window',glm_acc.shuffled',...
+            'VariableNames',{'accuracy','percent_correct','window','shuffled'});
+        mdl = fitglm(tbl,'accuracy~percent_correct+window+shuffled+percent_correct*window*shuffled'...
+            ,'CategoricalVars',[2,3,4])
 
 
+        txt = evalc('mdl');
+        txt=regexp(txt,'<strong>','split');
+        txt=cell2mat(txt);
+        txt=regexp(txt,'</strong>','split');
+        txt=cell2mat(txt);
 
-    %Plot the overall accuracy calculated from per mouse decoding
-    %Here I plot forward and reversed together
-    for pCorr_no=[1 3]
+        fprintf(fileID,'%s\n', txt);
+
+        %Perform the glm not including shuffled
+        fprintf(1, ['\nglm for decoding accuracy not including shuffled\n'])
+        fprintf(fileID, ['\nglm for decoding accuracy not including shuffled\n']);
+
+        fprintf(1, ['\nwindow 0: Base, 1:PreFV, 2:PreOdor, 3:Odor\n'])
+        fprintf(fileID, ['\nwindow 0: Base, 1:PreFV, 2:PreOdor, 3:Odor\n']);
+
+        tbl = table(glm_acc_no_sh.data',glm_acc_no_sh.pcorr',glm_acc_no_sh.window',...
+            'VariableNames',{'accuracy','percent_correct','window'});
+        mdl = fitglm(tbl,'accuracy~percent_correct+window+percent_correct*window'...
+            ,'CategoricalVars',[2,3])
+
+
+        txt = evalc('mdl');
+        txt=regexp(txt,'<strong>','split');
+        txt=cell2mat(txt);
+        txt=regexp(txt,'</strong>','split');
+        txt=cell2mat(txt);
+
+        fprintf(fileID,'%s\n', txt);
+
+
+        %Do the ranksum/t-test
+        fprintf(1, ['\n\nRanksum or t-test p values for decoding accuracy\n'])
+        fprintf(fileID, ['\n\nRanksum or t-test p values for decoding accuracy\n']);
+
+
+        [output_data] = drgMutiRanksumorTtest(input_acc_data, fileID,0);
+
+        %     %Nested ANOVAN
+        %     %https://www.mathworks.com/matlabcentral/answers/491365-within-between-subjects-in-anovan
+        %     nesting=[0 0 0; ... % This line indicates that group factor is not nested in any other factor.
+        %         0 0 0; ... % This line indicates that perCorr is not nested in any other factor.
+        %         1 1 0];    % This line indicates that mouse_no (the last factor) is nested under group, perCorr and event
+        %     % (the 1 in position 1 on the line indicates nesting under the first factor).
+        %     figureNo=figureNo+1;
+        %
+        %     [p anovanTbl stats]=anovan(glm_acc.data,{glm_acc.pcorr glm_acc.window glm_acc.mouse_nos},...
+        %         'model','interaction',...
+        %         'nested',nesting,...
+        %         'varnames',{'percent_correct','window','mouse_no'});
+        %
+        %     fprintf(fileID, ['\n\nNested ANOVAN for decoding accuracy\n']);
+        %     drgWriteANOVANtbl(anovanTbl,fileID);
+        fprintf(fileID, '\n\n');
+
+
+
+        %Plot the average accuracy timecourses calculated for neive and proficient
+        %and plot per mouse averages as well
+        %Here I plot forward and reversed together
+        pCorr_no=1;
 
 
         these_mean_per_mouse_accuracy=[];
@@ -1507,16 +1886,16 @@ if is_Fabio==0
             this_mouse_accuracy_sh=[];
             ii_sessions_inc=0;
             include_mouse=0;
-            for grNo=group_sets(pCorr_no,:)
-                if ~isempty(per_mouse_acc.group(grNo).mouse(mouseNo).mean_accuracy)
-                    for ii_sessions=1:size(per_mouse_acc.group(grNo).mouse(mouseNo).accuracy,1)
-                        ii_sessions_inc=ii_sessions_inc+1;
-                        this_mouse_accuracy(ii_sessions_inc,:)=per_mouse_acc.group(grNo).mouse(mouseNo).accuracy(ii_sessions,:);
-                        this_mouse_accuracy_sh(ii_sessions_inc,:)=per_mouse_acc.group(grNo).mouse(mouseNo).mean_accuracy_sh;
-                    end
-                    include_mouse=1;
+            grNo=1;
+            if ~isempty(per_mouse_acc.group(grNo).mouse(mouseNo).mean_accuracy)
+                for ii_sessions=1:size(per_mouse_acc.group(grNo).mouse(mouseNo).accuracy,1)
+                    ii_sessions_inc=ii_sessions_inc+1;
+                    this_mouse_accuracy(ii_sessions_inc,:)=per_mouse_acc.group(grNo).mouse(mouseNo).accuracy(ii_sessions,:);
+                    this_mouse_accuracy_sh(ii_sessions_inc,:)=per_mouse_acc.group(grNo).mouse(mouseNo).mean_accuracy_sh;
                 end
+                include_mouse=1;
             end
+
             if include_mouse==1
                 ii_m_included=ii_m_included+1;
                 these_mean_per_mouse_accuracy(ii_m_included,:)=mean(this_mouse_accuracy,1);
@@ -1525,32 +1904,6 @@ if is_Fabio==0
         end
 
 
-        %     per_mouse_mean_accuracy=zeros(1,length(handles_out2.mouse_names));
-        %     per_mouse_mean_accuracy_sh=zeros(1,length(handles_out2.mouse_names));
-        %     all_session_accuracy=[];
-        %     all_session_accuracy_sh=[];
-        %
-        %     %Get per session and per mouse
-        %     for mouseNo=1:length(handles_out2.mouse_names)
-        %         these_accs=[];
-        %         these_accs_sh=[];
-        %         for grNo=group_sets(perCorr_no,:)
-        %             if ~isempty(per_mouse_acc.group(grNo).mouse(mouseNo).mean_accuracy)
-        %                 for ii_sessions=1:size(per_mouse_acc.group(grNo).mouse(mouseNo).accuracy)
-        %                     t_from=time_periods_eu(window_no,1);
-        %                     t_to=time_periods_eu(window_no,2);
-        %                     this_ac=mean(per_mouse_acc.group(grNo).mouse(mouseNo).accuracy(ii_sessions,(time_span>=t_from)&(time_span<=t_to)) );
-        %                     this_ac_sh=mean(per_mouse_acc.group(grNo).mouse(mouseNo).accuracy_sh(ii_sessions,(time_span>=t_from)&(time_span<=t_to)) );
-        %                     these_accs=[these_accs this_ac];
-        %                     these_accs_sh=[these_accs_sh this_ac_sh];
-        %                 end
-        %             end
-        %         end
-        %         per_mouse_mean_accuracy(1,mouseNo)=mean(these_accs);
-        %         per_mouse_mean_accuracy_sh(1,mouseNo)=mean(these_accs_sh);
-        %
-        %
-        %     end
 
 
 
@@ -1617,7 +1970,7 @@ if is_Fabio==0
 
         end
 
-    end
+
 end
 pfft=1;
 
@@ -1649,7 +2002,7 @@ for mouseNo=1:length(handles_out2.mouse_names)
 
         if ~isempty(handles_out2.group_no(grNo).ii_time_span)
 
-
+ 
             %Extrapolate all points onto the longest ii_tspan
             these_prediction_mean_sm=[];
             ii_included=0;
@@ -1657,27 +2010,28 @@ for mouseNo=1:length(handles_out2.mouse_names)
             these_mice=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mouseNo;
             for ii_f=1:size(handles_out2.group_no(grNo).ii_time_span,1)
                 if these_mice(ii_f)==mouseNo
-                    ii_included=ii_included+1;
-                    if ii_f==size(handles_out2.group_no(grNo).ii_time_span,1)
-                        these_prediction_mean_sm(ii_included,:)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_moving_mean_per_trial_sm_timecourse(ii_file,1:ii_tspan);
-                    else
-                        this_ii_tspan=handles_out2.group_no(grNo).ii_time_span(ii_f);
-                        this_time_span=handles_out2.group_no(grNo).time_span_euclid(ii_f,1:this_ii_tspan);
+                    
+                        ii_included=ii_included+1;
+                        if ii_f==size(handles_out2.group_no(grNo).ii_time_span,1)
+                            these_prediction_mean_sm(ii_included,:)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_sm_timecourse(ii_file,1:ii_tspan);
+                        else
+                            this_ii_tspan=handles_out2.group_no(grNo).ii_time_span(ii_f);
+                            this_time_span=handles_out2.group_no(grNo).time_span_euclid(ii_f,1:this_ii_tspan);
 
-                        for ii_tsp=1:ii_tspan
+                            for ii_tsp=1:ii_tspan
 
-                            if time_span(ii_tsp)>this_time_span(end)
-                                these_prediction_mean_sm(ii_included,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_moving_mean_per_trial_sm_timecourse(ii_f,end);
-                            else
-                                ii_0=find(this_time_span<=time_span(ii_tsp),1,'last');
-                                ii_1=find(this_time_span>time_span(ii_tsp),1,'first');
-                                these_prediction_mean_sm(ii_included,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_moving_mean_per_trial_sm_timecourse(ii_f,ii_0)+...
-                                    (handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_moving_mean_per_trial_sm_timecourse(ii_f,ii_1)-handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_moving_mean_per_trial_sm_timecourse(ii_f,ii_0))...
-                                    *(time_span(ii_tsp)-this_time_span(ii_0))/(this_time_span(ii_1)-this_time_span(ii_0));
+                                if time_span(ii_tsp)>this_time_span(end)
+                                    these_prediction_mean_sm(ii_included,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_sm_timecourse(ii_f,end);
+                                else
+                                    ii_0=find(this_time_span<=time_span(ii_tsp),1,'last');
+                                    ii_1=find(this_time_span>time_span(ii_tsp),1,'first');
+                                    these_prediction_mean_sm(ii_included,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_sm_timecourse(ii_f,ii_0)+...
+                                        (handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_sm_timecourse(ii_f,ii_1)-handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_sm_timecourse(ii_f,ii_0))...
+                                        *(time_span(ii_tsp)-this_time_span(ii_0))/(this_time_span(ii_1)-this_time_span(ii_0));
+                                end
                             end
                         end
-                    end
-
+                   
                 end
 
             end
@@ -1717,9 +2071,10 @@ for mouseNo=1:length(handles_out2.mouse_names)
             ii_file=size(handles_out2.group_no(grNo).ii_time_span,1);
             for ii_f=1:size(handles_out2.group_no(grNo).ii_time_span,1)
                 if these_mice(ii_f)==mouseNo
+                    
                     ii_included=ii_included+1;
                     if ii_f==size(handles_out2.group_no(grNo).ii_time_span,1)
-                        these_prediction_mean_sp(ii_included,:)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_moving_mean_per_trial_sp_timecourse(ii_file,1:ii_tspan);
+                        these_prediction_mean_sp(ii_included,:)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_sp_timecourse(ii_file,1:ii_tspan);
                     else
                         this_ii_tspan=handles_out2.group_no(grNo).ii_time_span(ii_f);
                         this_time_span=handles_out2.group_no(grNo).time_span_euclid(ii_f,1:this_ii_tspan);
@@ -1727,17 +2082,17 @@ for mouseNo=1:length(handles_out2.mouse_names)
                         for ii_tsp=1:ii_tspan
                          
                                 if time_span(ii_tsp)>this_time_span(end)
-                                    these_prediction_mean_sp(ii_included,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_moving_mean_per_trial_sp_timecourse(ii_f,end);
+                                    these_prediction_mean_sp(ii_included,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_sp_timecourse(ii_f,end);
                                 else
                                     ii_0=find(this_time_span<=time_span(ii_tsp),1,'last');
                                     ii_1=find(this_time_span>time_span(ii_tsp),1,'first');
-                                    these_prediction_mean_sp(ii_included,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_moving_mean_per_trial_sp_timecourse(ii_f,ii_0)+...
-                                        (handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_moving_mean_per_trial_sp_timecourse(ii_f,ii_1)-handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_moving_mean_per_trial_sp_timecourse(ii_f,ii_0))...
+                                    these_prediction_mean_sp(ii_included,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_sp_timecourse(ii_f,ii_0)+...
+                                        (handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_sp_timecourse(ii_f,ii_1)-handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_sp_timecourse(ii_f,ii_0))...
                                         *(time_span(ii_tsp)-this_time_span(ii_0))/(this_time_span(ii_1)-this_time_span(ii_0));
                                 end
                             end
                         end
-
+                    
                 end
             end
 
@@ -1886,7 +2241,26 @@ end
 
 %Plot the predictions calculated from per mouse decoding
 %Both forward and reverse are averaged here
-for pCorr_no=[1 3]
+
+switch is_Fabio
+    case 0
+        these_pcorr=[1 3];
+    case 1
+        these_pcorr=[1];
+    case 2
+        these_pcorr=[1];
+end
+
+for pCorr_no=these_pcorr
+
+    switch is_Fabio
+        case 0
+            these_gr_out=group_sets(pCorr_no,:);
+        case 1
+            these_pcorr=[1];
+        case 2
+            these_gr_out=these_groups_out;
+    end
 
     ii_mouse_inc=0;
     per_mouse_prediction_sp=[];
@@ -1897,7 +2271,9 @@ for pCorr_no=[1 3]
         this_mouse_prediction_sm=[];
         include_mouse=0;
 
-        for grNo=group_sets(pCorr_no,:)
+        for grNo=these_gr_out
+%         for grNo=group_sets(pCorr_no,:)
+%         for grNo=these_groups_out
             if ~isempty(per_mouse_pred.group(grNo).mouse(mouseNo).mean_prediction_mean_sp)
                 for ii_sessions=1:size(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sm,1)
                     ii_sessions_inc=ii_sessions_inc+1;
@@ -2037,8 +2413,17 @@ input_pred_data=[];
 bar_offset=0;
 
 
-for perCorr_no=[1 3]
-    for window_no=1:4
+for perCorr_no=these_pcorr
+    switch is_Fabio
+        case 0
+            these_gr_out=group_sets(perCorr_no,:);
+        case 1
+            these_pcorr=[1];
+        case 2
+            these_gr_out=these_groups_out;
+    end
+
+    for window_no=1:size(time_periods_eu,1)
 
         per_mouse_mean_pred_sp=[];
         per_mouse_mean_pred_sm=[];
@@ -2052,17 +2437,23 @@ for perCorr_no=[1 3]
             these_preds_sm=[];
 
             include_mouse=0;
-            for grNo=group_sets(perCorr_no,:)
+            for grNo=these_gr_out
+%             for grNo=group_sets(perCorr_no,:)
+                %             for grNo=these_groups_out
                 if ~isempty(per_mouse_acc.group(grNo).mouse(mouseNo).mean_accuracy)
                     include_mouse=1;
                     for ii_sessions=1:size(per_mouse_acc.group(grNo).mouse(mouseNo).accuracy)
-                        t_from=time_periods_eu(window_no,1);
-                        t_to=time_periods_eu(window_no,2);
-                        this_pred_sp=mean(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sp(ii_sessions,(time_span>=t_from)&(time_span<=t_to)) );
-                        this_pred_sm=mean(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sm(ii_sessions,(time_span>=t_from)&(time_span<=t_to)) );
-                        these_preds_sp=[these_preds_sp this_pred_sp];
-                        these_preds_sm=[these_preds_sm this_pred_sm];
+                        if size(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sp,1)>0
+                            t_from=time_periods_eu(window_no,1);
+                            t_to=time_periods_eu(window_no,2);
+                            this_pred_sp=mean(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sp(ii_sessions,(time_span>=t_from)&(time_span<=t_to)) );
+                            this_pred_sm=mean(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sm(ii_sessions,(time_span>=t_from)&(time_span<=t_to)) );
+                            these_preds_sp=[these_preds_sp this_pred_sp];
+                            these_preds_sm=[these_preds_sm this_pred_sm];
+                        end
                     end
+                else
+                    pffft=1;
                 end
             end
             if include_mouse==1
@@ -2104,8 +2495,10 @@ for perCorr_no=[1 3]
         bar(bar_offset,mean(all_session_pred_sm),'LineWidth', 3,'EdgeColor','none','FaceColor',[158/255 31/255 99/255])
 
         %Violin plot
-        [mean_out, CIout]=drgViolinPoint(all_session_pred_sm...
-            ,edges,bar_offset,rand_offset,'k','k',2);
+        if ~isempty(all_session_pred_sm)
+            [mean_out, CIout]=drgViolinPoint(all_session_pred_sm...
+                ,edges,bar_offset,rand_offset,'k','k',2);
+        end
 
 
 
@@ -2115,8 +2508,10 @@ for perCorr_no=[1 3]
         bar(bar_offset,mean(all_session_pred_sp),'LineWidth', 3,'EdgeColor','none','FaceColor',[0 114/255 178/255])
 
         %Violin plot
-        [mean_out, CIout]=drgViolinPoint(all_session_pred_sp...
-            ,edges,bar_offset,rand_offset,'k','k',2);
+        if ~isempty(all_session_pred_sp)
+            [mean_out, CIout]=drgViolinPoint(all_session_pred_sp...
+                ,edges,bar_offset,rand_offset,'k','k',2);
+        end
 
 
 
@@ -2131,18 +2526,23 @@ for perCorr_no=[1 3]
     bar_offset=bar_offset+1;
 end
 
-xticks([1 3 5 7 9 11 13 15])
-xticklabels({'Base','PreFV','PreOdor','Odor','Base','PreFV','PreOdor','Odor'})
+% xticks([1 3 5 7 9 11 13 15])
+% xticklabels({'Base','PreFV','PreOdor','Odor','Base','PreFV','PreOdor','Odor'})
+
+xticks([0.5 2.5 4.5 7.5 9.5 11.5])
+xticklabels({'Pre','Odor','Reinf','Pre','Odor','Reinf'})
+
+
 title(['Prediction for ' handles_out2.classifier_names{iiMLalgo}])
 ylabel('Prediction')
 ylim([0 1.1])
-xlim([-1 17])
+xlim([-1 13])
 
 %     text(1,1,'45-65%')
 %     text(6,1,'65-80%')
 %     text(11,1,'>80%')
 
-
+ 
 
 %Perform the glm not including shuffled
 fprintf(1, ['\nglm for decoding prediction\n'])
@@ -2169,32 +2569,37 @@ fprintf(fileID,'%s\n', txt);
 %Do the ranksum/t-test
 fprintf(1, ['\n\nRanksum or t-test p values for decoding prediction\n'])
 fprintf(fileID, ['\n\nRanksum or t-test p values for decoding prediction\n']);
-
  
+
 [output_data] = drgMutiRanksumorTtest(input_pred_data, fileID,0);
 
 %Plot prediction vs accuracy
-figureNo = figureNo + 1;
-try
-    close(figureNo)
-catch
+if is_Fabio==0
+    figureNo = figureNo + 1;
+    try
+        close(figureNo)
+    catch
+    end
+    hFig=figure(figureNo);
+    hold on
+
+    ax=gca;ax.LineWidth=3;
+    set(hFig, 'units','normalized','position',[.2 .2 .3 .3])
+
+    plot(all_session_accuracy,all_session_pred_sm,'o','Color',[158/255 31/255 99/255])
+    hold on
+    plot(all_session_accuracy,all_session_pred_sp,'o','Color',[0 114/255 178/255])
+
+    xlabel('Accuracy')
+    ylabel('Prediction')
 end
-hFig=figure(figureNo);
-hold on
 
-ax=gca;ax.LineWidth=3;
-set(hFig, 'units','normalized','position',[.2 .2 .3 .3])
+if is_mat==0
+    out_file=[choiceBatchPathName choiceFileName];
+    out_file=[out_file(1:end-2) '.mat'];
+    save(out_file,'handles_out2','handles','-v7.3')
+end
 
-plot(all_session_accuracy,all_session_pred_sm,'o','Color',[158/255 31/255 99/255])
-hold on
-plot(all_session_accuracy,all_session_pred_sp,'o','Color',[0 114/255 178/255])
-
-xlabel('Accuracy')
-ylabel('Prediction')
-
-out_file=[choiceBatchPathName choiceFileName];
-out_file=[out_file(1:end-2) '.mat'];
-save(out_file,'handles_out2','handles','-v7.3')
 fclose(fileID);
 
 pfft=1;
