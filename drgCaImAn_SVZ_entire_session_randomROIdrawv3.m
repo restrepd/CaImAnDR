@@ -2351,7 +2351,7 @@ end
 %Save other variables to handles_out2
 handles_out2.time_span=time_span;
 handles_out2.MLalgo=MLalgo;
-handles_out2.time_window=time_window;
+handles_out2.time_windows=time_windows;
 handles_out2.wondow_no=window_no;
 handles_out2.no_ROI_draws=no_ROI_draws;
 handles_out2.dFF_per_trial_sm=dFF_per_trial_sm;
@@ -2387,43 +2387,43 @@ if show_figures==1
     %     end
     
     %Plot accuracy
-    for iiMLalgo=MLalgo_to_use
-        %This is odor window
-        figNo=figNo+1;
-        try
-            close(figNo)
-        catch
-        end
-        
-        hFig = figure(figNo);
-        
-        set(hFig, 'units','normalized','position',[.05 .1 .3 .3])
-        
-        hold on
-        %         accuracy_tr=handles_out2.ROI(1).MLalgo(iiMLalgo).accuracy_tr;
-        accuracy_per_ROI=[];
-        for iiROI=1:no_ROI_draws
-            accuracy_per_ROI=[accuracy_per_ROI mean(mean(handles_out2.ROI(iiROI).MLalgo(MLalgo).this_correct_predict(:,(time_span>=time_windows(window_no,1))&(time_span<=time_windows(window_no,2))),2))];
-        end
-        
-        histogram(accuracy_per_ROI)
-        
-        
-        
-        accuracy_per_ROI_sh=[];
-        for iiROI=1:no_ROI_draws
-            accuracy_per_ROI_sh=[accuracy_per_ROI_sh mean(mean(handles_out2.ROI(iiROI).MLalgo(MLalgo).this_correct_predict_sh(:,(time_span>=time_windows(window_no,1))&(time_span<=time_windows(window_no,2))),2))];
-        end
-        
-        histogram(accuracy_per_ROI_sh)
-        
-        
-        title(['Histogram of accuracy for p <= ' num2str(p_threshold)])
-        xlabel('Accuracy')
-        
-        fprintf(1,'Mean accuracy all runs= %d\n',mean(accuracy_per_ROI))
-        fprintf(1,'Shuffled trial mean accuracy all runs= %d\n',mean(accuracy_per_ROI_sh))
+    %     for iiMLalgo=MLalgo_to_use
+    %This is odor window
+    figNo=figNo+1;
+    try
+        close(figNo)
+    catch
     end
+    
+    hFig = figure(figNo);
+    
+    set(hFig, 'units','normalized','position',[.05 .1 .3 .3])
+    
+    hold on
+    %         accuracy_tr=handles_out2.ROI(1).MLalgo(iiMLalgo).accuracy_tr;
+    accuracy_per_ROI=[];
+    for iiROI=1:no_ROI_draws
+        accuracy_per_ROI=[accuracy_per_ROI mean(mean(handles_out2.ROI(iiROI).MLalgo(MLalgo).this_correct_predict(:,(time_span>=time_windows(window_no,1))&(time_span<=time_windows(window_no,2))),2))];
+    end
+    
+    histogram(accuracy_per_ROI)
+    
+    
+    
+    accuracy_per_ROI_sh=[];
+    for iiROI=1:no_ROI_draws
+        accuracy_per_ROI_sh=[accuracy_per_ROI_sh mean(mean(handles_out2.ROI(iiROI).MLalgo(MLalgo).this_correct_predict_sh(:,(time_span>=time_windows(window_no,1))&(time_span<=time_windows(window_no,2))),2))];
+    end
+    
+    histogram(accuracy_per_ROI_sh)
+    
+    
+    title(['Histogram of accuracy for p <= ' num2str(p_threshold)])
+    xlabel('Accuracy')
+    
+    fprintf(1,'Mean accuracy all runs= %d\n',mean(accuracy_per_ROI))
+    fprintf(1,'Shuffled trial mean accuracy all runs= %d\n',mean(accuracy_per_ROI_sh))
+    %     end
     
     %Plot pseudocolor accuracy vs dFF fraction positive
     %This is odor window
@@ -2438,7 +2438,7 @@ if show_figures==1
     set(hFig, 'units','normalized','position',[.05 .1 .3 .3])
     
     hold on
-    colors=colormap(fire);
+    colors=colormap(jet);
     
     ii_t_start=find(time_span>=time_windows(window_no,1),1,'first');
     ii_t_end=find(time_span<=time_windows(window_no,2),1,'last');
@@ -2467,7 +2467,9 @@ if show_figures==1
             dFF_sp_nonzero_f=dFF_sp_nonzero/n_dFF_sp;
             if ((accuracy_per_ROI(iiROI)<0.3)||(accuracy_per_ROI(iiROI)>0.7))
                 ii_color=1+ceil(accuracy_per_ROI(iiROI)*255);
-                plot(dFF_sm_nonzero_f,dFF_sp_nonzero_f,'o','MarkerFaceColor',[colors(ii_color,1) colors(ii_color,2) colors(ii_color,3)],'MarkerSize',5)
+                plot(dFF_sm_nonzero_f,dFF_sp_nonzero_f,'o','MarkerFaceColor',[colors(ii_color,1) colors(ii_color,2) colors(ii_color,3)],...
+                    'MarkerFaceColor',[colors(ii_color,1) colors(ii_color,2) colors(ii_color,3)],...
+                    'MarkerSize',5)
             end
         end
     end
@@ -2476,88 +2478,117 @@ if show_figures==1
     
     %Plot prediction
     
-    for iiMLalgo=MLalgo_to_use
-        %This is odor window
-        
-        %Do Sp first
-        figNo=figNo+1;
-        try
-            close(figNo)
-        catch
-        end
-        
-        hFig = figure(figNo);
-        
-        set(hFig, 'units','normalized','position',[.05 .1 .3 .3])
-        
-        hold on
-        
-        edges=[0:0.1:1];
-        
-        %S+
-        prediction_sp_per_ROI=[];
-        for iiROI=1:no_ROI_draws
-            prediction_sp_per_ROI=[prediction_sp_per_ROI mean(mean(handles_out2.ROI(iiROI).MLalgo(MLalgo).per_trial_sp_timecourse(:,(time_span>=time_windows(window_no,1))&(time_span<=time_windows(window_no,2))),2))];
-        end
-        
-        histogram(prediction_sp_per_ROI, edges)
-        
-        
-        
-        %S-
-        prediction_sm_per_ROI=[];
-        for iiROI=1:no_ROI_draws
-            prediction_sm_per_ROI=[prediction_sm_per_ROI mean(mean(handles_out2.ROI(iiROI).MLalgo(MLalgo).per_trial_sm_timecourse(:,(time_span>=time_windows(window_no,1))&(time_span<=time_windows(window_no,2))),2))];
-        end
-        
-        histogram(prediction_sm_per_ROI, edges)
-        
-        
-        title(['Histogram of label predictions for p <= ' num2str(p_threshold)])
-        xlabel('Prediction')
-        legend('S+','S-')
-        
-        fprintf(1,'Mean prediction S+ all runs= %d\n',mean(accuracy_per_ROI))
-        fprintf(1,'Mean prediction S- all runs= %d\n',mean(accuracy_per_ROI_sh))
+    %     for iiMLalgo=MLalgo_to_use
+    %This is odor window
+    
+    %Do Sp first
+    figNo=figNo+1;
+    try
+        close(figNo)
+    catch
     end
+    
+    hFig = figure(figNo);
+    
+    set(hFig, 'units','normalized','position',[.05 .1 .3 .3])
+    
+    hold on
+    
+    edges=[0:0.1:1];
+    
+    %S+
+    prediction_sp_per_ROI=[];
+    for iiROI=1:no_ROI_draws
+        prediction_sp_per_ROI=[prediction_sp_per_ROI mean(mean(handles_out2.ROI(iiROI).MLalgo(MLalgo).per_trial_sp_timecourse(:,(time_span>=time_windows(window_no,1))&(time_span<=time_windows(window_no,2))),2))];
+    end
+    
+    histogram(prediction_sp_per_ROI, edges)
+    
+       %S-
+    prediction_sm_per_ROI=[];
+    for iiROI=1:no_ROI_draws
+        prediction_sm_per_ROI=[prediction_sm_per_ROI mean(mean(handles_out2.ROI(iiROI).MLalgo(MLalgo).per_trial_sm_timecourse(:,(time_span>=time_windows(window_no,1))&(time_span<=time_windows(window_no,2))),2))];
+    end
+    
+    histogram(prediction_sm_per_ROI, edges)
+    
+    
+    title(['Histogram of label predictions for p <= ' num2str(p_threshold)])
+    xlabel('Prediction')
+    legend('S+','S-')
+    
+    
+    
+    
+    
+    %     end
+    
+    %Plot prediction S+ vs S-
+    figNo=figNo+1;
+    try
+        close(figNo)
+    catch
+    end
+    
+    hFig = figure(figNo);
+    
+    set(hFig, 'units','normalized','position',[.05 .1 .3 .3])
+    
+    hold on
+    
+ 
+    for iiROI=1:no_ROI_draws
+        ii_color=1+ceil(accuracy_per_ROI(iiROI)*255);
+        plot(prediction_sm_per_ROI(iiROI), prediction_sp_per_ROI(iiROI),'o',...
+            'MarkerFaceColor',[colors(ii_color,1) colors(ii_color,2) colors(ii_color,3)],...
+            'MarkerEdgeColor',[colors(ii_color,1) colors(ii_color,2) colors(ii_color,3)],...
+            'MarkerSize',5)
+    end
+    
+    
+    title(['Prediction S+ vs. S-, color accuracy'])
+    ylabel('Prediction S+')
+    xlabel('Prediction S-')
+    
+    
     
     %Plot prediction d prime
     
-    for iiMLalgo=MLalgo_to_use
-        %This is odor window
-        
-        %Do Sp first
-        figNo=figNo+1;
-        try
-            close(figNo)
-        catch
-        end
-        
-        hFig = figure(figNo);
-        
-        set(hFig, 'units','normalized','position',[.05 .1 .3 .3])
-        
-        hold on
-        
-        edges=[0:0.1:1];
-        
-        %Calculate d prime
-        d_prime=[];
-        for iiROI=1:no_ROI_draws
-            these_Sp_predictions=mean(handles_out2.ROI(iiROI).MLalgo(MLalgo).per_trial_sp_timecourse(:,(time_span>=time_windows(window_no,1))&(time_span<=time_windows(window_no,2))),2);
-            these_Sm_predictions=mean(handles_out2.ROI(iiROI).MLalgo(MLalgo).per_trial_sm_timecourse(:,(time_span>=time_windows(window_no,1))&(time_span<=time_windows(window_no,2))),2);
-            this_d_prime=(mean(these_Sp_predictions)-mean(these_Sm_predictions))/sqrt((std(these_Sp_predictions)^2 + std(these_Sm_predictions)^2 )/2);
-            
-            d_prime=[d_prime this_d_prime];
-        end
-        
-        histogram(d_prime)
-        
-        
-        title(['d prime for label predictions for p <= ' num2str(p_threshold)])
-        xlabel('d''')
-        
+    %     for iiMLalgo=MLalgo_to_use
+    %This is odor window
+    
+    %Do Sp first
+    figNo=figNo+1;
+    try
+        close(figNo)
+    catch
     end
+    
+    hFig = figure(figNo);
+    
+    set(hFig, 'units','normalized','position',[.05 .1 .3 .3])
+    
+    hold on
+    
+    edges=[0:0.1:1];
+    
+    %Calculate d prime
+    d_prime=[];
+    for iiROI=1:no_ROI_draws
+        these_Sp_predictions=mean(handles_out2.ROI(iiROI).MLalgo(MLalgo).per_trial_sp_timecourse(:,(time_span>=time_windows(window_no,1))&(time_span<=time_windows(window_no,2))),2);
+        these_Sm_predictions=mean(handles_out2.ROI(iiROI).MLalgo(MLalgo).per_trial_sm_timecourse(:,(time_span>=time_windows(window_no,1))&(time_span<=time_windows(window_no,2))),2);
+        this_d_prime=(mean(these_Sp_predictions)-mean(these_Sm_predictions))/sqrt((std(these_Sp_predictions)^2 + std(these_Sm_predictions)^2 )/2);
+        
+        d_prime=[d_prime this_d_prime];
+    end
+    
+    histogram(d_prime)
+    
+    
+    title(['d prime for label predictions for p <= ' num2str(p_threshold)])
+    xlabel('d''')
+    
+    %     end
     
     
     
