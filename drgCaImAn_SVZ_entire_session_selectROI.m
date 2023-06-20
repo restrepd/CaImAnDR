@@ -1,4 +1,4 @@
-function handles_out2=drgCaImAn_SVZ_entire_session_randomROIdrawv3(handles_choices)
+function handles_out2=drgCaImAn_SVZ_entire_session_selectROI(handles_choices)
 %This program trains several decoding algorithms with the post odorant and then determines what happens throughout the entire timecouse
 %The user enters the choices entered under exist('handles_choices')==0
 %
@@ -15,8 +15,11 @@ if exist('handles_choices')==0
     close all
     
     %Load file
-    [pre_perFileName,pre_perPathName] = uigetfile({'*pre_per.mat'},'Select the .m file with all the choices for analysis');
+    [pre_perFileName,pre_perPathName] = uigetfile({'*pre_per.mat'},'Select the *pre_per.mat');
+
+    [pre_per_rdecFileName,pre_per_rdecPathName] = uigetfile({'*pre_per_rdec.mat'},'Select the *pre_per_rdec.mat');
     
+    process_low=1; %1= process with ROIs with accuracy<=0.35 0= process with accuracy >0.65
     processing_algorithm=3; %Use 3 for manuscript (trained with all points in the training window)
     k_fold=5; %Only used for processing_algorithm=2,
     post_time=5; %The decoding model will be trained with all points in post_time sec interval starting post_shift secs after odor on, 5
@@ -85,12 +88,29 @@ time_windows=[-1 0;
 delta_odor=4.127634e+00;
 delta_odor_on_reinf_on=4.415787e+00;
 delta_reinf=4.078266e-01;
- 
-load([pre_perPathName pre_perFileName])
-if show_figures==1
-    fprintf(1, ['\ndrgCaImAn_SVZ_entire_session run for ' pre_perFileName '\n\n']);
-    fprintf(1, 'post_time = %d, p_threshold= %d, post_shift= %d, cost %d\n',post_time,p_threshold,post_shift, ii_cost);
+
+%Load the rdec file and choose the ROIs for decoding
+load([pre_per_rdecPathName pre_per_rdecFileName])
+fprintf(1, ['\ndrgCaImAnInspectMultiROI run for ' pre_perFileName '\n\n']);
+ii_out=1;
+handles_out2rdec=handles_out.ii_out(ii_out).handles_out;
+no_ROI_draws=handles_out2rdec.no_ROI_draws;
+rdecMLalgo=6;
+rdectime_windows=[3.1 4.1];
+rdectime_span=handles_out2rdec.time_span;
+
+rdec_accuracy_per_ROI=[];
+
+for iiROI=1:no_ROI_draws
+    rdec_accuracy_per_ROI=[rdec_accuracy_per_ROI mean(mean(handles_out2rdec.ROI(iiROI).MLalgo(rdecMLalgo).this_correct_predict(:,(rdectime_span>=rdectime_windows(1))&(rdectime_span<=rdectime_windows(2))),2))];
 end
+
+no_ROI_draws=1; %Number of times that decoding is calculated for each set of no_ROIs
+no_ROIs=10000; %Number of ROIs used in the decoding (sampled randomly from the total number of ROIs)
+
+load([pre_perPathName pre_perFileName])
+fprintf(1, ['\ndrgCaImAn_SVZ_entire_session run for ' pre_perFileName '\n\n']);
+fprintf(1, 'post_time = %d, p_threshold= %d, post_shift= %d, cost %d\n',post_time,p_threshold,post_shift, ii_cost);
 
 if convert_z==1
     for trace_no=1:size(traces,1)
@@ -156,6 +176,64 @@ if show_figures==1
     ylim([-y_shift*0.2 (no_traces+2)*y_shift])
     xlabel('time(sec)')
     title(['All dFF timecourses ' num2str(size(traces,1)) ' ROIs'])
+
+    figNo=figNo+1;
+    try
+        close(figNo)
+    catch
+    end
+    
+    hFig = figure(figNo);
+    
+    set(hFig, 'units','normalized','position',[.05 .1 .85 .8])
+    hold on
+    
+    % Determine the y spacing of the traces
+    if process_low==1
+        these_traces=traces(rdec_accuracy_per_ROI<=0.35,:);
+    else
+        these_traces=traces(rdec_accuracy_per_ROI>=0.65,:);
+    end
+    y_shift=1.2*(prctile(traces(:),95)-prctile(these_traces(:),5));
+    
+    %Plot the traces and do z normalization
+    %For S+ and S- plot odor on and reinforcement
+    for epoch=1:handles.dropcData.epochIndex
+        %Epoch 2 is odor on, 3 is odor off
+        plot_epoch=(handles.dropcData.epochEvent(epoch)==2)||(handles.dropcData.epochEvent(epoch)==3);
+        if plot_epoch
+            if handles.dropcData.epochTypeOfOdor(epoch)==handles.dropcProg.splusOdor
+                plot([handles.dropcData.epochTime(epoch) handles.dropcData.epochTime(epoch)], [0 (no_traces+2)*y_shift],...
+                    '-r','LineWidth',1)
+            else
+                plot([handles.dropcData.epochTime(epoch) handles.dropcData.epochTime(epoch)], [0 (no_traces+2)*y_shift],...
+                    '-b','LineWidth',1)
+            end
+        end
+    end
+     
+    trNo_included=0;
+    for trNo=1:no_traces
+        if process_low==1
+            if rdec_accuracy_per_ROI(trNo)<=0.35
+                trNo_included=trNo_included+1;
+                plot(time,traces(trNo,:)+y_shift*trNo_included,'-k','LineWidth',1)
+            end
+        else
+            if rdec_accuracy_per_ROI(trNo)>=0.65
+                trNo_included=trNo_included+1;
+                plot(time,traces(trNo,:)+y_shift*trNo_included,'-k','LineWidth',1)
+            end
+        end
+    end
+    no_these_traces=size(these_traces,1);
+    ylim([-y_shift*0.2 (no_these_traces+2)*y_shift])
+    xlabel('time(sec)')
+    if process_low==1
+        title(['dFF timecourses for ROIs with accuracy<=0.35'])
+    else
+        title(['dFF timecourses for ROIs with accuracy>=0.65'])
+    end
 end
 
 %if the number of ROIs is larger than the number available decrease it to
@@ -230,9 +308,7 @@ fa_per_trial=[];
 
 %Calculate percent correct
 handles_out.percent_correct=100*(sum(hit_per_trial)+sum(cr_per_trial))/length(hit_per_trial);
-if show_figures==1
-    fprintf(1,'Percent corect %d\n',handles_out.percent_correct)
-end
+fprintf(1,'Percent corect %d\n',handles_out.percent_correct)
 
 which_model_for_traces_loo(which_model_for_traces_loo>trial_no)=trial_no;
 %
@@ -310,52 +386,58 @@ for iiROI=1:size(dFFs_sm_per_trial_per_ROI,2)
     dFF_sm(:,:)=dFFs_sm_per_trial_per_ROI(:,iiROI,:);
     dFF_sp=zeros(size(dFFs_sp_per_trial_per_ROI,1),size(dFFs_sp_per_trial_per_ROI,3));
     dFF_sp(:,:)=dFFs_sp_per_trial_per_ROI(:,iiROI,:);
-    
+
     [h,p_values(iiROI)]=ttest2(mean(dFF_sp,2),mean(dFF_sm,2));
 end
 
 p_value_masks=[];
 for iiROI=1:no_ROI_draws
-    
-    if no_ROIs~=1
-        found_it=0;
-        while found_it==0
-            these_mask_ROIs=randperm(length(p_values));
-            these_mask_ROIs=these_mask_ROIs(1:no_ROIs);
-            p_value_mask=logical(zeros(1,length(p_values)));
-            p_value_mask(these_mask_ROIs)=1;
-            found_it=1;
-            for jjROI=1:size(p_value_masks,1)
-                if sum(p_value_masks(jjROI,:)==p_value_mask)==length(p_values)
-                    found_it=0;
-                end
-            end
-        end
+
+    %     if no_ROIs~=1
+    %         found_it=0;
+    %         while found_it==0
+    %             these_mask_ROIs=randperm(length(p_values));
+    %             these_mask_ROIs=these_mask_ROIs(1:no_ROIs);
+    %             p_value_mask=logical(zeros(1,length(p_values)));
+    %             p_value_mask(these_mask_ROIs)=1;
+    %             found_it=1;
+    %             for jjROI=1:size(p_value_masks,1)
+    %                 if sum(p_value_masks(jjROI,:)==p_value_mask)==length(p_values)
+    %                     found_it=0;
+    %                 end
+    %             end
+    %         end
+    %     else
+    %         p_value_mask=logical(zeros(1,length(p_values)));
+    %         p_value_mask(1,iiROI)=logical(1);
+    %     end
+
+    if process_low==1
+        p_value_mask=rdec_accuracy_per_ROI<=0.35;
     else
-        p_value_mask=logical(zeros(1,length(p_values)));
-        p_value_mask(1,iiROI)=logical(1);
+        p_value_mask=rdec_accuracy_per_ROI>=0.65;
     end
-    
+
     p_value_masks(iiROI,:)=p_value_mask;
     %     end
 
     handles_out2.p_value_masks=p_value_masks;
-    
+
     %Trim the number of ROIs in all matrices
     noROIs_before_trimming=size(measurements_post,2);
-%     dFF_per_trial_sp=dFF_per_trial_sp(:,p_value_mask,:);
-%     dFF_per_trial_sm=dFF_per_trial_sm(:,p_value_mask,:);
+    %     dFF_per_trial_sp=dFF_per_trial_sp(:,p_value_mask,:);
+    %     dFF_per_trial_sm=dFF_per_trial_sm(:,p_value_mask,:);
     measurements_post_trimmed=measurements_post(:,p_value_mask);
-%     measurements_pre_trimmed=measurements_pre(:,p_value_mask);
+    %     measurements_pre_trimmed=measurements_pre(:,p_value_mask);
     traces_trimmed=traces(p_value_mask,:);
-%     no_traces=size(traces,1);
-    
+    %     no_traces=size(traces,1);
+
     %Save odor times
     handles_out2.sp_times=[];
     handles_out2.sp_times_ii=0;
     handles_out2.sm_times=[];
     handles_out2.sm_times_ii=0;
-    
+
     %For S+ and S- plot odor on and reinforcement
     for epoch=1:handles.dropcData.epochIndex
         %Epoch 2 is odor on, 3 is odor off
@@ -374,7 +456,7 @@ for iiROI=1:no_ROI_draws
             end
         end
     end
-    
+
     
     training_decisions_post_sh=zeros(1,length(training_decisions_post));
     training_decisions_post_sh(1,:)=training_decisions_post(randperm(length(training_decisions_post)));
@@ -391,9 +473,8 @@ for iiROI=1:no_ROI_draws
     
     handles_out2.dt=dt;
     
-    if show_figures==1
-        fprintf(1, ['Training run number %d with %d ROIs (original no ROIs %d)...\n'],iiROI,size(measurements_post_trimmed,2),noROIs_before_trimming);
-    end
+    fprintf(1, ['Training run number %d with %d ROIs (original no ROIs %d)...\n'],iiROI,size(measurements_post_trimmed,2),noROIs_before_trimming);
+    
     
     for MLalgo=MLalgo_to_use
         
@@ -1551,15 +1632,15 @@ for iiROI=1:no_ROI_draws
                         
                     end
                     
-                    if show_figures==1
-                        fprintf(1, ['Training accuracy for ' classifier_names{MLalgo} ' and cost %d is %d, wta accuracy is %d\n']...
-                            ,ii_cost, sum(correct_predict_tr)/length(correct_predict_tr),sum(correct_predict_tr_wta)/length(correct_predict_tr_wta));
-                        fprintf(1, ['Shuffled training accuracy for ' classifier_names{MLalgo} ' and cost %d is %d, wta accuracy is %d\n']...
-                            ,ii_cost, sum(correct_predict_tr_sh)/length(correct_predict_tr_sh),sum(correct_predict_tr_wta_sh)/length(correct_predict_tr_wta_sh));
-                        fprintf(1, ['Training accuracy for shuffled per trial ' classifier_names{MLalgo} ' and cost %d is %d, wta accuracy is %d\n']...
-                            ,ii_cost, sum(correct_predict_tr_sh2(:))/length(correct_predict_tr_sh2(:)),sum(correct_predict_tr_wta_sh2(:))/length(correct_predict_tr_wta_sh2(:)));
-                        fprintf(1, ['Mean label trace %d, variance %d\n'],mean(label_traces),var(label_traces));
-                    end
+                    
+                    fprintf(1, ['Training accuracy for ' classifier_names{MLalgo} ' and cost %d is %d, wta accuracy is %d\n']...
+                        ,ii_cost, sum(correct_predict_tr)/length(correct_predict_tr),sum(correct_predict_tr_wta)/length(correct_predict_tr_wta));
+                    fprintf(1, ['Shuffled training accuracy for ' classifier_names{MLalgo} ' and cost %d is %d, wta accuracy is %d\n']...
+                        ,ii_cost, sum(correct_predict_tr_sh)/length(correct_predict_tr_sh),sum(correct_predict_tr_wta_sh)/length(correct_predict_tr_wta_sh));
+                    fprintf(1, ['Training accuracy for shuffled per trial ' classifier_names{MLalgo} ' and cost %d is %d, wta accuracy is %d\n']...
+                        ,ii_cost, sum(correct_predict_tr_sh2(:))/length(correct_predict_tr_sh2(:)),sum(correct_predict_tr_wta_sh2(:))/length(correct_predict_tr_wta_sh2(:)));
+                    fprintf(1, ['Mean label trace %d, variance %d\n'],mean(label_traces),var(label_traces));
+                    
                     
                     handles_not_out.MLalgo(MLalgo).correct_predict_tr=correct_predict_tr;
                     handles_not_out.MLalgo(MLalgo).correct_predict_tr_wta=correct_predict_tr_wta;
@@ -1647,10 +1728,9 @@ for iiROI=1:no_ROI_draws
                         pzero=sum(label_traces_sh2(ii,:)==0)/size(label_traces_sh2,2);
                         handles_out.MLalgo(MLalgo).shannon_e_sh2(ii)=-pzero*log2(pzero) - pone*log2(pone);
                     end
-                    if show_figures==1
-                        fprintf(1, ['Shannon entropy %d, shuffled 1 %d, shuffled 2 %d\n\n'],handles_out.MLalgo(MLalgo).shannon_e...
-                            ,handles_out.MLalgo(MLalgo).shannon_e_sh,mean(handles_out.MLalgo(MLalgo).shannon_e_sh2));
-                    end
+                    fprintf(1, ['Shannon entropy %d, shuffled 1 %d, shuffled 2 %d\n\n'],handles_out.MLalgo(MLalgo).shannon_e...
+                        ,handles_out.MLalgo(MLalgo).shannon_e_sh,mean(handles_out.MLalgo(MLalgo).shannon_e_sh2));
+                    
                     %Now let's do accounting and show it in a bar graph
                     
                     %post Splus
@@ -2427,10 +2507,8 @@ if show_figures==1
     title(['Histogram of accuracy for p <= ' num2str(p_threshold)])
     xlabel('Accuracy')
     
-    if show_figures==1
-        fprintf(1,'Mean accuracy all runs= %d\n',mean(accuracy_per_ROI))
-        fprintf(1,'Shuffled trial mean accuracy all runs= %d\n',mean(accuracy_per_ROI_sh))
-    end
+    fprintf(1,'Mean accuracy all runs= %d\n',mean(accuracy_per_ROI))
+    fprintf(1,'Shuffled trial mean accuracy all runs= %d\n',mean(accuracy_per_ROI_sh))
     %     end
     
     %Plot pseudocolor accuracy vs dFF fraction positive
@@ -2602,7 +2680,6 @@ if show_figures==1
     
     
 end
-if show_figures==1
-    fprintf(1,'Elapsed time (hr) %d\n',toc/(60*60))
-end
+ 
+fprintf(1,'Elapsed time (hr) %d\n',toc/(60*60))
 pffft=1;
