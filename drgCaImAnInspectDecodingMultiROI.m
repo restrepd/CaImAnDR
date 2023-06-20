@@ -30,7 +30,10 @@ if exist('handles_choices')==0
     %This dt_lat is used to find the maximum accuracy attained within dt_lat
     %after latency start
     dt_lat=1;
-    
+    sustained_dt=0.2;
+    lat_fact=1;
+    mad_pre_accuracy=0.05;
+
     %When run with show_figures=1 it plots results for a couple of ROIs
     show_figures=1;
 
@@ -550,10 +553,11 @@ for iiROI=1:no_ROI_draws
     all_pre_accuracy_values=[all_pre_accuracy_values mean(handles_out2.ROI(iiROI).MLalgo(MLalgo).this_correct_predict(:,(time_span>=pre_time_window(1))&(time_span<=pre_time_window(2))),1)];
 end
 
-mad_pre_accuracy=mad(all_pre_accuracy_values);
-sustained_dt=0.2;
+% mad_pre_accuracy=mad(all_pre_accuracy_values);
+
+% sustained_dt=0.2;
 sustained_ii=ceil(sustained_dt/(time_span(2)-time_span(1)));
-lat_fact=1;
+% lat_fact=1;
 
 for iiROI=1:no_ROI_draws
     accuracy_per_ROIw=[accuracy_per_ROIw prctile(mean(handles_out2.ROI(iiROI).MLalgo(MLalgo).this_correct_predict(:,(time_span>=time_window_lat(1))&(time_span<=time_window_lat(2))),1),95)];
@@ -666,30 +670,30 @@ if show_figures==1
     text(30,0.65,'S+ vs S-','Color',[0 114/255 178/255])
 
 
-    ylim([-0.1 ii_shift+1.1])
+    ylim([0.8 ii_shift+1.1])
     xlim([-7 15])
     this_ylim=ylim;
 
     %FV
 %     rectangle(Position=[-1.5,this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)),1.5,0.03*(this_ylim(2)-this_ylim(1))], FaceColor=[0.9 0.9 0.9], EdgeColor=[0.9 0.9 0.9])
-    plot([-1.5 0],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'Color',[0.7 0.7 0.7],'LineWidth',5);
+    plot([-1.5 0],[1 1],'Color',[0.7 0.7 0.7],'LineWidth',5);
    
     plot([-1.5 -1.5],[this_ylim],'-','Color',[0.5 0.5 0.5])
-
+ 
     %Odor on markers
     plot([0 0],this_ylim,'-k')
-    odorhl=plot([0 mean(delta_odor)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-k','LineWidth',5);
+    odorhl=plot([0 mean(delta_odor)],[1 1],'-k','LineWidth',5);
     plot([mean(delta_odor) mean(delta_odor)],this_ylim,'-k')
 
     %Reinforcement markers
     plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on)],this_ylim,'-r')
-    reinfhl=plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on+delta_reinf)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-r','LineWidth',5);
+    reinfhl=plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on+delta_reinf)],[1 1],'-r','LineWidth',5);
     plot([mean(delta_odor_on_reinf_on+delta_reinf) mean(delta_odor_on_reinf_on+delta_reinf)],this_ylim,'-r')
 
     title(['Accuracy for ROIs with accuracy per ROIw > ' num2str(acc_thr(2))])
     xlabel('Time(sec)')
     ylabel('Accuracy')
-    ylim([1 12.5])
+    
 
 %     %Plot the second derivative of accuracy for ROIs with accuracy_per_ROIw>acc_thr(2)
 %     %This did not help

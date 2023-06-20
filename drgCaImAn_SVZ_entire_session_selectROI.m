@@ -19,7 +19,7 @@ if exist('handles_choices')==0
 
     [pre_per_rdecFileName,pre_per_rdecPathName] = uigetfile({'*pre_per_rdec.mat'},'Select the *pre_per_rdec.mat');
     
-    process_low=1; %1= process with ROIs with accuracy<=0.35 0= process with accuracy >0.65
+    process_low=0; %1= process with ROIs with accuracy<=0.35 0= process with accuracy >0.65
     processing_algorithm=3; %Use 3 for manuscript (trained with all points in the training window)
     k_fold=5; %Only used for processing_algorithm=2,
     post_time=5; %The decoding model will be trained with all points in post_time sec interval starting post_shift secs after odor on, 5
@@ -2486,13 +2486,17 @@ if show_figures==1
     set(hFig, 'units','normalized','position',[.05 .1 .3 .3])
     
     hold on
+    edges=[0:0.05:1];
+
+  
+
     %         accuracy_tr=handles_out2.ROI(1).MLalgo(iiMLalgo).accuracy_tr;
     accuracy_per_ROI=[];
     for iiROI=1:no_ROI_draws
         accuracy_per_ROI=[accuracy_per_ROI mean(mean(handles_out2.ROI(iiROI).MLalgo(MLalgo).this_correct_predict(:,(time_span>=time_windows(window_no,1))&(time_span<=time_windows(window_no,2))),2))];
     end
     
-    histogram(accuracy_per_ROI)
+    histogram(accuracy_per_ROI,edges,'Normalization','Probability')
     
     
     
@@ -2501,7 +2505,7 @@ if show_figures==1
         accuracy_per_ROI_sh=[accuracy_per_ROI_sh mean(mean(handles_out2.ROI(iiROI).MLalgo(MLalgo).this_correct_predict_sh(:,(time_span>=time_windows(window_no,1))&(time_span<=time_windows(window_no,2))),2))];
     end
     
-    histogram(accuracy_per_ROI_sh)
+    histogram(accuracy_per_ROI_sh,edges,'Normalization','Probability')
     
     
     title(['Histogram of accuracy for p <= ' num2str(p_threshold)])
