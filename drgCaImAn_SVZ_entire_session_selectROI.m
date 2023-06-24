@@ -19,7 +19,7 @@ if exist('handles_choices')==0
 
     [pre_per_rdecFileName,pre_per_rdecPathName] = uigetfile({'*pre_per_rdec.mat'},'Select the *pre_per_rdec.mat');
     
-    process_low=0; %1= process with ROIs with accuracy<=0.35 0= process with accuracy >0.65
+    process_low=0; %1= process with ROIs with accuracy<=0.35 0= process with accuracy >=0.65
     processing_algorithm=3; %Use 3 for manuscript (trained with all points in the training window)
     k_fold=5; %Only used for processing_algorithm=2,
     post_time=5; %The decoding model will be trained with all points in post_time sec interval starting post_shift secs after odor on, 5
@@ -47,11 +47,13 @@ if exist('handles_choices')==0
     handles_choices.show_figures=show_figures;
     handles_choices.ii_cost=ii_cost;
     handles_choices.no_ROI_draws=no_ROI_draws;
-    handles_choices.no_ROIs=no_ROIs;
+    handles_choices.process_low=process_low;
     
 else
     pre_perPathName=handles_choices.pre_per_PathName;
     pre_perFileName=handles_choices.pre_per_FileName;
+    pre_per_rdecPathName=pre_perPathName;
+    pre_per_rdecFileName=[pre_perFileName(1:end-4) '_rdec.mat'];
     processing_algorithm=handles_choices.processing_algorithm;
     post_time=handles_choices.post_time;
     k_fold=handles_choices.k_fold;
@@ -64,6 +66,7 @@ else
     ii_cost=handles_choices.ii_cost;
     no_ROI_draws=handles_choices.no_ROI_draws;
     no_ROIs=handles_choices.no_ROIs;
+    process_low=handles_choices.process_low;
 end
 
 w = warning ('off','all');

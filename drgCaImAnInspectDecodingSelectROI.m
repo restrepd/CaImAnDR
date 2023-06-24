@@ -1,4 +1,4 @@
-function handles_outd=drgCaImAnInspectDecodingMultiROI(handles_choices)
+function handles_outd=drgCaImAnInspectDecodingSelectROI(handles_choices)
 %drgCaImAnInspectDecodingSingleROI
 %This function inspects the decoding results of multi ROI decoding
 %When run with show_figures=1 it plots results for a couple of ROIs
@@ -38,7 +38,7 @@ if exist('handles_choices')==0
     show_figures=1;
 
     %The variables below need to be defined if show_figures=1
-    ROI1=22; %50 has a nice accuracy curve starting at odor on
+    ROI1=6; %50 has a nice accuracy curve starting at odor on
     %1 has an accuracy close to zero and has low dFF zero fraction for both S+ and S-
     %22 has accuracy below 0.5 with high dFF zero fraction for both S+ and S-
     %62 has a nice increase 2 sec after odor on
@@ -66,6 +66,13 @@ else
 
     ROI1=1;
     time_to_inspect1=4; %Time to inspect the dFF
+
+      %This dt_lat is used to find the maximum accuracy attained within dt_lat
+    %after latency start
+    dt_lat=1;
+    sustained_dt=0.2;
+    lat_fact=1;
+    mad_pre_accuracy=0.05;
 end
 
 
