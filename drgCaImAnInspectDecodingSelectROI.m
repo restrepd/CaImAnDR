@@ -622,7 +622,7 @@ latency_per_ROI=[];
 cropped_time_span_ii=find((time_span>=time_window_lat(1))&(time_span<=time_window_lat(2)));
 cropped_time_span=time_span(cropped_time_span_ii);
 
-%Calculate teh mean absolute deviation (as opposed to the STD)
+%Calculate the mean absolute deviation (as opposed to the STD)
 all_pre_accuracy_values=[];
 for iiROI=1:no_ROI_draws
     all_pre_accuracy_values=[all_pre_accuracy_values mean(handles_out2.ROI(iiROI).MLalgo(MLalgo).this_correct_predict(:,(time_span>=pre_time_window(1))&(time_span<=pre_time_window(2))),1)];

@@ -97,11 +97,13 @@ no_mice=length(mouse_names);
 figNo=0;
 show_figures=1;
 handles_out_all=[];
+handles_out_all_rdec=[];
 
 if all_files_present==1
 
 
     %Process each file separately
+    fileNo_included=0;
     for fileNo=first_file:length(handles.FileName_pre_per)
         tic
         first_toc=toc;
@@ -113,6 +115,24 @@ if all_files_present==1
         [percent_correct] = drgCaImAnFindPercentCorrect(pre_per_PathName, pre_per_FileName);
 
         if percent_correct>=80
+            fileNo_included=fileNo_included+1;
+            mouseNo_per_file_included(fileNo_included)=mouseNo_per_file(fileNo);
+
+            %First bring in the rdec data for single ROI decoding
+            handles_choices.ii_out=1;
+            handles_choices.show_figures=0;
+            handles_choices.pre_perFileName=[pre_per_FileName(1:end-4) '_rdec.mat'];
+            handles_choices.pre_perPathName=pre_per_PathName;
+            handles_choices.time_windows=[3.1 4.1];
+            handles_choices.time_windows_pre=[-1 0];
+            handles_choices.time_window_lat=[-1.5 10];
+            handles_choices.pre_time_window=[-7 -1.5];
+            handles_choices.acc_thr=[0.35 0.65];
+            handles_choices.dt_span=15;
+            handles_choices.MLalgo=6;
+
+            handles_out_all_rdec.file(fileNo_included).handles_outd=drgCaImAnInspectDecodingMultiROI(handles_choices);
+
             %Do only for proficient
             for ii_process_low=1:2
 
@@ -131,16 +151,17 @@ if all_files_present==1
 
 
 
-                handles_out_all.file(fileNo).ii_out(ii_process_low).handles_choices=handles_choices;
+                handles_out_all.file(fileNo_included).ii_out(ii_process_low).handles_choices=handles_choices;
 
                 start_toc=toc;
 
-                handles_out_all.file(fileNo).ii_out(ii_process_low).handles_outd=drgCaImAnInspectDecodingSelectROI(handles_choices);
+                handles_out_all.file(fileNo_included).ii_out(ii_process_low).handles_outd=drgCaImAnInspectDecodingSelectROI(handles_choices);
 
                 fprintf(1, ['Data processed for file number %d, ii_out= %d\n'],fileNo,ii_process_low);
             end
             fprintf(1,'Processing time for file number %d is %d seconds\n',fileNo,(toc-first_toc));
-
+        else
+            fprintf(1,'File number %d was excluded because percent correct <80\n',fileNo);
         end
     end
 
@@ -150,118 +171,226 @@ if all_files_present==1
     %Plot the histograms for accuracy for each number of ROIs in the odor
     %window
     figureNo=0;
-    figureNo = figureNo + 1;
-    try
-        close(figureNo)
-    catch
-    end
-    hFig=figure(figureNo);
-
-
-    set(hFig, 'units','normalized','position',[.3 .3 .4 .7])
-
-    edges=[0:0.05:1];
     for ii_process_low=1:length(all_no_ROIs)
-        subplot(length(all_no_ROIs),1,ii_process_low)
+        figureNo = figureNo + 1;
+        try
+            close(figureNo)
+        catch
+        end
+        hFig=figure(figureNo);
+
+
+        set(hFig, 'units','normalized','position',[.2 .3 .4 .4])
+
+        edges=[0:0.05:1];
+
+        %plot the accuracy determined using all ROIs per session
+        subplot(2,1,2)
         ax=gca;ax.LineWidth=3;
         hold on
 
         all_accs=[];
         all_accs_sh=[];
-        for fileNo=first_file:length(handles.FileName_pre_per)
+        for fileNo=1:fileNo_included
             all_accs=[all_accs handles_out_all.file(fileNo).ii_out(ii_process_low).handles_outd.accuracy_per_ROI];
             all_accs_sh=[all_accs_sh handles_out_all.file(fileNo).ii_out(ii_process_low).handles_outd.accuracy_per_ROI_sh];
         end
         histogram(all_accs,edges,'Normalization','Probability')
         histogram(all_accs_sh,edges,'Normalization','Probability')
 
-        if ii_process_low==1
-            title(['ROIs with decoding accuracy >=0.65'])
-        else
-            title(['ROIs with decoding accuracy <=0.35'])
-        end
+
         if ii_process_low==1
             xlabel('Accuracy')
         end
         ylabel('P')
-    end
-    sgtitle('Histograms for accuracy in odor window')
 
-    %Plot the histograms for accuracy for each number of ROIs in the pre
-    %window
-    figureNo = figureNo + 1;
-    try
-        close(figureNo)
-    catch
-    end
-    hFig=figure(figureNo);
+        title('Accuracy estimated with all ROIs per session')
 
 
-    set(hFig, 'units','normalized','position',[.3 .3 .4 .7])
-
-    edges=[0:0.05:1];
-    for ii_process_low=1:length(all_no_ROIs)
-        subplot(length(all_no_ROIs),1,ii_process_low)
+        %plot the per ROI accuracy
+        subplot(2,1,1)
         ax=gca;ax.LineWidth=3;
         hold on
 
         all_accs=[];
         all_accs_sh=[];
-        for fileNo=first_file:length(handles.FileName_pre_per)
+        for fileNo=1:fileNo_included
+            these_accs=handles_out_all_rdec.file(fileNo).handles_outd.accuracy_per_ROI;
+            these_accs_sh=handles_out_all_rdec.file(fileNo).handles_outd.accuracy_per_ROI_sh;
+            if ii_process_low==1
+                pruned_these_accs=these_accs(these_accs>=0.65);
+                pruned_these_accs_sh=these_accs_sh(these_accs>=0.65);
+            else
+                pruned_these_accs=these_accs(these_accs<=0.35);
+                pruned_these_accs_sh=these_accs_sh(these_accs<=0.35);
+            end
+            all_accs=[all_accs pruned_these_accs];
+            all_accs_sh=[all_accs_sh pruned_these_accs_sh];
+        end
+        histogram(all_accs,edges,'Normalization','Probability')
+        histogram(all_accs_sh,edges,'Normalization','Probability')
+
+
+        if ii_process_low==1
+            xlabel('Accuracy')
+        end
+        ylabel('P')
+
+        title('Accuracy estimated per ROI')
+
+        if ii_process_low==1
+            sgtitle(['Histogram for odor decoding accuracy (single ROI accuracy >=0.65)'])
+        else
+            sgtitle(['Histogram for odor decoding accuracy (single ROI accuracy <=0.35)'])
+        end
+    end
+
+
+    %Plot the histograms for accuracy for each number of ROIs in the pre
+    %window
+    for ii_process_low=1:length(all_no_ROIs)
+        figureNo = figureNo + 1;
+        try
+            close(figureNo)
+        catch
+        end
+        hFig=figure(figureNo);
+
+
+        set(hFig, 'units','normalized','position',[.3 .3 .4 .4])
+
+        edges=[0:0.05:1];
+
+        %plot the per ROI accuracy
+        subplot(2,1,1)
+        ax=gca;ax.LineWidth=3;
+        hold on
+
+        all_accs=[];
+        all_accs_sh=[];
+        for fileNo=1:fileNo_included
+            these_accs=handles_out_all_rdec.file(fileNo).handles_outd.accuracy_per_ROI_pre;
+            these_accs_sh=handles_out_all_rdec.file(fileNo).handles_outd.accuracy_per_ROI_sh_pre;
+            if ii_process_low==1
+                pruned_these_accs=these_accs(these_accs>=0.65);
+                pruned_these_accs_sh=these_accs_sh(these_accs>=0.65);
+            else
+                pruned_these_accs=these_accs(these_accs<=0.35);
+                pruned_these_accs_sh=these_accs_sh(these_accs<=0.35);
+            end
+            all_accs=[all_accs pruned_these_accs];
+            all_accs_sh=[all_accs_sh pruned_these_accs_sh];
+        end
+        histogram(all_accs,edges,'Normalization','Probability')
+        histogram(all_accs_sh,edges,'Normalization','Probability')
+
+
+        if ii_process_low==1
+            xlabel('Accuracy')
+        end
+        ylabel('P')
+
+        title('Accuracy estimated per ROI')
+
+        %Plot accuracy calculated for all ROIs per session
+        subplot(2,1,2)
+        ax=gca;ax.LineWidth=3;
+        hold on
+
+        all_accs=[];
+        all_accs_sh=[];
+        for fileNo=1:fileNo_included
             all_accs=[all_accs handles_out_all.file(fileNo).ii_out(ii_process_low).handles_outd.accuracy_per_ROI_pre];
             all_accs_sh=[all_accs_sh handles_out_all.file(fileNo).ii_out(ii_process_low).handles_outd.accuracy_per_ROI_sh_pre];
         end
         histogram(all_accs,edges,'Normalization','Probability')
         histogram(all_accs_sh,edges,'Normalization','Probability')
 
-        if ii_process_low==1
-            title(['ROIs with decoding accuracy >=0.65'])
-        else
-            title(['ROIs with decoding accuracy <=0.35'])
-        end
+
         if ii_process_low==1
             xlabel('Accuracy')
         end
         ylabel('P')
+
+        title('Accuracy estimated with all ROIs per session')
+        if ii_process_low==1
+            sgtitle(['Histogram for pre decoding accuracy (single ROI accuracy >=0.65)'])
+        else
+            sgtitle(['Histogram for pre decoding accuracy (single ROI accuracy <=0.35)'])
+        end
+
     end
-    sgtitle('Histograms for accuracy in pre window')
 
 
-    %Plot the histograms for latency for each number of ROIs
-    figureNo = figureNo + 1;
-    try
-        close(figureNo)
-    catch
-    end
-    hFig=figure(figureNo);
 
-
-    set(hFig, 'units','normalized','position',[.3 .3 .4 .7])
-
-    edges=[-2:0.5:10];
+    %Plot the histograms for latency
     for ii_process_low=1:length(all_no_ROIs)
-        subplot(length(all_no_ROIs),1,ii_process_low)
+        figureNo = figureNo + 1;
+        try
+            close(figureNo)
+        catch
+        end
+        hFig=figure(figureNo);
+
+
+        set(hFig, 'units','normalized','position',[.2 .3 .4 .4])
+
+        edges=[-2:0.5:10];
+
+
+        %plot the per ROI latency
+        subplot(2,1,1)
         ax=gca;ax.LineWidth=3;
         hold on
 
         all_lats=[];
-        for fileNo=first_file:length(handles.FileName_pre_per)
+
+        for fileNo=1:fileNo_included
+            these_lats=handles_out_all_rdec.file(fileNo).handles_outd.latency_per_ROI;
+            these_accs=handles_out_all_rdec.file(fileNo).handles_outd.accuracy_per_ROI;
+            if ii_process_low==1
+                pruned_these_lats=these_lats(these_accs>=0.65);
+            else
+                pruned_these_lats=these_lats(these_accs<=0.35);
+            end
+            all_lats=[all_lats pruned_these_lats];
+        end
+        histogram(all_lats,edges,'Normalization','Probability')
+
+        if ii_process_low==1
+            xlabel('Accuracy')
+        end
+        ylabel('P')
+
+        title('Latency estimated per ROI')
+
+        %Now plot latencies estimated for all ROIs per session
+        subplot(2,1,2)
+        ax=gca;ax.LineWidth=3;
+        hold on
+
+        all_lats=[];
+        for fileNo=1:fileNo_included
             all_lats=[all_lats handles_out_all.file(fileNo).ii_out(ii_process_low).handles_outd.latency_per_ROI];
         end
         histogram(all_lats,edges)
 
 
-        if ii_process_low==1
-            title(['ROIs with decoding accuracy >=0.65'])
-        else
-            title(['ROIs with decoding accuracy <=0.35'])
-        end
+
         if ii_process_low==1
             xlabel('Latency')
         end
         ylabel('P')
+
+        title('Latency estimated for all ROIs per session')
+
+        if ii_process_low==1
+            sgtitle(['Histogram for latencies (single ROI accuracy >=0.65)'])
+        else
+            sgtitle(['Histogram for latencies (single ROI accuracy <=0.35)'])
+        end
     end
-    sgtitle('Histograms for latency')
+    
 
     %Now generate per mouse histograms
     for ii_mouse=1:no_mice
@@ -276,7 +405,7 @@ if all_files_present==1
         hFig=figure(figureNo);
 
 
-        set(hFig, 'units','normalized','position',[.3 .3 .4 .7])
+        set(hFig, 'units','normalized','position',[.2 .3 .4 .4])
 
         edges=[0:0.05:1];
         for ii_process_low=1:length(all_no_ROIs)
@@ -286,8 +415,8 @@ if all_files_present==1
 
             all_accs=[];
             all_accs_sh=[];
-            for fileNo=first_file:length(handles.FileName_pre_per)
-                if mouseNo_per_file(fileNo)==ii_mouse
+            for fileNo=1:fileNo_included
+                if mouseNo_per_file_included(fileNo)==ii_mouse
                     all_accs=[all_accs handles_out_all.file(fileNo).ii_out(ii_process_low).handles_outd.accuracy_per_ROI];
                     all_accs_sh=[all_accs_sh handles_out_all.file(fileNo).ii_out(ii_process_low).handles_outd.accuracy_per_ROI_sh];
                 end
@@ -317,7 +446,7 @@ if all_files_present==1
         hFig=figure(figureNo);
 
 
-        set(hFig, 'units','normalized','position',[.3 .3 .4 .7])
+        set(hFig, 'units','normalized','position',[.2 .3 .4 .4])
 
         edges=[0:0.05:1];
         for ii_process_low=1:length(all_no_ROIs)
@@ -327,8 +456,8 @@ if all_files_present==1
 
             all_accs=[];
             all_accs_sh=[];
-            for fileNo=first_file:length(handles.FileName_pre_per)
-                if mouseNo_per_file(fileNo)==ii_mouse
+            for fileNo=1:fileNo_included
+                if mouseNo_per_file_included(fileNo)==ii_mouse
                     all_accs=[all_accs handles_out_all.file(fileNo).ii_out(ii_process_low).handles_outd.accuracy_per_ROI_pre];
                     all_accs_sh=[all_accs_sh handles_out_all.file(fileNo).ii_out(ii_process_low).handles_outd.accuracy_per_ROI_sh_pre];
                 end
@@ -357,7 +486,7 @@ if all_files_present==1
         hFig=figure(figureNo);
 
 
-        set(hFig, 'units','normalized','position',[.3 .3 .4 .7])
+        set(hFig, 'units','normalized','position',[.2 .3 .4 .4])
 
         edges=[-2:0.5:10];
         for ii_process_low=1:length(all_no_ROIs)
@@ -366,8 +495,8 @@ if all_files_present==1
             hold on
 
             all_lats=[];
-            for fileNo=first_file:length(handles.FileName_pre_per)
-                if mouseNo_per_file(fileNo)==ii_mouse
+            for fileNo=1:fileNo_included
+                if mouseNo_per_file_included(fileNo)==ii_mouse
                 all_lats=[all_lats handles_out_all.file(fileNo).ii_out(ii_process_low).handles_outd.latency_per_ROI];
                 end
             end

@@ -10,15 +10,20 @@ prof_labels{1}='naive';
 prof_labels{2}='intermediate';
 prof_labels{3}='proficient';
 
-time_periods_eu=[-5 -3;
-    -2.5 -1.5;
-    -1 0;
-    2 4.1];
+% time_periods_eu=[-5 -3;
+%     -2.5 -1.5;
+%     -1 0;
+%     2 4.1];
 
-period_labels{1}='Baseline';
-period_labels{2}='PreFV';
-period_labels{3}='PreOdor';
-period_labels{4}='Odor';
+time_periods_eu=[
+            -1 0;
+            3.1 4.1;
+            4.4 5.4];
+
+% period_labels{1}='Baseline';
+period_labels{2}='Pre';
+period_labels{3}='Odor';
+period_labels{4}='Reinf';
 
 
 
@@ -451,7 +456,7 @@ if all_files_present==1
     for ii_pc_group=[1 3]
 
         %Calculate the mean for each mouse for each time period
-        for ii_t_period=1:4
+        for ii_t_period=1:size(time_periods_eu,1)
             per_mouse_delta_zdist_euclid=[];
             per_mouse_delta_zdist_euclid_within=[];
             all_delta_zdist_euclid=[];
@@ -549,16 +554,17 @@ if all_files_present==1
         bar_offsetbw=bar_offsetbw+1;
     end
 
+    
     figure(figNo-1)
-    xticks([1.5 3.5 5.5 7.5 10.5 12.5 14.5 16.5])
-    xticklabels({'Base','PreFV','PreOd','Odor','Base','PreFV','PreOd','Odor'})
+    xticks([1.5 3.5 5.5 8.5 10.5 12.5])
+    xticklabels({'Pre','Odor','Reinf','Pre','Odor','Reinf'})
 
     ylabel('Euclidean distance')
     title('Euclidean distance')
 
     figure(figNo)
-    xticks([1 2 3 4 6 7 8 9])
-    xticklabels({'Base','PreFV','PreOd','Odor','Base','PreFV','PreOd','Odor'})
+    xticks([1 2 3 5 6 7])
+    xticklabels({'Pre','Odor','Reinf','Pre','Odor','Reinf'})
 
     ylabel('Euclidean distance between-within')
     title('Euclidean distance between-within')
@@ -737,7 +743,7 @@ if all_files_present==1
     for ii_pc_group=[1 3]
 
         %Calculate the mean for each mouse for each time period
-        for ii_t_period=1:4
+        for ii_t_period=1:size(time_periods_eu,1)
             per_mouse_meandFF_sp=[];
             per_mouse_meandFF_sm=[];
             all_meandFF_sp=[];
@@ -811,8 +817,8 @@ if all_files_present==1
         bar_offset=bar_offset+1;
     end
 
-    xticks([1.5 3.5 5.5 7.5 10.5 12.5 14.5 16.5])
-    xticklabels({'Base','PreFV','PreOd','Odor','Base','PreFV','PreOd','Odor'})
+      xticks([1.5 3.5 5.5 8.5 10.5 12.5])
+    xticklabels({'Pre','Odor','Reinf','Pre','Odor','Reinf'})
 
     ylabel('mean dFF')
 
@@ -1016,7 +1022,7 @@ if all_files_present==1
     for ii_pc_group=[1 3]
 
         %Calculate the mean for each mouse for each time period
-        for ii_t_period=1:4
+        for ii_t_period=1:size(time_periods_eu,1)
             per_mouse_delta_KLdivergence=[];
             per_mouse_delta_KLdivergence_mix=[];
             all_delta_KLdivergence=[];
@@ -1092,8 +1098,10 @@ if all_files_present==1
         bar_offset=bar_offset+1;
     end
 
-    xticks([1.5 3.5 5.5 7.5 10.5 12.5 14.5 16.5])
-    xticklabels({'Base','PreFV','PreOd','Odor','Base','PreFV','PreOd','Odor'})
+   
+      xticks([1.5 3.5 5.5 8.5 10.5 12.5])
+    xticklabels({'Pre','Odor','Reinf','Pre','Odor','Reinf'})
+
 
     ylabel('KL divergence')
 
@@ -1443,7 +1451,7 @@ if all_files_present==1
     for ii_pc_group=[1 3]
 
         %Calculate the mean for each mouse for each time period
-        for ii_t_period=1:4
+        for ii_t_period=1:size(time_periods_eu,1)
             per_mouse_delta_dprime=[];
             per_mouse_delta_dprime_mix=[];
             all_delta_dprime=[];
@@ -1550,15 +1558,17 @@ if all_files_present==1
     end
 
     figure(figNo-1)
-    xticks([1.5 3.5 5.5 7.5 10.5 12.5 14.5 16.5])
-    xticklabels({'Base','PreFV','PreOd','Odor','Base','PreFV','PreOd','Odor'})
+   
+      xticks([1.5 3.5 5.5 8.5 10.5 12.5])
+    xticklabels({'Pre','Odor','Reinf','Pre','Odor','Reinf'})
+
 
     ylabel('delta dprime')
     title('delta dprime black=between gray=within)')
 
     figure(figNo)
-    xticks([1 2 3 4 6 7 8 9])
-    xticklabels({'Base','PreFV','PreOd','Odor','Base','PreFV','PreOd','Odor'})
+    xticks([1 2 3 5 6 7])
+    xticklabels({'Pre','Odor','Reinf','Pre','Odor','Reinf'})
 
     ylabel('delta dprime')
 
@@ -2021,7 +2031,7 @@ if all_files_present==1
     for ii_pc_group=[1 3]
 
         %Calculate the mean for each mouse for each time period
-        for ii_t_period=1:4
+        for ii_t_period=1:size(time_periods_eu,1)
 
             all_LR_sp=[];
             all_LR_sm=[];
@@ -2095,8 +2105,11 @@ if all_files_present==1
         bar_offset=bar_offset+1;
     end
 
-    xticks([1.5 3.5 5.5 7.5 10.5 12.5 14.5 16.5])
-    xticklabels({'Base','PreFV','PreOd','Odor','Base','PreFV','PreOd','Odor'})
+
+
+
+xticks([1.5 3.5 5.5 8.5 10.5 12.5])
+    xticklabels({'Pre','Odor','Reinf','Pre','Odor','Reinf'})
 
     title('')
     ylabel('lick rate (Hz)')

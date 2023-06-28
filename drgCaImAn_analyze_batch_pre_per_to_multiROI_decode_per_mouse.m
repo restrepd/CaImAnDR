@@ -40,7 +40,7 @@ else
     first_file=1;
 end
 
-
+first_file=1;
 
 %Parallel batch processing for each file
 all_files_present=1;
@@ -102,6 +102,8 @@ if all_files_present==1
 
 
     %Process each file separately
+    fileNo_included=0;
+    mouseNo_per_file_included=[];
     for fileNo=first_file:length(handles.FileName_pre_per)
         tic
         first_toc=toc;
@@ -114,6 +116,9 @@ if all_files_present==1
 
         if percent_correct>=80
             %Do only for proficient
+            fileNo_included=fileNo_included+1;
+            mouseNo_per_file_included(fileNo_included)=mouseNo_per_file(fileNo);
+
             for ii_ROI_choices=1:length(all_no_ROIs)
 
 
@@ -131,16 +136,18 @@ if all_files_present==1
 
 
 
-                handles_out_all.file(fileNo).ii_out(ii_ROI_choices).handles_choices=handles_choices;
+                handles_out_all.file(fileNo_included).ii_out(ii_ROI_choices).handles_choices=handles_choices;
 
                 start_toc=toc;
 
-                handles_out_all.file(fileNo).ii_out(ii_ROI_choices).handles_outd=drgCaImAnInspectDecodingMultiROI(handles_choices);
+                handles_out_all.file(fileNo_included).ii_out(ii_ROI_choices).handles_outd=drgCaImAnInspectDecodingMultiROI(handles_choices);
 
                 fprintf(1, ['Data processed for file number %d, ii_out= %d\n'],fileNo,ii_ROI_choices);
             end
             fprintf(1,'Processing time for file number %d is %d seconds\n',fileNo,(toc-first_toc));
 
+        else
+            fprintf(1,'File number %d was excluded because percent correct <80\n',fileNo);
         end
     end
 
@@ -158,7 +165,7 @@ if all_files_present==1
     hFig=figure(figureNo);
 
 
-    set(hFig, 'units','normalized','position',[.3 .3 .4 .7])
+    set(hFig, 'units','normalized','position',[.3 .1 .25 .7])
 
     edges=[0:0.05:1];
     for ii_ROI_choices=1:length(all_no_ROIs)
@@ -168,7 +175,7 @@ if all_files_present==1
 
         all_accs=[];
         all_accs_sh=[];
-        for fileNo=first_file:length(handles.FileName_pre_per)
+        for fileNo=first_file:fileNo_included
             all_accs=[all_accs handles_out_all.file(fileNo).ii_out(ii_ROI_choices).handles_outd.accuracy_per_ROI];
             all_accs_sh=[all_accs_sh handles_out_all.file(fileNo).ii_out(ii_ROI_choices).handles_outd.accuracy_per_ROI_sh];
         end
@@ -197,7 +204,7 @@ if all_files_present==1
     hFig=figure(figureNo);
 
 
-    set(hFig, 'units','normalized','position',[.3 .3 .4 .7])
+     set(hFig, 'units','normalized','position',[.3 .1 .25 .7])
 
     edges=[0:0.05:1];
     for ii_ROI_choices=1:length(all_no_ROIs)
@@ -207,7 +214,7 @@ if all_files_present==1
 
         all_accs=[];
         all_accs_sh=[];
-        for fileNo=first_file:length(handles.FileName_pre_per)
+        for fileNo=first_file:fileNo_included
             all_accs=[all_accs handles_out_all.file(fileNo).ii_out(ii_ROI_choices).handles_outd.accuracy_per_ROI_pre];
             all_accs_sh=[all_accs_sh handles_out_all.file(fileNo).ii_out(ii_ROI_choices).handles_outd.accuracy_per_ROI_sh_pre];
         end
@@ -236,7 +243,7 @@ if all_files_present==1
     hFig=figure(figureNo);
 
 
-    set(hFig, 'units','normalized','position',[.3 .3 .4 .7])
+    set(hFig, 'units','normalized','position',[.3 .1 .25 .7])
 
     edges=[-2:0.5:10];
     for ii_ROI_choices=1:length(all_no_ROIs)
@@ -245,7 +252,7 @@ if all_files_present==1
         hold on
 
         all_lats=[];
-        for fileNo=first_file:length(handles.FileName_pre_per)
+        for fileNo=first_file:fileNo_included
             all_lats=[all_lats handles_out_all.file(fileNo).ii_out(ii_ROI_choices).handles_outd.latency_per_ROI];
         end
         histogram(all_lats,edges)
@@ -276,7 +283,7 @@ if all_files_present==1
         hFig=figure(figureNo);
 
 
-        set(hFig, 'units','normalized','position',[.3 .3 .4 .7])
+         set(hFig, 'units','normalized','position',[.3 .1 .25 .7])
 
         edges=[0:0.05:1];
         for ii_ROI_choices=1:length(all_no_ROIs)
@@ -286,8 +293,8 @@ if all_files_present==1
 
             all_accs=[];
             all_accs_sh=[];
-            for fileNo=first_file:length(handles.FileName_pre_per)
-                if mouseNo_per_file(fileNo)==ii_mouse
+            for fileNo=first_file:fileNo_included
+                if mouseNo_per_file_included(fileNo)==ii_mouse
                     all_accs=[all_accs handles_out_all.file(fileNo).ii_out(ii_ROI_choices).handles_outd.accuracy_per_ROI];
                     all_accs_sh=[all_accs_sh handles_out_all.file(fileNo).ii_out(ii_ROI_choices).handles_outd.accuracy_per_ROI_sh];
                 end
@@ -317,7 +324,7 @@ if all_files_present==1
         hFig=figure(figureNo);
 
 
-        set(hFig, 'units','normalized','position',[.3 .3 .4 .7])
+         set(hFig, 'units','normalized','position',[.3 .1 .25 .7])
 
         edges=[0:0.05:1];
         for ii_ROI_choices=1:length(all_no_ROIs)
@@ -327,8 +334,8 @@ if all_files_present==1
 
             all_accs=[];
             all_accs_sh=[];
-            for fileNo=first_file:length(handles.FileName_pre_per)
-                if mouseNo_per_file(fileNo)==ii_mouse
+            for fileNo=first_file:fileNo_included
+                if mouseNo_per_file_included(fileNo)==ii_mouse
                     all_accs=[all_accs handles_out_all.file(fileNo).ii_out(ii_ROI_choices).handles_outd.accuracy_per_ROI_pre];
                     all_accs_sh=[all_accs_sh handles_out_all.file(fileNo).ii_out(ii_ROI_choices).handles_outd.accuracy_per_ROI_sh_pre];
                 end
@@ -357,7 +364,7 @@ if all_files_present==1
         hFig=figure(figureNo);
 
 
-        set(hFig, 'units','normalized','position',[.3 .3 .4 .7])
+         set(hFig, 'units','normalized','position',[.3 .1 .25 .7])
 
         edges=[-2:0.5:10];
         for ii_ROI_choices=1:length(all_no_ROIs)
@@ -366,8 +373,8 @@ if all_files_present==1
             hold on
 
             all_lats=[];
-            for fileNo=first_file:length(handles.FileName_pre_per)
-                if mouseNo_per_file(fileNo)==ii_mouse
+            for fileNo=first_file:fileNo_included
+                if mouseNo_per_file_included(fileNo)==ii_mouse
                 all_lats=[all_lats handles_out_all.file(fileNo).ii_out(ii_ROI_choices).handles_outd.latency_per_ROI];
                 end
             end

@@ -63,6 +63,13 @@ else
     dt_span=handles_choices.dt_span;
     MLalgo=handles_choices.MLalgo;
     time_windows_pre=handles_choices.time_windows_pre;
+    
+      %This dt_lat is used to find the maximum accuracy attained within dt_lat
+    %after latency start
+    dt_lat=1;
+    sustained_dt=0.2;
+    lat_fact=1;
+    mad_pre_accuracy=0.05;
 
     ROI1=1;
     time_to_inspect1=4; %Time to inspect the dFF

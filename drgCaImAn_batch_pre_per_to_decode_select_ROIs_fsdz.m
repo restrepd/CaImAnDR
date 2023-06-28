@@ -82,48 +82,68 @@ if all_files_present==1
         
         pre_per_PathName=handles.PathName_pre_per{fileNo};
         pre_per_FileName=handles.FileName_pre_per{fileNo};
-        
-        handles_choices.pre_per_PathName=pre_per_PathName;
-        handles_choices.pre_per_FileName=pre_per_FileName;
-        handles_choices.processing_algorithm=handles.processing_algorithm;
-        handles_choices.MLalgo_to_use=handles.MLalgo_to_use;
-        handles_choices.dt_p_threshold=handles.dt_p_threshold;
-        handles_choices.show_figures=handles.show_figures;
-        handles_choices.post_time=handles.post_time;
-        handles_choices.k_fold=handles.k_fold;
-        handles_choices.post_shift=handles.post_shift;
-        handles_choices.pre_time=handles.pre_time;
-        handles_choices.ii_cost=handles.ii_cost;
-        handles_choices.p_threshold=1.1;
-        handles_choices.no_ROI_draws=1000; %Number of times that decoding is calculated for each set of no_ROIs
-        handles_choices.no_ROIs=1; %Number of ROIs used in the decoding (sampled randomly from the total number of ROIs)
-  
-        for process_low=0:1
-             
-            handles_choices.process_low=process_low;
-            
-  
-            handles_out.ii_out(process_low+1).handles_choices=handles_choices;
-            handles_out.ii_out(process_low+1).grNo=handles.group(fileNo);
-            handles_out.ii_out(process_low+1).fileNo=fileNo;
-            
-            start_toc=toc;
-            
-             fprintf(1, ['Started processing file number %d, condition number %d\n'],fileNo,process_low);
+ 
+        [percent_correct] = drgCaImAnFindPercentCorrect(pre_per_PathName, pre_per_FileName);
 
-            handles_out.ii_out(process_low+1).handles_out=drgCaImAn_SVZ_entire_session_selectROI(handles_choices);
-            
-            fprintf(1, ['Data processed for file number %d, condition number %d\n'],fileNo,process_low);
-            
-            fprintf(1,'Processing time for drgCaImAn_pre_per_to_LDA_fsdz_new %d hours\n',(toc-start_toc)/(60*60));
+        if percent_correct>=80
+
+            handles_choices.pre_per_PathName=pre_per_PathName;
+            handles_choices.pre_per_FileName=pre_per_FileName;
+            handles_choices.processing_algorithm=handles.processing_algorithm;
+            handles_choices.MLalgo_to_use=handles.MLalgo_to_use;
+            handles_choices.dt_p_threshold=handles.dt_p_threshold;
+            handles_choices.show_figures=handles.show_figures;
+            handles_choices.post_time=handles.post_time;
+            handles_choices.k_fold=handles.k_fold;
+            handles_choices.post_shift=handles.post_shift;
+            handles_choices.pre_time=handles.pre_time;
+            handles_choices.ii_cost=handles.ii_cost;
+            handles_choices.p_threshold=1.1;
+            handles_choices.no_ROI_draws=1000; %Number of times that decoding is calculated for each set of no_ROIs
+            handles_choices.no_ROIs=1; %Number of ROIs used in the decoding (sampled randomly from the total number of ROIs)
+            handles_choices.fileNo=fileNo;
+
+            failed=0;
+            fprintf(1, ['\n\n']);
+            for process_low=0:1
+
+                handles_choices.process_low=process_low;
+
+
+                handles_out.ii_out(process_low+1).handles_choices=handles_choices;
+                handles_out.ii_out(process_low+1).grNo=handles.group(fileNo);
+                handles_out.ii_out(process_low+1).fileNo=fileNo;
+
+                start_toc=toc;
+
+                fprintf(1, ['Started processing file number %d, condition number %d\n'],fileNo,process_low);
+
+                handles_out.ii_out(process_low+1).handles_out=drgCaImAn_SVZ_entire_session_selectROI(handles_choices);
+
+                if handles_out.ii_out(process_low+1).handles_out.failed==1;
+                    failed=1;
+                end
+                if failed==0
+                    fprintf(1, ['Data processed for file number %d, condition number %d\n'],fileNo,process_low);
+
+                    fprintf(1,'Processing time for drgCaImAn_pre_per_to_LDA_fsdz_new %d hours\n',(toc-start_toc)/(60*60));
+                end
+            end
+
+            if failed==0
+                fprintf(1,'Processing time for file No %d is %d hours\n',fileNo,(toc-first_toc)/(60*60));
+            else
+                fprintf(1,'Processing failed  for  file No %d\n',fileNo);
+            end
+
+            %Save output file
+            handles_out.last_file_processed=fileNo;
+            handles_out.handles=handles;
+            save([pre_per_PathName pre_per_FileName(1:end-4) suffix_out],'handles_out','handles_choices','-v7.3')
+
+        else
+            fprintf(1,'File no %d not processed because percent correct <80\n',fileNo);
         end
-        
-        fprintf(1,'\n\nProcessing time for file No %d is %d hours\n',fileNo,(toc-first_toc)/(60*60));
-        
-        %Save output file
-        handles_out.last_file_processed=fileNo;
-        handles_out.handles=handles;
-        save([pre_per_PathName pre_per_FileName(1:end-4) suffix_out],'handles_out','handles_choices','-v7.3')
     end
     
     fprintf(1, 'Total processing time %d hours\n',toc/(60*60));
