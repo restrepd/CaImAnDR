@@ -1,4 +1,4 @@
-function handles_out=drgCaImAn_SVZ_entire_session_shufflingv2(handles_choices)
+function handles_out=drgCaImAn_decode_gpu_licks_entire_session(handles_choices)
 %This program trains several decoding algorithms with the post odorant and then determines what happens throughout the entire timecouse
 %The user enters the choices entered under exist('handles_choices')==0
 %
@@ -17,18 +17,18 @@ if exist('handles_choices')==0
     
     processing_algorithm=3; %Use 3
     k_fold=5; %Only used for processing_algorithm=2,
-    post_time=2; %The decoding model will be trained with all points in post_time sec interval starting post_shift secs after odor on
-    post_shift=-5; %Set to 0 if you want to train with odor on points
+    post_time=0.5; %The decoding model will be trained with all points in post_time sec interval starting post_shift secs after odor on
+    post_shift=3; %Set to 0 if you want to train with odor on points
     pre_time=5; %Used to calculate the decoding accuracy pre_time sec before post_shift
-    MLalgo_to_use=[6]; %Vector with the decoding algorithms you want to use
+    MLalgo_to_use=[4]; %Vector with the decoding algorithms you want to use
     ii_cost=3;
     p_threshold=1.1; %This limits the ROIs used in the decoding model to those whose p value in a ttest for the two odors in <=p_threshold
     dt_p_threshold=20; %Time to be used after the odor on for the p_threshold t_test
     show_figures=1; %Show the figures
     perm_before=0; %Permute the labels before running the decoder
     
-    handles_choices.pre_perFileName=pre_perFileName;
-    handles_choices.pre_perPathName=pre_perPathName;
+    handles_choices.pre_per_FileName=pre_perFileName;
+    handles_choices.pre_per_PathName=pre_perPathName;
     handles_choices.processing_algorithm=processing_algorithm;
     handles_choices.post_time=post_time;
     handles_choices.k_fold=k_fold;
@@ -40,7 +40,7 @@ if exist('handles_choices')==0
     handles_choices.show_figures=show_figures;
     handles_choices.ii_cost=ii_cost;
     handles_choices.perm_before=perm_before;
-    
+     
 else
     pre_perPathName=handles_choices.pre_per_PathName;
     pre_perFileName=handles_choices.pre_per_FileName;
@@ -68,8 +68,11 @@ warning('off')
 %Restart random seeds
 rng('shuffle');
 
+%Start the gpu
+gpuDevice(1);
 convert_z=0; %Convert dFF traces to z
-dt_span=40; %Seconds for per trial traces centered on odor on 
+dt_span=30; %Seconds for per trial traces centered on odor on, this used to be 40
+            %For some reason making this smaller than ~30 makes the baseline (original) above 0.5
 moving_mean_n=30; %Points used to calculate moving mean for the prediction label figure
 no_shuffles=10; %Number of shuffles for per trial shuffling
 window_no=2;
@@ -77,8 +80,10 @@ time_windows=[-1 0;
     2 4.1];
   
 load([pre_perPathName pre_perFileName])
-fprintf(1, ['\ndrgCaImAn_SVZ_entire_session run for ' pre_perFileName '\n\n']);
-fprintf(1, 'post_time = %d, p_threshold= %d, post_shift= %d, cost %d\n',post_time,p_threshold,post_shift, ii_cost);
+if show_figures==1
+    fprintf(1, ['\ndrgCaImAn_SVZ_entire_session run for ' pre_perFileName '\n\n']);
+    fprintf(1, 'post_time = %d, p_threshold= %d, post_shift= %d, cost %d\n',post_time,p_threshold,post_shift, ii_cost);
+end
 
 if convert_z==1
     for trace_no=1:size(traces,1)
@@ -86,12 +91,13 @@ if convert_z==1
     end
 end
 
-classifier_names{1}='Linear';
+classifier_names{1}='LDA';
 classifier_names{2}='SVM';
 classifier_names{3}='Bayes';
 classifier_names{4}='ANN';
 classifier_names{5}='Tree';
 classifier_names{6}='GLM';
+
 
 delta_odor=4.127634e+00;
 delta_odor_on_reinf_on=4.415787e+00;
@@ -108,28 +114,34 @@ handles_not_out.MLalgo_to_use=MLalgo_to_use;
 
 figNo=0;
 
-%time has the time for the dF/F traces(ROI,time)
 if show_figures==1
     figNo=figNo+1;
     try
         close(figNo)
     catch
     end
-    
+
     hFig = figure(figNo);
-    
+
     set(hFig, 'units','normalized','position',[.05 .1 .85 .8])
+
+
     hold on
-    
+
     % Determine the y spacing of the traces
     y_shift=1.2*(prctile(traces(:),95)-prctile(traces(:),5));
-    
-    %Plot the traces and do z normalization
-    %For S+ and S- plot odor on and reinforcement
-    for epoch=1:handles.dropcData.epochIndex
-        %Epoch 2 is odor on, 3 is odor off
-        plot_epoch=(handles.dropcData.epochEvent(epoch)==2)||(handles.dropcData.epochEvent(epoch)==3);
-        if plot_epoch
+end
+
+%Plot the event lines
+odor_on_times=[];
+ootii=0;
+
+%For S+ and S- plot odor on and reinforcement
+for epoch=1:handles.dropcData.epochIndex
+    %Epoch 2 is odor on, 3 is odor off
+    plot_epoch=(handles.dropcData.epochEvent(epoch)==2)||(handles.dropcData.epochEvent(epoch)==3);
+    if plot_epoch
+        if show_figures==1
             if handles.dropcData.epochTypeOfOdor(epoch)==handles.dropcProg.splusOdor
                 plot([handles.dropcData.epochTime(epoch) handles.dropcData.epochTime(epoch)], [0 (no_traces+2)*y_shift],...
                     '-r','LineWidth',1)
@@ -138,17 +150,161 @@ if show_figures==1
                     '-b','LineWidth',1)
             end
         end
+        if (handles.dropcData.epochEvent(epoch)==2)
+            ootii=ootii+1;
+            odor_on_times(ootii)=handles.dropcData.epochTime(epoch);
+        end
     end
-    
+
+
+end
+
+
+
+%Align the rhd times with the olfactometer
+
+%Find the FV, odor on and odor off events in digital_in recorded by INTAN
+ii=1;
+at_end=0;
+odor_on_times_rhd=[];
+FV_times_rhd=[];
+odor_off_times_rhd=[];
+iioon=0;
+iiFV=0;
+iiooff=0;
+digital_in=bitand(digital_in,2+4+8+16);
+while at_end==0
+    ii_FV=find(digital_in(ii:end)==6,1,'first');
+    if isempty(ii_FV)
+        at_end=1;
+    else
+        %FV
+        ii=ii+ii_FV-1;
+        iiFV=iiFV+1;
+        FV_times_rhd(iiFV)=ii/acq_rate;
+
+        %Odor on
+        ii_odor_on=find(digital_in(ii:end)==18,1,'first');
+        %Odor off
+        ii_odor_off=find(digital_in(ii:end)<18,1,'first');
+
+        if (~isempty(ii_odor_on))&(~isempty(ii_odor_off))
+
+            %Odor on
+            ii=ii+ii_odor_on-1;
+            iioon=iioon+1;
+            odor_on_times_rhd(iioon)=ii/acq_rate;
+
+            %Odor off
+
+            ii=ii+ii_odor_off-1;
+            iiooff=iiooff+1;
+            odor_off_times_rhd(iiooff)=ii/acq_rate;
+
+            ii=ii+1;
+            if ii>=length(digital_in)
+                at_end=1;
+            end
+        else
+            at_end=1;
+        end
+    end
+end
+
+%Find the alignment of the rhd vs the olfactometer times
+if length(odor_on_times)<length(odor_on_times_rhd)
+    sum_delta=[];
+    for ii=0:length(odor_on_times_rhd)-length(odor_on_times)
+        sum_delta(ii+1)=abs(sum(odor_on_times_rhd(1+ii:ii+length(odor_on_times))-odor_on_times));
+    end
+    [min_del min_jj]=min(sum_delta);
+    odor_on_times_rhd=odor_on_times_rhd(min_jj:min_jj+length(odor_on_times)-1);
+end
+
+if length(odor_on_times)>length(odor_on_times_rhd)
+    sum_delta=[];
+    for ii=0:length(odor_on_times)-length(odor_on_times_rhd)
+        sum_delta(ii+1)=abs(sum(odor_on_times(1+ii:ii+length(odor_on_times_rhd))-odor_on_times_rhd));
+    end
+    [min_del min_jj]=min(sum_delta);
+    odor_on_times=odor_on_times(min_jj:min_jj+length(odor_on_times_rhd)-1);
+end
+
+delta_t_rhd=mean(odor_on_times-odor_on_times_rhd);
+time_rhd=([1:length(adc_in)]/acq_rate)+delta_t_rhd;
+adc_in_trimmed=adc_in(time_rhd>0);
+time_rhd_trimmed=time_rhd(time_rhd>0);
+
+if show_figures==1
+    %Plot the licks recorded by the INTAN (adc_in)
+ 
+    pct998=prctile(adc_in,99.8);
+    pct1=prctile(adc_in,1);
+    norm_fact=0.8*y_shift/(pct998-pct1);
+
+    plot(time_rhd(time_rhd>0),adc_in(time_rhd>0)*norm_fact)
+
+    %Plot the traces
+    time=[1:no_images]*dt;
     for trNo=1:no_traces
         % for trNo=1:20
         plot(time,traces(trNo,:)+y_shift*trNo,'-k','LineWidth',1)
     end
-    
+
     ylim([-y_shift*0.2 (no_traces+2)*y_shift])
-    xlabel('time(sec)')
+
+
+    xlabel('time (s)')
+    ylabel('deltaF/F')
     title(['All dFF timecourses ' num2str(size(traces,1)) ' ROIs'])
 end
+
+pffft=1;
+
+% %time has the time for the dF/F traces(ROI,time)
+% if show_figures==1
+%     figNo=figNo+1;
+%     try
+%         close(figNo)
+%     catch
+%     end
+%     
+%     hFig = figure(figNo);
+%     
+%     set(hFig, 'units','normalized','position',[.05 .1 .85 .8])
+%     hold on
+%     
+%     % Determine the y spacing of the traces
+%     y_shift=1.2*(prctile(traces(:),95)-prctile(traces(:),5));
+%     
+%     %Plot the traces and do z normalization
+%     %For S+ and S- plot odor on and reinforcement
+%     for epoch=1:handles.dropcData.epochIndex
+%         %Epoch 2 is odor on, 3 is odor off
+%         plot_epoch=(handles.dropcData.epochEvent(epoch)==2)||(handles.dropcData.epochEvent(epoch)==3);
+%         if plot_epoch
+%             if handles.dropcData.epochTypeOfOdor(epoch)==handles.dropcProg.splusOdor
+%                 plot([handles.dropcData.epochTime(epoch) handles.dropcData.epochTime(epoch)], [0 (no_traces+2)*y_shift],...
+%                     '-r','LineWidth',1)
+%             else
+%                 plot([handles.dropcData.epochTime(epoch) handles.dropcData.epochTime(epoch)], [0 (no_traces+2)*y_shift],...
+%                     '-b','LineWidth',1)
+%             end
+%         end
+%     end
+%     
+%     for trNo=1:no_traces
+%         % for trNo=1:20
+%         plot(time,traces(trNo,:)+y_shift*trNo,'-k','LineWidth',1)
+%     end
+%     
+%     ylim([-y_shift*0.2 (no_traces+2)*y_shift])
+%     xlabel('time(sec)')
+%     title(['All dFF timecourses ' num2str(size(traces,1)) ' ROIs'])
+% 
+% 
+% 
+% end
 
 %epochs is a vector of the length of time that gives information on
 %behavior
@@ -190,24 +346,29 @@ dFF_per_trial_sm=[];
 dFFs_sp_per_trial_per_ROI=[];
 dFFs_sm_per_trial_per_ROI=[];
 hit_per_trial=[];
-cr_per_trial=[];
+cr_per_trial=[]; 
 
 [hit_per_trial,cr_per_trial,dFFs_sp_per_trial_per_ROI,...
     dFFs_sm_per_trial_per_ROI,dFF_per_trial_sm,dFF_per_trial_sp,training_decisions_post,...
     which_model_for_traces_loo,decisions_per_trial,...
     ii_pointer_to_td,epochs_sp_post,measurements_post,...
-    measurements_pre,epochs_sp_pre,ii_post,trial_no...
-    ,epochs_sm_post,epochs_sm_pre] = ...
-    drgCaImAn_parse_out_trials(dt, dt_span,epochs,no_points_post_shift,no_points_post,no_points_pre,traces,ii_p_threshold,no_odor_trials);
+    ii_post,trial_no,epochs_sm_post,trimmed_licks] = ...
+    drgCaImAn_parse_out_trials_and_licks(dt, dt_span,epochs,...
+    no_points_post_shift,no_points_post,traces...
+    ,ii_p_threshold,no_odor_trials,time,time_rhd_trimmed,adc_in_trimmed);
  
 
 %Calculate percent correct
 handles_out.percent_correct=100*(sum(hit_per_trial)+sum(cr_per_trial))/length(hit_per_trial);
 
-fprintf(1, 'percent correct behavior = %d\n',handles_out.percent_correct);
+if show_figures==1
+    fprintf(1, 'percent correct behavior = %d\n',handles_out.percent_correct);
+end
 
 which_model_for_traces_loo(which_model_for_traces_loo>trial_no)=trial_no;
 
+time_span=[0:dt:dt*size(dFF_per_trial_sp,3)]-dt_span+dt;
+time_span=time_span(1:end-1);
 
 %Now let's limit the ROIs to those below p_threshold
 
@@ -228,7 +389,7 @@ noROIs_before_trimming=size(measurements_post,2);
 dFF_per_trial_sp=dFF_per_trial_sp(:,p_value_mask,:);
 dFF_per_trial_sm=dFF_per_trial_sm(:,p_value_mask,:);
 measurements_post=measurements_post(:,p_value_mask);
-measurements_pre=measurements_pre(:,p_value_mask);
+% measurements_pre=measurements_pre(:,p_value_mask);
 traces=traces(p_value_mask,:);
 no_traces=size(traces,1);
 
@@ -257,236 +418,239 @@ for epoch=1:handles.dropcData.epochIndex
     end
 end
 
-
-%Plot the trimmed traces
-%time has the time for the dF/F traces(ROI,time)
-if show_figures==1
-    figNo=figNo+1;
-    try
-        close(figNo)
-    catch
-    end
-    
-    hFig = figure(figNo);
-    
-    set(hFig, 'units','normalized','position',[.05 .1 .85 .8])
-    hold on
-    
-    % Determine the y spacing of the traces
-    y_shift=1.2*(prctile(traces(:),95)-prctile(traces(:),5));
-    
-    %Plot the traces and do z normalization
-    %For S+ and S- plot odor on and reinforcement
-    for epoch=1:handles.dropcData.epochIndex
-        %Epoch 2 is odor on, 3 is odor off
-        plot_epoch=(handles.dropcData.epochEvent(epoch)==2)||(handles.dropcData.epochEvent(epoch)==3);
-        if plot_epoch
-            if handles.dropcData.epochTypeOfOdor(epoch)==handles.dropcProg.splusOdor
-                plot([handles.dropcData.epochTime(epoch) handles.dropcData.epochTime(epoch)], [0 (no_traces+2)*y_shift],...
-                    '-r','LineWidth',1)
-            else
-                plot([handles.dropcData.epochTime(epoch) handles.dropcData.epochTime(epoch)], [0 (no_traces+2)*y_shift],...
-                    '-b','LineWidth',1)
-            end
-        end
-    end
-    
-    for trNo=1:no_traces
-        % for trNo=1:20
-        plot(time,traces(trNo,:)+y_shift*trNo,'-k','LineWidth',1)
-    end
-    
-    ylim([-y_shift*0.2 (no_traces+2)*y_shift])
-    xlabel('time(sec)')
-    title(['dFF timecourses after p value trimming ' num2str(size(measurements_post,2)) ' ROIs'])
-end
-
-%Euclidean distance
-%For each time point
-for ii_t=1:size(dFF_per_trial_sp,3)
-    jj=0;
-    d=[];
-    for ii_sp=1:size(dFF_per_trial_sp,1)
-        for ii_sm=1:size(dFF_per_trial_sm,1)
-            sum_of_sq=0;
-            for iiROI=1:size(dFF_per_trial_sm,2)
-                sum_of_sq=sum_of_sq+(dFF_per_trial_sp(ii_sp,iiROI,ii_t)-dFF_per_trial_sm(ii_sm,iiROI,ii_t))^2;
-            end
-            jj=jj+1;
-            d(jj)=sqrt(sum_of_sq);
-        end
-    end
-    dist_euclid(ii_t)=mean(d);
-end
-
-handles_out.dist_euclid=dist_euclid;
-time_span=[0:dt:dt*size(dFF_per_trial_sp,3)]-dt_span+dt;
-time_span=time_span(1:end-1)+post_shift;
-handles_out.time_span=time_span;
-handles_out.dist_euclid_zero=mean(dist_euclid((time_span>-20)&(time_span<=0)));
-
-%Kullback-Leibler divergence
-KLdivergence=zeros(1,size(dFF_per_trial_sp,3));
-for ii_t=1:size(dFF_per_trial_sp,3)
-    
-    z_sp_mean=zeros(1,size(dFF_per_trial_sp,2));
-    these_z_sp=zeros(size(dFF_per_trial_sp,1),size(dFF_per_trial_sp,2));
-    these_z_sp(:,:)=dFF_per_trial_sp(:,:,ii_t);
-    z_sp_mean(1,:)=mean(these_z_sp,1);
-    
-    z_sm_mean=zeros(1,size(dFF_per_trial_sm,2));
-    these_z_sm=zeros(size(dFF_per_trial_sm,1),size(dFF_per_trial_sm,2));
-    these_z_sm(:,:)=dFF_per_trial_sm(:,:,ii_t);
-    z_sm_mean(1,:)=mean(these_z_sm,1);
-    
-    %Use pdist to find all distances for odor 1
-    ii_sp=0;
-    ii_sm=0;
-    distances_sp=zeros(1,size(dFF_per_trial_sp,1));
-    distances_sm=zeros(1,size(dFF_per_trial_sm,1));
-    
-    for ii_sp=1:size(dFF_per_trial_sp,1)
-        odor_queary=zeros(1,size(dFF_per_trial_sp,2));
-        odor_queary(1,:)=these_z_sp(ii_sp,:);
-        all_points=[z_sp_mean; z_sm_mean; odor_queary];
-        all_distances=pdist(all_points);
-        d12=all_distances(1);
-        dq1=all_distances(2);
-        dq2=all_distances(3);
-        distances_sp(1,ii_sp)=(d12^2 + dq1^2 -dq2^2)/(2*d12);
-    end
-    
-    for ii_sm=1:size(dFF_per_trial_sm,1)
-        odor_queary=zeros(1,size(dFF_per_trial_sm,2));
-        odor_queary(1,:)=these_z_sm(ii_sm,:);
-        all_points=[z_sp_mean; z_sm_mean; odor_queary];
-        all_distances=pdist(all_points);
-        d12=all_distances(1);
-        dq1=all_distances(2);
-        dq2=all_distances(3);
-        distances_sm(1,ii_sm)=(d12^2 + dq1^2 -dq2^2)/(2*d12);
-    end
-    
-    
-    %KL divergence
-    num_bins=50;
-    max_d=max([max(distances_sp) max(distances_sm)]);
-    min_d=min([min(distances_sp) min(distances_sm)]);
-    X=[min_d:(max_d-min_d)/(num_bins-1):max_d];
-    
-    p1=zeros(1,length(X));
-    p2=zeros(1,length(X));
-    
-    for ii=1:length(distances_sp)
-        [min_d min_ii]=min(abs(distances_sp(ii)-X));
-        p1(min_ii)=p1(min_ii)+1;
-    end
-    p1=p1/sum(p1);
-    p1(p1==0)=eps; 
-    
-    for ii=1:length(distances_sm)
-        [min_d min_ii]=min(abs(distances_sm(ii)-X));
-        p2(min_ii)=p2(min_ii)+1;
-    end
-    p2=p2/sum(p2);
-    p2(p2==0)=eps;
-    
-    KLdivergence(ii_t) = kldiv(X,p1,p2);
-end
-handles_out.KLdivergence=KLdivergence;
-
-meandFF_per_trial_sp=zeros(size(dFF_per_trial_sp,1),size(dFF_per_trial_sp,3));
-meandFF_per_trial_sp(:,:)=mean(dFF_per_trial_sp,2);
-
-meandFF_per_trial_sm=zeros(size(dFF_per_trial_sm,1),size(dFF_per_trial_sm,3));
-meandFF_per_trial_sm(:,:)=mean(dFF_per_trial_sm,2);
-
-%Plot the mean timecourse for S+ and S-
-if show_figures==1
-    figNo=figNo+1;
-    try
-        close(figNo)
-    catch
-    end
-    
-    hFig = figure(figNo);
-    
-    set(hFig, 'units','normalized','position',[.05 .1 .3 .6])
-    
-    subplot(3,1,1)
-    hold on
-    
-    
-    %S+ trials
-    try
-        CIsp = bootci(1000, @mean, meandFF_per_trial_sp);
-        meansp=mean(dFF_per_trial_sp,1);
-        CIsp(1,:)=meansp-CIsp(1,:);
-        CIsp(2,:)=CIsp(2,:)-meansp;
-        
-        [hlsp, hpsp] = boundedline(time_span',mean(meandFF_per_trial_sp,1)', CIsp', 'cmap',[80/255 194/255 255/255]);
-    catch
-    end
-    
-    
-    
-    
-    %S-
-    try
-        CIsp = bootci(1000, @mean, meandFF_per_trial_sm);
-        meansp=mean(dFF_per_trial_sm,1);
-        CIsp(1,:)=meansp-CIsp(1,:);
-        CIsp(2,:)=CIsp(2,:)-meansp;
-        
-        [hlsp, hpsp] = boundedline(time_span',mean(meandFF_per_trial_sm,1)', CIsp', 'cmap',[238/255 111/255 179/255]);
-    catch
-    end
-    
-    
-    
-    
-    plot(time_span',mean(meandFF_per_trial_sp,1)', 'Color',[80/255 194/255 255/255]);
-    plot(time_span',mean(meandFF_per_trial_sm,1)', 'Color',[238/255 111/255 179/255]);
-    
-    text(30,0.75,'S-','Color',[80/255 194/255 255/255])
-    text(30,0.65,'S+','Color',[0 114/255 178/255])
-    
-    ylim([0 1])
-    
-    title(['Mean dFF'])
-    xlabel('Time(sec)')
-    ylabel('dFF')
-    
-    subplot(3,1,2)
-    hold on
-    
-    %Euclidean distance
-    plot(time_span',(dist_euclid-mean(dist_euclid((time_span>-20)&(time_span<=0))))', 'Color',[238/255 111/255 179/255]);
-    
-    
-    
-    title(['Euclidean distance'])
-    xlabel('Time(sec)')
-    ylabel('Euclidean d')
-    
-    subplot(3,1,3)
-    hold on
-    
-    %KL divergence
-    plot(time_span',KLdivergence', 'Color',[238/255 111/255 179/255]);
-    
-    
-   
-    title(['KL divergence'])
-    xlabel('Time(sec)')
-    ylabel('KL divergence')
-    
-    
-end
+pffft=1;
+% 
+% %Plot the trimmed traces
+% %time has the time for the dF/F traces(ROI,time)
+% if show_figures==1
+%     figNo=figNo+1;
+%     try
+%         close(figNo)
+%     catch
+%     end
+%     
+%     hFig = figure(figNo);
+%     
+%     set(hFig, 'units','normalized','position',[.05 .1 .85 .8])
+%     hold on
+%     
+%     % Determine the y spacing of the traces
+%     y_shift=1.2*(prctile(traces(:),95)-prctile(traces(:),5));
+%     
+%     %Plot the traces and do z normalization
+%     %For S+ and S- plot odor on and reinforcement
+%     for epoch=1:handles.dropcData.epochIndex
+%         %Epoch 2 is odor on, 3 is odor off
+%         plot_epoch=(handles.dropcData.epochEvent(epoch)==2)||(handles.dropcData.epochEvent(epoch)==3);
+%         if plot_epoch
+%             if handles.dropcData.epochTypeOfOdor(epoch)==handles.dropcProg.splusOdor
+%                 plot([handles.dropcData.epochTime(epoch) handles.dropcData.epochTime(epoch)], [0 (no_traces+2)*y_shift],...
+%                     '-r','LineWidth',1)
+%             else
+%                 plot([handles.dropcData.epochTime(epoch) handles.dropcData.epochTime(epoch)], [0 (no_traces+2)*y_shift],...
+%                     '-b','LineWidth',1)
+%             end
+%         end
+%     end
+%     
+%     for trNo=1:no_traces
+%         % for trNo=1:20
+%         plot(time,traces(trNo,:)+y_shift*trNo,'-k','LineWidth',1)
+%     end
+%     
+%     ylim([-y_shift*0.2 (no_traces+2)*y_shift])
+%     xlabel('time(sec)')
+%     title(['dFF timecourses after p value trimming ' num2str(size(measurements_post,2)) ' ROIs'])
+% end
 
 
-handles_out.meandFFsp=mean(meandFF_per_trial_sp,1);
-handles_out.meandFFsm=mean(meandFF_per_trial_sm,1);
+
+% %Euclidean distance
+% %For each time point
+% for ii_t=1:size(dFF_per_trial_sp,3)
+%     jj=0;
+%     d=[];
+%     for ii_sp=1:size(dFF_per_trial_sp,1)
+%         for ii_sm=1:size(dFF_per_trial_sm,1)
+%             sum_of_sq=0;
+%             for iiROI=1:size(dFF_per_trial_sm,2)
+%                 sum_of_sq=sum_of_sq+(dFF_per_trial_sp(ii_sp,iiROI,ii_t)-dFF_per_trial_sm(ii_sm,iiROI,ii_t))^2;
+%             end
+%             jj=jj+1;
+%             d(jj)=sqrt(sum_of_sq);
+%         end
+%     end
+%     dist_euclid(ii_t)=mean(d);
+% end
+% 
+% handles_out.dist_euclid=dist_euclid;
+% time_span=[0:dt:dt*size(dFF_per_trial_sp,3)]-dt_span+dt;
+% time_span=time_span(1:end-1)+post_shift;
+% handles_out.time_span=time_span;
+% handles_out.dist_euclid_zero=mean(dist_euclid((time_span>-20)&(time_span<=0)));
+% 
+% %Kullback-Leibler divergence
+% KLdivergence=zeros(1,size(dFF_per_trial_sp,3));
+% for ii_t=1:size(dFF_per_trial_sp,3)
+%     
+%     z_sp_mean=zeros(1,size(dFF_per_trial_sp,2));
+%     these_z_sp=zeros(size(dFF_per_trial_sp,1),size(dFF_per_trial_sp,2));
+%     these_z_sp(:,:)=dFF_per_trial_sp(:,:,ii_t);
+%     z_sp_mean(1,:)=mean(these_z_sp,1);
+%     
+%     z_sm_mean=zeros(1,size(dFF_per_trial_sm,2));
+%     these_z_sm=zeros(size(dFF_per_trial_sm,1),size(dFF_per_trial_sm,2));
+%     these_z_sm(:,:)=dFF_per_trial_sm(:,:,ii_t);
+%     z_sm_mean(1,:)=mean(these_z_sm,1);
+%     
+%     %Use pdist to find all distances for odor 1
+%     ii_sp=0;
+%     ii_sm=0;
+%     distances_sp=zeros(1,size(dFF_per_trial_sp,1));
+%     distances_sm=zeros(1,size(dFF_per_trial_sm,1));
+%     
+%     for ii_sp=1:size(dFF_per_trial_sp,1)
+%         odor_queary=zeros(1,size(dFF_per_trial_sp,2));
+%         odor_queary(1,:)=these_z_sp(ii_sp,:);
+%         all_points=[z_sp_mean; z_sm_mean; odor_queary];
+%         all_distances=pdist(all_points);
+%         d12=all_distances(1);
+%         dq1=all_distances(2);
+%         dq2=all_distances(3);
+%         distances_sp(1,ii_sp)=(d12^2 + dq1^2 -dq2^2)/(2*d12);
+%     end
+%     
+%     for ii_sm=1:size(dFF_per_trial_sm,1)
+%         odor_queary=zeros(1,size(dFF_per_trial_sm,2));
+%         odor_queary(1,:)=these_z_sm(ii_sm,:);
+%         all_points=[z_sp_mean; z_sm_mean; odor_queary];
+%         all_distances=pdist(all_points);
+%         d12=all_distances(1);
+%         dq1=all_distances(2);
+%         dq2=all_distances(3);
+%         distances_sm(1,ii_sm)=(d12^2 + dq1^2 -dq2^2)/(2*d12);
+%     end
+%     
+%     
+%     %KL divergence
+%     num_bins=50;
+%     max_d=max([max(distances_sp) max(distances_sm)]);
+%     min_d=min([min(distances_sp) min(distances_sm)]);
+%     X=[min_d:(max_d-min_d)/(num_bins-1):max_d];
+%     
+%     p1=zeros(1,length(X));
+%     p2=zeros(1,length(X));
+%     
+%     for ii=1:length(distances_sp)
+%         [min_d min_ii]=min(abs(distances_sp(ii)-X));
+%         p1(min_ii)=p1(min_ii)+1;
+%     end
+%     p1=p1/sum(p1);
+%     p1(p1==0)=eps; 
+%     
+%     for ii=1:length(distances_sm)
+%         [min_d min_ii]=min(abs(distances_sm(ii)-X));
+%         p2(min_ii)=p2(min_ii)+1;
+%     end
+%     p2=p2/sum(p2);
+%     p2(p2==0)=eps;
+%     
+%     KLdivergence(ii_t) = kldiv(X,p1,p2);
+% end
+% handles_out.KLdivergence=KLdivergence;
+% 
+% meandFF_per_trial_sp=zeros(size(dFF_per_trial_sp,1),size(dFF_per_trial_sp,3));
+% meandFF_per_trial_sp(:,:)=mean(dFF_per_trial_sp,2);
+% 
+% meandFF_per_trial_sm=zeros(size(dFF_per_trial_sm,1),size(dFF_per_trial_sm,3));
+% meandFF_per_trial_sm(:,:)=mean(dFF_per_trial_sm,2);
+% 
+% %Plot the mean timecourse for S+ and S-
+% if show_figures==1
+%     figNo=figNo+1;
+%     try
+%         close(figNo)
+%     catch
+%     end
+%     
+%     hFig = figure(figNo);
+%     
+%     set(hFig, 'units','normalized','position',[.05 .1 .3 .6])
+%     
+%     subplot(3,1,1)
+%     hold on
+%     
+%     
+%     %S+ trials
+%     try
+%         CIsp = bootci(1000, @mean, meandFF_per_trial_sp);
+%         meansp=mean(dFF_per_trial_sp,1);
+%         CIsp(1,:)=meansp-CIsp(1,:);
+%         CIsp(2,:)=CIsp(2,:)-meansp;
+%         
+%         [hlsp, hpsp] = boundedline(time_span',mean(meandFF_per_trial_sp,1)', CIsp', 'cmap',[80/255 194/255 255/255]);
+%     catch
+%     end
+%     
+%     
+%     
+%     
+%     %S-
+%     try
+%         CIsp = bootci(1000, @mean, meandFF_per_trial_sm);
+%         meansp=mean(dFF_per_trial_sm,1);
+%         CIsp(1,:)=meansp-CIsp(1,:);
+%         CIsp(2,:)=CIsp(2,:)-meansp;
+%         
+%         [hlsp, hpsp] = boundedline(time_span',mean(meandFF_per_trial_sm,1)', CIsp', 'cmap',[238/255 111/255 179/255]);
+%     catch
+%     end
+%     
+%     
+%     
+%     
+%     plot(time_span',mean(meandFF_per_trial_sp,1)', 'Color',[80/255 194/255 255/255]);
+%     plot(time_span',mean(meandFF_per_trial_sm,1)', 'Color',[238/255 111/255 179/255]);
+%     
+%     text(30,0.75,'S-','Color',[80/255 194/255 255/255])
+%     text(30,0.65,'S+','Color',[0 114/255 178/255])
+%     
+%     ylim([0 1])
+%     
+%     title(['Mean dFF'])
+%     xlabel('Time(sec)')
+%     ylabel('dFF')
+%     
+%     subplot(3,1,2)
+%     hold on
+%     
+% %     %Euclidean distance
+% %     plot(time_span',(dist_euclid-mean(dist_euclid((time_span>-20)&(time_span<=0))))', 'Color',[238/255 111/255 179/255]);
+% %     
+% %     
+% %     
+% %     title(['Euclidean distance'])
+% %     xlabel('Time(sec)')
+% %     ylabel('Euclidean d')
+% %     
+% %     subplot(3,1,3)
+% %     hold on
+% %     
+% %     %KL divergence
+% %     plot(time_span',KLdivergence', 'Color',[238/255 111/255 179/255]);
+% %     
+% %     
+% %    
+% %     title(['KL divergence'])
+% %     xlabel('Time(sec)')
+% %     ylabel('KL divergence')
+%     
+%     
+% end
+
+% 
+% handles_out.meandFFsp=mean(meandFF_per_trial_sp,1);
+% handles_out.meandFFsm=mean(meandFF_per_trial_sm,1);
 
 training_decisions_post_sh=zeros(1,length(training_decisions_post));
 training_decisions_post_sh(1,:)=training_decisions_post(randperm(length(training_decisions_post)));
@@ -513,9 +677,9 @@ handles_out.dt=dt;
 % handles_out.epochs_sm_post=epochs_sm_post;
 % handles_out.epochs_sm_pre=epochs_sm_pre;
 
-
-fprintf(1, ['Training post with %d ROIs (original no ROIs %d)...\n'],size(measurements_post,2),noROIs_before_trimming);
-
+if show_figures==1
+    fprintf(1, ['Training post with %d ROIs (original no ROIs %d)...\n'],size(measurements_post,2),noROIs_before_trimming);
+end
 
 
 for MLalgo=MLalgo_to_use
@@ -1018,6 +1182,9 @@ for MLalgo=MLalgo_to_use
                 
                 %Store the decisions in Y
                 Y=these_training_decisions;
+ 
+                tblTrn=gpuArray(table2array(tblTrn));
+                Y=gpuArray(double(Y));
                 
                 switch MLalgo
                     case 1
@@ -1043,14 +1210,15 @@ for MLalgo=MLalgo_to_use
                             handles_not_out.MLalgo(MLalgo).processed_succesfully=0;
                         end
                     case 4
-                        handles_not_out.MLalgo(MLalgo).models(kk).Mdl = fitcnet(tblTrn,Y);
+                        handles_not_out.MLalgo(MLalgo).models(kk).Mdl = fitcnet(tblTrn,Y,'ExecutionEnvironment','gpu');
+%                         handles_not_out.MLalgo(MLalgo).models(kk).Mdl = fitcnet(tblTrn,Y,'OptimizeHyperparameters','auto');
                     case 5
                         handles_not_out.MLalgo(MLalgo).models(kk).Mdl = fitctree(tblTrn,Y,'Cost',this_cost);
                     case 6
                         handles_not_out.MLalgo(MLalgo).models(kk).Mdl = fitglm(these_training_measurements,Y','Distribution','binomial');
                 end
             end
-            
+             
             if handles_not_out.MLalgo(MLalgo).processed_succesfully==1
                 %Predict labels for the test set. You trained Mdl using a table of data, but you can predict labels using a matrix.
                 %Note: for some reason this did not work for net when I did this:
@@ -1063,11 +1231,9 @@ for MLalgo=MLalgo_to_use
                     for ii=1:size(traces,2)
                         this_time_point=zeros(1,size(traces,1));
                         this_time_point(1,:)=traces(:,ii);
-                        %which_model_for_traces_loo uses a leave one out
-                        %strategy
+                        this_time_point=gpuArray(double(this_time_point));
                         [label,score] = predict(handles_not_out.MLalgo(MLalgo).models(which_model_for_traces_loo(ii)).Mdl,this_time_point);
                         scores(ii,:)=score;
-                        %Please note this is a winner take all
                         if label>0.5
                             label_traces(ii)=1;
                         else
@@ -1078,6 +1244,7 @@ for MLalgo=MLalgo_to_use
                     for ii=1:size(measurements_post,1)
                         this_time_point=zeros(1,size(traces,1));
                         this_time_point(1,:)=measurements_post(ii,:);
+                        this_time_point=gpuArray(double(this_time_point));
                         [label,score] = predict(handles_not_out.MLalgo(MLalgo).models(which_model(ii)).Mdl,this_time_point);
                         scores_post(ii,:)=score;
                         if label>0.5
@@ -1090,6 +1257,7 @@ for MLalgo=MLalgo_to_use
                     for ii=1:size(traces,2)
                         this_time_point=zeros(1,size(traces,1));
                         this_time_point(1,:)=traces(:,ii);
+                        this_time_point=gpuArray(double(this_time_point));
                         try
                             [label_traces(ii),score] = predict(handles_not_out.MLalgo(MLalgo).models(which_model_for_traces_loo(ii)).Mdl,this_time_point);
                             scores(ii,:)=score;
@@ -1107,6 +1275,7 @@ for MLalgo=MLalgo_to_use
                     for ii=1:size(measurements_post,1)
                         this_time_point=zeros(1,size(traces,1));
                         this_time_point(1,:)=measurements_post(ii,:);
+                        this_time_point=gpuArray(double(this_time_point));
                         try
                             [label_post(ii),score] = predict(handles_not_out.MLalgo(MLalgo).models(which_model(ii)).Mdl,this_time_point);
                             scores_post(ii,:)=score;
@@ -1161,6 +1330,9 @@ for MLalgo=MLalgo_to_use
                     
                     %Store the decisions in Y
                     Y=these_training_decisions;
+
+                    tblTrn=gpuArray(double(tblTrn));
+                    Y=gpuArray(double(Y));
                     
                     handles_not_out.MLalgo(MLalgo).sh_models(kk).processed_succesfully=1;
                     
@@ -1189,7 +1361,7 @@ for MLalgo=MLalgo_to_use
                                 handles_not_out.MLalgo(MLalgo).sh_models(kk).processed_succesfully=0;
                             end
                         case 4
-                            handles_not_out.MLalgo(MLalgo).sh_models(kk).Mdl = fitcnet(tblTrn,Y);
+                            handles_not_out.MLalgo(MLalgo).sh_models(kk).Mdl = fitcnet(tblTrn,Y,'ExecutionEnvironment','gpu');
                         case 5
                             handles_not_out.MLalgo(MLalgo).sh_models(kk).Mdl = fitctree(tblTrn,Y,'Cost',this_cost);
                         case 6
@@ -1210,6 +1382,7 @@ for MLalgo=MLalgo_to_use
                     for ii=1:size(traces,2)
                         this_time_point=zeros(1,size(traces,1));
                         this_time_point(1,:)=traces(:,ii);
+                        this_time_point=gpuArray(double(this_time_point));
                         [label,score] = predict(handles_not_out.MLalgo(MLalgo).sh_models(which_model_for_traces_loo(ii)).Mdl,this_time_point);
                         scores_sh(ii,:)=score;
                         if label>0.5
@@ -1222,6 +1395,7 @@ for MLalgo=MLalgo_to_use
                     for ii=1:size(measurements_post,1)
                         this_time_point=zeros(1,size(traces,1));
                         this_time_point(1,:)=measurements_post(ii,:);
+                        this_time_point=gpuArray(double(this_time_point));
                         [label,score] = predict(handles_not_out.MLalgo(MLalgo).sh_models(which_model(ii)).Mdl,this_time_point);
                         scores_post_sh(ii,:)=score;
                         if label>0.5
@@ -1235,6 +1409,7 @@ for MLalgo=MLalgo_to_use
                     for ii=1:size(traces,2)
                         this_time_point=zeros(1,size(traces,1));
                         this_time_point(1,:)=traces(:,ii);
+                        this_time_point=gpuArray(double(this_time_point));
                         [label_traces_sh(ii),score] = predict(handles_not_out.MLalgo(MLalgo).sh_models(which_model_for_traces_loo(ii)).Mdl,this_time_point);
                         scores_sh(ii,:)=score;
                     end
@@ -1242,6 +1417,7 @@ for MLalgo=MLalgo_to_use
                     for ii=1:size(measurements_post,1)
                         this_time_point=zeros(1,size(traces,1));
                         this_time_point(1,:)=measurements_post(ii,:);
+                        this_time_point=gpuArray(double(this_time_point));
                         [label_post_sh(ii),score] = predict(handles_not_out.MLalgo(MLalgo).sh_models(which_model(ii)).Mdl,this_time_point);
                         scores_post_sh(ii,:)=score;
                     end
@@ -1290,7 +1466,10 @@ for MLalgo=MLalgo_to_use
                         
                         %Store the decisions in Y
                         Y=these_training_decisions;
-                        
+
+                        tblTrn=gpuArray(double(tblTrn));
+                        Y=gpuArray(double(Y));
+
                         handles_not_out.MLalgo(MLalgo).sh2(ii_sh).sh_models(kk).processed_succesfully=1;
                         
                         switch MLalgo
@@ -1317,7 +1496,7 @@ for MLalgo=MLalgo_to_use
                                     handles_not_out.MLalgo(MLalgo).sh2(ii_sh).sh_models(kk).processed_succesfully=0;
                                 end
                             case 4
-                                handles_not_out.MLalgo(MLalgo).sh2(ii_sh).sh_models(kk).Mdl = fitcnet(tblTrn,Y);
+                                handles_not_out.MLalgo(MLalgo).sh2(ii_sh).sh_models(kk).Mdl = fitcnet(tblTrn,Y,'ExecutionEnvironment','gpu');
                             case 5
                                 handles_not_out.MLalgo(MLalgo).sh2(ii_sh).sh_models(kk).Mdl = fitctree(tblTrn,Y,'Cost',this_cost);
                             case 6
@@ -1336,6 +1515,7 @@ for MLalgo=MLalgo_to_use
                         for ii=1:size(traces,2)
                             this_time_point=zeros(1,size(traces,1));
                             this_time_point(1,:)=traces(:,ii);
+                            this_time_point=gpuArray(double(this_time_point));
                             [label,score] = predict(handles_not_out.MLalgo(MLalgo).sh2(ii_sh).sh_models(which_model_for_traces_loo(ii)).Mdl,this_time_point);
                             scores_sh2(ii_sh,ii,:)=score;
                             if label>0.5
@@ -1349,6 +1529,7 @@ for MLalgo=MLalgo_to_use
                         for ii=1:size(measurements_post,1)
                             this_time_point=zeros(1,size(traces,1));
                             this_time_point(1,:)=measurements_post(ii,:);
+                            this_time_point=gpuArray(double(this_time_point));
                             [label,score] = predict(handles_not_out.MLalgo(MLalgo).sh2(ii_sh).sh_models(which_model(ii)).Mdl,this_time_point);
                             scores_post_sh2(ii_sh,ii,:)=score;
                             if label>0.5
@@ -1362,6 +1543,8 @@ for MLalgo=MLalgo_to_use
                         for ii=1:size(traces,2)
                             this_time_point=zeros(1,size(traces,1));
                             this_time_point(1,:)=traces(:,ii);
+                            this_time_point=gpuArray(double(this_time_point));
+
                             [label_traces_sh2(ii_sh,ii),score] = predict(handles_not_out.MLalgo(MLalgo).sh2(ii_sh).sh_models(which_model_for_traces_loo(ii)).Mdl,this_time_point);
                             scores_sh2(ii_sh,ii,:)=score;
                         end
@@ -1369,6 +1552,7 @@ for MLalgo=MLalgo_to_use
                         for ii=1:size(measurements_post,1)
                             this_time_point=zeros(1,size(traces,1));
                             this_time_point(1,:)=measurements_post(ii,:);
+                            this_time_point=gpuArray(double(this_time_point));
                             [label_post_sh2(ii_sh,ii),score] = predict(handles_not_out.MLalgo(MLalgo).sh_models(which_model(ii)).Mdl,this_time_point);
                             scores_post_sh2(ii_sh,ii,:)=score;
                         end
@@ -1472,15 +1656,15 @@ for MLalgo=MLalgo_to_use
             
         end
         
-        
-        fprintf(1, ['Training accuracy for ' classifier_names{MLalgo} ' and cost %d is %d, wta accuracy is %d\n']...
-            ,ii_cost, sum(correct_predict_tr)/length(correct_predict_tr),sum(correct_predict_tr_wta)/length(correct_predict_tr_wta));
-        fprintf(1, ['Shuffled training accuracy for ' classifier_names{MLalgo} ' and cost %d is %d, wta accuracy is %d\n']...
-            ,ii_cost, sum(correct_predict_tr_sh)/length(correct_predict_tr_sh),sum(correct_predict_tr_wta_sh)/length(correct_predict_tr_wta_sh));
-        fprintf(1, ['Training accuracy for shuffled per trial ' classifier_names{MLalgo} ' and cost %d is %d, wta accuracy is %d\n']...
-            ,ii_cost, sum(correct_predict_tr_sh2(:))/length(correct_predict_tr_sh2(:)),sum(correct_predict_tr_wta_sh2(:))/length(correct_predict_tr_wta_sh2(:)));
-        fprintf(1, ['Mean label trace %d, variance %d\n'],mean(label_traces),var(label_traces));
-        
+        if show_figures==1
+            fprintf(1, ['Training accuracy for ' classifier_names{MLalgo} ' and cost %d is %d, wta accuracy is %d\n']...
+                ,ii_cost, sum(correct_predict_tr)/length(correct_predict_tr),sum(correct_predict_tr_wta)/length(correct_predict_tr_wta));
+            fprintf(1, ['Shuffled training accuracy for ' classifier_names{MLalgo} ' and cost %d is %d, wta accuracy is %d\n']...
+                ,ii_cost, sum(correct_predict_tr_sh)/length(correct_predict_tr_sh),sum(correct_predict_tr_wta_sh)/length(correct_predict_tr_wta_sh));
+            fprintf(1, ['Training accuracy for shuffled per trial ' classifier_names{MLalgo} ' and cost %d is %d, wta accuracy is %d\n']...
+                ,ii_cost, sum(correct_predict_tr_sh2(:))/length(correct_predict_tr_sh2(:)),sum(correct_predict_tr_wta_sh2(:))/length(correct_predict_tr_wta_sh2(:)));
+            fprintf(1, ['Mean label trace %d, variance %d\n'],mean(label_traces),var(label_traces));
+        end
         
         handles_not_out.MLalgo(MLalgo).correct_predict_tr=correct_predict_tr;
         handles_not_out.MLalgo(MLalgo).correct_predict_tr_wta=correct_predict_tr_wta;
@@ -1550,6 +1734,32 @@ for MLalgo=MLalgo_to_use
             ylim([-0.2 1.2])
             title(['Label prediction for entire session for ' classifier_names{MLalgo} ' and p value threshold ' num2str(p_threshold)])
             
+
+             figNo=figNo+1;
+            try
+                close(figNo)
+            catch
+            end
+            
+            hFig = figure(figNo);
+            
+            set(hFig, 'units','normalized','position',[.05 .1 .85 .3])
+            
+            hold on
+            
+            
+          
+            
+            %                 plot(time,moving_mean_label_traces_sh,'-','Color',[80/255 194/255 255/255])
+            plot(time,trimmed_licks,'-k','LineWidth',1)
+            plot(time,1.1*((epochs==8)+(epochs==9)),'-b')
+            plot(time,1.1*((epochs==6)+(epochs==7)),'-r')
+            
+            %                 plot(time,moving_mean_label_traces_sh(1,:),'-b')
+            
+            ylim([-0.2 1.2])
+            title(['Licks for entire session'])
+            
         end
         
         handles_out.time=time;
@@ -1568,9 +1778,12 @@ for MLalgo=MLalgo_to_use
             pzero=sum(label_traces_sh2(ii,:)==0)/size(label_traces_sh2,2);
             handles_out.MLalgo(MLalgo).shannon_e_sh2(ii)=-pzero*log2(pzero) - pone*log2(pone);
         end
-        fprintf(1, ['Shannon entropy %d, shuffled 1 %d, shuffled 2 %d\n'],handles_out.MLalgo(MLalgo).shannon_e...
-            ,handles_out.MLalgo(MLalgo).shannon_e_sh,mean(handles_out.MLalgo(MLalgo).shannon_e_sh2));
-        
+
+        if show_figures==1
+            fprintf(1, ['Shannon entropy %d, shuffled 1 %d, shuffled 2 %d\n'],handles_out.MLalgo(MLalgo).shannon_e...
+                ,handles_out.MLalgo(MLalgo).shannon_e_sh,mean(handles_out.MLalgo(MLalgo).shannon_e_sh2));
+        end
+
         %Now let's do accounting and show it in a bar graph
         
         %post Splus
@@ -1933,6 +2146,7 @@ for MLalgo=MLalgo_to_use
             text(30,0.75,'Shuffled','Color','k')
             text(30,0.65,'S+ vs S-','Color',[0 114/255 178/255])
             
+
             xlim([-7 15])
             ylim([0.2 1])
 
@@ -1954,10 +2168,11 @@ for MLalgo=MLalgo_to_use
             plot([mean(delta_odor_on_reinf_on+delta_reinf) mean(delta_odor_on_reinf_on+delta_reinf)],this_ylim,'-r')
 
 
-            title(['Accuracy v2 for ' classifier_names{MLalgo} ' trained from ' num2str(post_shift) ' to ' num2str(post_shift+post_time)])
-
+            title(['Accuracy v3 for ' classifier_names{MLalgo} ' trained from ' num2str(post_shift) ' to ' num2str(post_shift+post_time)])
             xlabel('Time(sec)')
             ylabel('Accuracy')
+
+            
             
             %Plot the posterior probabilities for Sp (scores,:,2) and Sm (scores(:,1))
             figNo=figNo+1;
@@ -2046,10 +2261,14 @@ for MLalgo=MLalgo_to_use
             
         end
     else
-        fprintf(1, [classifier_names{MLalgo} ' was not processed succesfully\n']);
+        if show_figures==1
+            fprintf(1, [classifier_names{MLalgo} ' was not processed succesfully\n']);
+        end
     end
     
-    fprintf(1,['Accuracy v2 for ' classifier_names{MLalgo} ' = %d\n\n'],mean(mean(handles_out.MLalgo(MLalgo).this_correct_predict(:,(time_span>=time_windows(window_no,1))&(time_span<=time_windows(window_no,2))),1)))
+    if show_figures==1
+        fprintf(1,['Accuracy for ' classifier_names{MLalgo} ' = %d\n\n'],mean(mean(handles_out.MLalgo(MLalgo).this_correct_predict(:,(time_span>=time_windows(window_no,1))&(time_span<=time_windows(window_no,2))),1)))
+    end
 
 end
 
@@ -2060,6 +2279,12 @@ end
 %     fprintf(1, ['Accuracy for odor window  is %d\n'],...
 %     odor_acc);
 
-fprintf(1,'Elapsed time (hr) %d\n\n',toc/(60*60))
+handles_out.time_span=time_span;
+
+if show_figures==1
+    fprintf(1,'Elapsed time (hr) %d\n\n',toc/(60*60))
+end
+
+
 
 pffft=1;

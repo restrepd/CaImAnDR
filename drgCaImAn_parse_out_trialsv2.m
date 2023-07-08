@@ -1,10 +1,9 @@
-function [hit_per_trial,cr_per_trial,dFFs_sp_per_trial_per_ROI,...
-    dFFs_sm_per_trial_per_ROI,dFF_per_trial_sm,dFF_per_trial_sp,training_decisions_post...
+function [hit_per_trial,cr_per_trial,dFFs_sp_per_trial_per_ROI_post_shifted,...
+    dFFs_sm_per_trial_per_ROI_post_shifted,dFF_per_trial_sm,dFF_per_trial_sp,training_decisions_post...
     ,which_model_for_traces_loo,decisions_per_trial,...
     ii_pointer_to_td,epochs_sp_post,measurements_post,...
-    measurements_pre,epochs_sp_pre,ii_post,trial_no...
-    ,epochs_sm_post,epochs_sm_pre,miss_per_trial,fa_per_trial] = ...
-    drgCaImAn_parse_out_trials(dt, dt_span,epochs,no_points_post_shift,no_points_post,no_points_pre,traces,ii_p_threshold,no_odor_trials)
+    ii_post,trial_no,epochs_sm_post,miss_per_trial,fa_per_trial] = ...
+    drgCaImAn_parse_out_trialsv2(dt, dt_span,epochs,no_points_post_shift,no_points_post,traces,ii_p_threshold,no_odor_trials)
 %This function parses out the trials from the epochs vector
 
 
@@ -34,8 +33,8 @@ dt_post_which_model=floor(20/dt); %Points that model will be used beyond the tra
 ii_span=ceil(dt_span/dt);
 dFF_per_trial_sp=[];
 dFF_per_trial_sm=[];
-dFFs_sp_per_trial_per_ROI=[];
-dFFs_sm_per_trial_per_ROI=[];
+dFFs_sp_per_trial_per_ROI_post_shifted=[];
+dFFs_sm_per_trial_per_ROI_post_shifted=[];
 hit_per_trial=[];
 miss_per_trial=[];
 cr_per_trial=[];
@@ -43,7 +42,7 @@ fa_per_trial=[];
 training_decisions_post=[];
 which_model_for_traces_loo=no_odor_trials*ones(1,size(traces,2));
 measurements_post=[];
-measurements_pre=[];
+% measurements_pre=[];
 
 %training_decisions is 1 if S+ and 2 if S-
 %epochs has masks for the following epochs
@@ -72,7 +71,8 @@ while (at_end==0)
             %This is S+
         
             next_ii=next_ii_sp;
-            if (no_points_post_shift+this_ii+next_ii+no_points_post<length(epochs))&(no_points_post_shift+this_ii+next_ii-no_points_pre>0)&(no_points_post_shift+this_ii+next_ii+ii_span<=length(epochs))
+            if (no_points_post_shift+this_ii+next_ii+no_points_post<length(epochs))&(no_points_post_shift+this_ii+next_ii>0)...
+                    &(no_points_post_shift+this_ii+next_ii+ii_span<=length(epochs))&(no_points_post_shift+this_ii+next_ii-ii_span>0)
                 if epochs(this_ii+1+next_ii_sp)==6
                     hit_per_trial=[hit_per_trial 1];
                     miss_per_trial=[miss_per_trial 0];
@@ -85,22 +85,23 @@ while (at_end==0)
                 measurements_post(ii_post+1:ii_post+no_points_post,:)=traces(:,no_points_post_shift+this_ii+next_ii:no_points_post_shift+this_ii+next_ii+no_points_post-1)';
                 training_decisions_post(ii_post+1:ii_post+no_points_post,:)=1;
                 ii_sp_post=ii_sp_post+1;
-                dFFs_sp_per_trial_per_ROI(ii_sp_post,:,:)=traces(:,no_points_post_shift+this_ii+next_ii:no_points_post_shift+this_ii+next_ii+ii_p_threshold);
-                dFFs_this_trial=traces(:,no_points_post_shift+this_ii+next_ii-ii_span:no_points_post_shift+this_ii+next_ii+ii_span);
+                dFFs_sp_per_trial_per_ROI_post_shifted(ii_sp_post,:,:)=traces(:,no_points_post_shift+this_ii+next_ii:no_points_post_shift+this_ii+next_ii+ii_p_threshold);
+                dFFs_this_trial=traces(:,this_ii+next_ii-ii_span:this_ii+next_ii+ii_span);
                 dFF_per_trial_sp(ii_sp_post,:,:)=dFFs_this_trial;
                 trial_no=trial_no+1;
                 decisions_per_trial(trial_no)=1;
-                which_model_for_traces_loo(1,ii_which_model+1:no_points_post_shift+this_ii+next_ii+no_points_post-1+dt_post_which_model)=trial_no;
-                ii_which_model=no_points_post_shift+this_ii+next_ii+no_points_post-1+dt_post_which_model;
-                ii_pointer_to_td(ii_post+1:ii_post+no_points_post)=no_points_post_shift+this_ii+next_ii:no_points_post_shift+this_ii+next_ii+no_points_post-1;
-                epochs_sp_post(1,no_points_post_shift+this_ii+next_ii:no_points_post_shift+this_ii+next_ii+no_points_post-1)=1;
-                measurements_pre(ii_pre+1:ii_pre+no_points_pre,:)=traces(:,no_points_post_shift+this_ii+next_ii-no_points_pre:no_points_post_shift+this_ii+next_ii-1)';
-                epochs_sp_pre(1,no_points_post_shift+this_ii+next_ii-no_points_pre:no_points_post_shift+this_ii+next_ii-1)=1;
+                which_model_for_traces_loo(1,ii_which_model+1:this_ii+next_ii+no_points_post-1+dt_post_which_model)=trial_no;
+                ii_which_model=this_ii+next_ii+no_points_post-1+dt_post_which_model;
+                ii_pointer_to_td(ii_post+1:ii_post+no_points_post)=this_ii+next_ii:this_ii+next_ii+no_points_post-1;
+                epochs_sp_post(1,this_ii+next_ii:this_ii+next_ii+no_points_post-1)=1;
+%                 measurements_pre(ii_pre+1:ii_pre+no_points_pre,:)=traces(:,this_ii+next_ii-no_points_pre:this_ii+next_ii-1)';
+%                 epochs_sp_pre(1,this_ii+next_ii-no_points_pre:this_ii+next_ii-1)=1;
                 this_ii=this_ii+next_ii+delta_ii_sp-1;
                 ii_post=ii_post+no_points_post;
-                ii_pre=ii_pre+no_points_pre;
+%                 ii_pre=ii_pre+no_points_pre;
             else
-                if (no_points_post_shift+this_ii+next_ii+no_points_post>length(epochs))||(no_points_post_shift+this_ii+next_ii-ii_span>0)&(no_points_post_shift+this_ii+next_ii+ii_span>length(epochs))
+                if (no_points_post_shift+this_ii+next_ii+no_points_post>length(epochs))||((no_points_post_shift+this_ii+next_ii-ii_span>0)...
+                        &(no_points_post_shift+this_ii+next_ii+ii_span>length(epochs)))
                     at_end=1;
                 else
                     this_ii=this_ii+next_ii+delta_ii_sp-1;
@@ -113,7 +114,7 @@ while (at_end==0)
          
 
             next_ii=next_ii_sm;
-            if (no_points_post_shift+this_ii+next_ii+no_points_post<length(epochs))&(no_points_post_shift+this_ii+next_ii-no_points_pre>0)...
+            if (no_points_post_shift+this_ii+next_ii+no_points_post<length(epochs))&(no_points_post_shift+this_ii+next_ii>0)...
                     &(no_points_post_shift+this_ii+next_ii+ii_span<=length(epochs))&(no_points_post_shift+this_ii+next_ii-ii_span>0)
                 if epochs(this_ii+1+next_ii_sm)==9
                     cr_per_trial=[cr_per_trial 1];
@@ -127,22 +128,23 @@ while (at_end==0)
                 measurements_post(ii_post+1:ii_post+no_points_post,:)=traces(:,no_points_post_shift+this_ii+next_ii:no_points_post_shift+this_ii+next_ii+no_points_post-1)';
                 training_decisions_post(ii_post+1:ii_post+no_points_post,:)=0;
                 ii_sm_post=ii_sm_post+1;
-                dFFs_sm_per_trial_per_ROI(ii_sm_post,:,:)=traces(:,no_points_post_shift+this_ii+next_ii:no_points_post_shift+this_ii+next_ii+ii_p_threshold);
-                dFFs_this_trial=traces(:,no_points_post_shift+this_ii+next_ii-ii_span:no_points_post_shift+this_ii+next_ii+ii_span);
+                dFFs_sm_per_trial_per_ROI_post_shifted(ii_sm_post,:,:)=traces(:,no_points_post_shift+this_ii+next_ii:no_points_post_shift+this_ii+next_ii+ii_p_threshold);
+                dFFs_this_trial=traces(:,this_ii+next_ii-ii_span:this_ii+next_ii+ii_span);
                 dFF_per_trial_sm(ii_sm_post,:,:)=dFFs_this_trial;
                 trial_no=trial_no+1;
                 decisions_per_trial(trial_no)=0;
-                which_model_for_traces_loo(1,ii_which_model+1:no_points_post_shift+this_ii+next_ii+no_points_post-1+dt_post_which_model)=trial_no;
-                ii_which_model=no_points_post_shift+this_ii+next_ii+no_points_post-1+dt_post_which_model;
-                ii_pointer_to_td(ii_post+1:ii_post+no_points_post)=no_points_post_shift+this_ii+next_ii:no_points_post_shift+this_ii+next_ii+no_points_post-1;
-                epochs_sm_post(1,no_points_post_shift+this_ii+next_ii:no_points_post_shift+this_ii+next_ii+no_points_post-1)=1;
-                measurements_pre(ii_pre+1:ii_pre+no_points_pre,:)=traces(:,no_points_post_shift+this_ii+next_ii-no_points_pre:no_points_post_shift+this_ii+next_ii-1)';
-                epochs_sm_pre(1,no_points_post_shift+this_ii+next_ii-no_points_pre:no_points_post_shift+this_ii+next_ii-1)=1;
+                which_model_for_traces_loo(1,ii_which_model+1:this_ii+next_ii+no_points_post-1+dt_post_which_model)=trial_no;
+                ii_which_model=this_ii+next_ii+no_points_post-1+dt_post_which_model;
+                ii_pointer_to_td(ii_post+1:ii_post+no_points_post)=this_ii+next_ii:this_ii+next_ii+no_points_post-1;
+                epochs_sm_post(1,this_ii+next_ii:this_ii+next_ii+no_points_post-1)=1;
+%                 measurements_pre(ii_pre+1:ii_pre+no_points_pre,:)=traces(:,this_ii+next_ii-no_points_pre:this_ii+next_ii-1)';
+%                 epochs_sm_pre(1,this_ii+next_ii-no_points_pre:this_ii+next_ii-1)=1;
                 this_ii=this_ii+next_ii+delta_ii_sm-1;
                 ii_post=ii_post+no_points_post;
-                ii_pre=ii_pre+no_points_pre;
+%                 ii_pre=ii_pre+no_points_pre;
             else
-                if (no_points_post_shift+this_ii+next_ii+no_points_post>length(epochs))||(no_points_post_shift+this_ii+next_ii-ii_span>0)&(no_points_post_shift+this_ii+next_ii+ii_span>length(epochs))
+                if (no_points_post_shift+this_ii+next_ii+no_points_post>length(epochs))||((no_points_post_shift+this_ii+next_ii-ii_span>0)...
+                        &(no_points_post_shift+this_ii+next_ii+ii_span>length(epochs)))
                     at_end=1;
                 else
                     this_ii=this_ii+next_ii+delta_ii_sm-1;
@@ -157,7 +159,7 @@ while (at_end==0)
 
                 
 
-                if (no_points_post_shift+this_ii+next_ii+no_points_post<length(epochs))&(no_points_post_shift+this_ii+next_ii-no_points_pre>0)...
+                if (no_points_post_shift+this_ii+next_ii+no_points_post<length(epochs))&(no_points_post_shift+this_ii+next_ii>0)...
                         &(no_points_post_shift+this_ii+next_ii+ii_span<=length(epochs))&(no_points_post_shift+this_ii+next_ii-ii_span>0)
                     if epochs(this_ii+1+next_ii_sm)==9
                         cr_per_trial=[cr_per_trial 1];
@@ -171,22 +173,22 @@ while (at_end==0)
                     measurements_post(ii_post+1:ii_post+no_points_post,:)=traces(:,no_points_post_shift+this_ii+next_ii:no_points_post_shift+this_ii+next_ii+no_points_post-1)';
                     training_decisions_post(ii_post+1:ii_post+no_points_post,:)=0;
                     ii_sm_post=ii_sm_post+1;
-                    dFFs_sm_per_trial_per_ROI(ii_sm_post,:,:)=traces(:,no_points_post_shift+this_ii+next_ii:no_points_post_shift+this_ii+next_ii+ii_p_threshold);
-                    dFFs_this_trial=traces(:,no_points_post_shift+this_ii+next_ii-ii_span:no_points_post_shift+this_ii+next_ii+ii_span);
+                    dFFs_sm_per_trial_per_ROI_post_shifted(ii_sm_post,:,:)=traces(:,no_points_post_shift+this_ii+next_ii:no_points_post_shift+this_ii+next_ii+ii_p_threshold);
+                    dFFs_this_trial=traces(:,this_ii+next_ii-ii_span:this_ii+next_ii+ii_span);
                     dFF_per_trial_sm(ii_sm_post,:,:)=dFFs_this_trial;
                     trial_no=trial_no+1;
                     decisions_per_trial(trial_no)=0;
-                    which_model_for_traces_loo(1,ii_which_model+1:no_points_post_shift+this_ii+next_ii+no_points_post-1+dt_post_which_model)=trial_no;
-                    ii_which_model=no_points_post_shift+this_ii+next_ii+no_points_post-1+dt_post_which_model;
-                    ii_pointer_to_td(ii_post+1:ii_post+no_points_post)=no_points_post_shift+this_ii+next_ii:no_points_post_shift+this_ii+next_ii+no_points_post-1;
-                    epochs_sm_post(1,no_points_post_shift+this_ii+next_ii:no_points_post_shift+this_ii+next_ii+no_points_post-1)=1;
-                    measurements_pre(ii_pre+1:ii_pre+no_points_pre,:)=traces(:,no_points_post_shift+this_ii+next_ii-no_points_pre:no_points_post_shift+this_ii+next_ii-1)';
-                    epochs_sm_pre(1,no_points_post_shift+this_ii+next_ii-no_points_pre:no_points_post_shift+this_ii+next_ii-1)=1;
+                    which_model_for_traces_loo(1,ii_which_model+1:this_ii+next_ii+no_points_post-1+dt_post_which_model)=trial_no;
+                    ii_which_model=this_ii+next_ii+no_points_post-1+dt_post_which_model;
+                    ii_pointer_to_td(ii_post+1:ii_post+no_points_post)=this_ii+next_ii:this_ii+next_ii+no_points_post-1;
+                    epochs_sm_post(1,this_ii+next_ii:this_ii+next_ii+no_points_post-1)=1;
+%                     measurements_pre(ii_pre+1:ii_pre+no_points_pre,:)=traces(:,this_ii+next_ii-no_points_pre:this_ii+next_ii-1)';
+%                     epochs_sm_pre(1,this_ii+next_ii-no_points_pre:this_ii+next_ii-1)=1;
                     this_ii=this_ii+next_ii+delta_ii_sm-1;
                     ii_post=ii_post+no_points_post;
-                    ii_pre=ii_pre+no_points_pre;
+%                     ii_pre=ii_pre+no_points_pre;
                 else
-                    if (no_points_post_shift+this_ii+next_ii+no_points_post>length(epochs))||(no_points_post_shift+this_ii+next_ii-ii_span>0)&(no_points_post_shift+this_ii+next_ii+ii_span>length(epochs))
+                    if (no_points_post_shift+this_ii+next_ii+no_points_post>length(epochs))||((no_points_post_shift+this_ii+next_ii-ii_span>0)&(no_points_post_shift+this_ii+next_ii+ii_span>length(epochs)))
                         at_end=1;
                     else
                         this_ii=this_ii+next_ii+delta_ii_sm-1;
@@ -198,7 +200,7 @@ while (at_end==0)
 
                 
 
-                if (no_points_post_shift+this_ii+next_ii+no_points_post<length(epochs))&(no_points_post_shift+this_ii+next_ii-no_points_pre>0)...
+                if (no_points_post_shift+this_ii+next_ii+no_points_post<length(epochs))&(no_points_post_shift+this_ii+next_ii>0)...
                         &(no_points_post_shift+this_ii+next_ii+ii_span<=length(epochs))&(no_points_post_shift+this_ii+next_ii-ii_span>0)
                     if epochs(this_ii+1+next_ii_sp)==6
                         hit_per_trial=[hit_per_trial 1];
@@ -212,22 +214,23 @@ while (at_end==0)
                     measurements_post(ii_post+1:ii_post+no_points_post,:)=traces(:,no_points_post_shift+this_ii+next_ii:no_points_post_shift+this_ii+next_ii+no_points_post-1)';
                     training_decisions_post(ii_post+1:ii_post+no_points_post,:)=1;
                     ii_sp_post=ii_sp_post+1;
-                    dFFs_sp_per_trial_per_ROI(ii_sp_post,:,:)=traces(:,no_points_post_shift+this_ii+next_ii:no_points_post_shift+this_ii+next_ii+ii_p_threshold);
-                    dFFs_this_trial=traces(:,no_points_post_shift+this_ii+next_ii-ii_span:no_points_post_shift+this_ii+next_ii+ii_span);
+                    dFFs_sp_per_trial_per_ROI_post_shifted(ii_sp_post,:,:)=traces(:,no_points_post_shift+this_ii+next_ii:no_points_post_shift+this_ii+next_ii+ii_p_threshold);
+                    dFFs_this_trial=traces(:,this_ii+next_ii-ii_span:this_ii+next_ii+ii_span);
                     dFF_per_trial_sp(ii_sp_post,:,:)=dFFs_this_trial;
                     trial_no=trial_no+1;
                     decisions_per_trial(trial_no)=1;
-                    which_model_for_traces_loo(1,ii_which_model+1:no_points_post_shift+this_ii+next_ii+no_points_post-1+dt_post_which_model)=trial_no;
-                    ii_which_model=no_points_post_shift+this_ii+next_ii+no_points_post-1+dt_post_which_model;
-                    ii_pointer_to_td(ii_post+1:ii_post+no_points_post)=no_points_post_shift+this_ii+next_ii:no_points_post_shift+this_ii+next_ii+no_points_post-1;
-                    epochs_sp_post(1,no_points_post_shift+this_ii+next_ii:no_points_post_shift+this_ii+next_ii+no_points_post-1)=1;
-                    measurements_pre(ii_pre+1:ii_pre+no_points_pre,:)=traces(:,no_points_post_shift+this_ii+next_ii-no_points_pre:no_points_post_shift+this_ii+next_ii-1)';
-                    epochs_sp_pre(1,no_points_post_shift+this_ii+next_ii-no_points_pre:no_points_post_shift+this_ii+next_ii-1)=1;
+                    which_model_for_traces_loo(1,ii_which_model+1:this_ii+next_ii+no_points_post-1+dt_post_which_model)=trial_no;
+                    ii_which_model=this_ii+next_ii+no_points_post-1+dt_post_which_model;
+                    ii_pointer_to_td(ii_post+1:ii_post+no_points_post)=this_ii+next_ii:this_ii+next_ii+no_points_post-1;
+                    epochs_sp_post(1,this_ii+next_ii:this_ii+next_ii+no_points_post-1)=1;
+%                     measurements_pre(ii_pre+1:ii_pre+no_points_pre,:)=traces(:,this_ii+next_ii-no_points_pre:this_ii+next_ii-1)';
+%                     epochs_sp_pre(1,this_ii+next_ii-no_points_pre:this_ii+next_ii-1)=1;
                     this_ii=this_ii+next_ii+delta_ii_sp-1;
                     ii_post=ii_post+no_points_post;
-                    ii_pre=ii_pre+no_points_pre;
+%                     ii_pre=ii_pre+no_points_pre; 
                 else
-                    if (no_points_post_shift+this_ii+next_ii+no_points_post>length(epochs))||(no_points_post_shift+this_ii+next_ii-ii_span>0)&(no_points_post_shift+this_ii+next_ii+ii_span>length(epochs))
+                    if (no_points_post_shift+this_ii+next_ii+no_points_post>length(epochs))||((no_points_post_shift+this_ii+next_ii-ii_span>0)...
+                            &(no_points_post_shift+this_ii+next_ii+ii_span>length(epochs)))
                         at_end=1;
                     else
                         this_ii=this_ii+next_ii+delta_ii_sp-1;

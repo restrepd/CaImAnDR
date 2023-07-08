@@ -469,6 +469,8 @@ if show_figures==1
 
     hold on
 
+    this_time_span=time_span;
+
     this_dFF_per_trial_sm=zeros(size(dFF_per_trial_sm,1),size(dFF_per_trial_sm,3));
     this_dFF_per_trial_sm(:,:)=dFF_per_trial_sm(:,ROI1,:);
 
@@ -481,7 +483,7 @@ if show_figures==1
     CIsm(1,:)=meansm-CIsm(1,:);
     CIsm(2,:)=CIsm(2,:)-meansm;
 
-    [hlsm, hpsm] = boundedline(time_span',mean(this_dFF_per_trial_sm,1)', CIsm',  'cmap',[238/255 111/255 179/255]);
+    [hlsm, hpsm] = boundedline(this_time_span',mean(this_dFF_per_trial_sm,1)', CIsm',  'cmap',[238/255 111/255 179/255]);
 
 
     CIsm = bootci(1000, @mean, this_dFF_per_trial_sp);
@@ -489,10 +491,10 @@ if show_figures==1
     CIsm(1,:)=meansm-CIsm(1,:);
     CIsm(2,:)=CIsm(2,:)-meansm;
 
-    [hlsm, hpsm] = boundedline(time_span',mean(this_dFF_per_trial_sp,1)', CIsm', 'cmap',[80/255 194/255 255/255]);
+    [hlsm, hpsm] = boundedline(this_time_span',mean(this_dFF_per_trial_sp,1)', CIsm', 'cmap',[80/255 194/255 255/255]);
 
-    plot(time_span',mean(this_dFF_per_trial_sm,1)','Color',[238/255 111/255 179/255],'LineWidth',1.5)
-    plot(time_span',mean(this_dFF_per_trial_sp,1)', 'Color',[80/255 194/255 255/255],'LineWidth',1.5);
+    plot(this_time_span',mean(this_dFF_per_trial_sm,1)','Color',[238/255 111/255 179/255],'LineWidth',1.5)
+    plot(this_time_span',mean(this_dFF_per_trial_sp,1)', 'Color',[80/255 194/255 255/255],'LineWidth',1.5);
 
     xlim([-7 15])
     
@@ -874,7 +876,7 @@ if show_figures==1
                 %                 pffft=1;
                 %             end
             end
-            plot(time_span',mean(this_d_prime,1)'+ii_shift,'-k','LineWidth',1.5)
+            plot(this_time_span',mean(this_d_prime,1)'+ii_shift,'-k','LineWidth',1.5)
         end
     end
 

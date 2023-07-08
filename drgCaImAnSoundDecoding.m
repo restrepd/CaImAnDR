@@ -155,17 +155,21 @@ sum_this_dBSp=zeros(length(f_down),length(t_down));
 sum_this_dBSm=zeros(length(f_down),length(t_down));
 median_FV_click_ii=median(FV_click_ii);
 
+click_dBSp=zeros(length(f_down),ii_splus);
 for ii=1:ii_splus
     this_dB=[];
     this_dB=dB.splus(ii).this_dB;
+    click_dBSp(:,ii)=this_dB(:,FV_click_ii(dB.splus(ii).fileNo));
     K=FV_click_ii(dB.splus(ii).fileNo)-median_FV_click_ii+9;
     this_dB_shifted = circshift(this_dB', K )';
     sum_this_dBSp=sum_this_dBSp+this_dB_shifted;
 end
 
+click_dBSm=zeros(length(f_down),ii_sminus);
 for ii=1:ii_sminus
     this_dB=[];
     this_dB=dB.sminus(ii).this_dB;
+    click_dBSm(:,ii)=this_dB(:,FV_click_ii(dB.sminus(ii).fileNo));
     K=FV_click_ii(dB.sminus(ii).fileNo)-median_FV_click_ii+9;
     this_dB_shifted = circshift(this_dB', K )';
     sum_this_dBSm=sum_this_dBSm+this_dB_shifted;
@@ -239,7 +243,7 @@ end
 hFig = figure(figNo);
 set(hFig, 'units','normalized','position',[.83 .1 .05 .3])
 
-prain=[min_dB:(max_dB-min_dB)/99:max_dB];
+prain=[0:(max_dB-min_dB)/99:max_dB-min_dB];
 drg_pcolor(repmat([1:10],100,1)',repmat(prain,10,1),repmat(prain,10,1))
 colormap fire
 shading interp
@@ -491,12 +495,58 @@ bar_offset=2;
 bar(bar_offset,meansm,'FaceColor',[0.7 .7 .7])
 plot([bar_offset bar_offset],CIsm,'-k','LineWidth',3)
 
+xticks([1 2])
+xticklabels({'Shuffled','Original'})
 
 title(['Accuracy'])
-xlabel('Time(sec)')
 ylabel('Accuracy')
 
 p = ranksum(this_correct_predict_sh,this_correct_predict);
 fprintf(1,['p-value for ranksum between accuracy and shifted accuracy ' num2str(p) '\n'])
+
+%Plot dB at the click
+click_dBSp=click_dBSp-min_dB;
+click_dBSm=click_dBSm-min_dB;
+click_dBSp=click_dBSp';
+click_dBSm=click_dBSm';
+
+figNo=figNo+1;
+try
+    close(figNo)
+catch
+end
+
+hFig = figure(figNo);
+ax=gca;ax.LineWidth=3;
+
+set(hFig, 'units','normalized','position',[.05 .1 .3 .3])
+
+hold on
+
+
+
+CIsm = bootci(1000, @mean, click_dBSm);
+meansm=mean(click_dBSm,1);
+CIsm(1,:)=meansm-CIsm(1,:);
+CIsm(2,:)=CIsm(2,:)-meansm;
+
+[hlsm, hpsm] = boundedline(f_down,mean(click_dBSm,1)', CIsm',  'cmap',[238/255 111/255 179/255]);
+
+
+CIsm = bootci(1000, @mean, click_dBSp);
+meansm=mean(click_dBSp,1);
+CIsm(1,:)=meansm-CIsm(1,:);
+CIsm(2,:)=CIsm(2,:)-meansm;
+
+[hlsm, hpsm] = boundedline(f_down,mean(click_dBSp,1)', CIsm', 'cmap',[80/255 194/255 255/255]);
+
+plot(f_down,mean(click_dBSm,1)','Color',[238/255 111/255 179/255],'LineWidth',1.5)
+plot(f_down,mean(click_dBSp,1)', 'Color',[80/255 194/255 255/255],'LineWidth',1.5);
+
+xlim([min(f_down) max(f_down)])
+
+title(['dB at final valve click'])
+xlabel('Frequency (Hz)')
+ylabel('dB')
 pffft=1;
 

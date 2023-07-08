@@ -2,7 +2,7 @@
 close all
 clear all
 
-is_Fabio=2;
+is_Fabio=0;
 %0 Choices for Ming's go-no go processing
 %1 Choices for Fabio
 %2 Choices for Ming's passive
@@ -1628,10 +1628,10 @@ switch is_Fabio
 
                 xlim([-10 20])
 
-
+ 
 
                 title(['Decoding accuracy calculated per mouse for ' per_corr_set_label{pCorr_no}])
-
+                pffft=1;
             end
 
         end
