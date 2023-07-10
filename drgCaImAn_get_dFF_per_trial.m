@@ -239,7 +239,7 @@ ii=0;
 
 while (at_end==0)
     next_ii=find((epochs(this_ii+1:end)==8)|(epochs(this_ii+1:end)==9),1,'first');
-    delta_ii_sm=find(epochs(this_ii+next_ii_sm:end)~=epochs(this_ii+next_ii_sm),1,'first');
+    delta_ii_sm=find(epochs(this_ii+next_ii:end)~=epochs(this_ii+next_ii),1,'first');
     if ~isempty(next_ii)
         %This is S-
 
@@ -350,7 +350,8 @@ if show_figures==1
     title(['dFF timecourses after p value trimming ' num2str(size(measurements_per_trial,2)) ' ROIs'])
 end
 
-fprintf(1, ['Demixed PCA run with %d ROIs (original no ROIs %d)...\n'],size(measurements_per_trial,2),noROIs_before_trimming);
+fprintf(1, ['dFF per trial extracted with %d ROIs (original no ROIs %d), %d S+ and %d S- trials\n'],size(measurements_per_trial,2),...
+    size(dFFs_sp_per_trial_per_ROI,2),size(dFFs_sm_per_trial_per_ROI,2),noROIs_before_trimming);
 
 
 handles_out.Nall=Nall;

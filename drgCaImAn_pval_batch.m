@@ -23,7 +23,7 @@ if nargin==0
     [choiceFileName,choiceBatchPathName] = uigetfile({'drgCaImAn_pval_choices*.m'},'Select the .m file with all the choices for analysis');
 end
 
-fprintf(1, ['\ndrgCaImAn_batch_pre_per_to_LDA_fsdz run for ' choiceFileName '\n\n']);
+fprintf(1, ['\ndrgCaImAn_pval_batch run for ' choiceFileName '\n\n']);
 
 tempDirName=['temp' choiceFileName(12:end-2)];
 
@@ -87,14 +87,14 @@ delta_reinf=4.078266e-01;
 
 pre_t=[-3 -2];
 fv_t=[-1 0];
-odor_t=[2 3];
+odor_t=[0.5 5.5];
 
 % Time events of interest (e.g. stimulus onset/offset, cues etc.)
 % They are marked on the plots with vertical lines
 timeEvents = [0 delta_odor delta_odor_on_reinf_on delta_reinf+delta_odor_on_reinf_on];
 
-%Time tinterval for shifting time base due to slow olfactometer computer
-t_shift=0.61;
+%We performed controls and we do not need a time shift
+% t_shift=0;
 
 
 %Parallel batch processing for each file
@@ -278,6 +278,7 @@ if all_files_present==1
     %resampled to a dt of 0.03 sec
     dt_res=0.03;
     time_span=t_from:dt_res:t_to;
+    handles_out.time_span=time_span;
     T=length(time_span);
 
     handles_out.output_data_pre=[];
@@ -368,18 +369,18 @@ if all_files_present==1
                         end
                     end
 
-                    %Now do the time shift
-                    no_shift=ceil(t_shift/(time_span(2)-time_span(1)));
-
-                    if all_handles(fileNo).handles_out.shift_time==1
-                        if no_shift>0
-                            these_FR(no_shift+1:end)=these_FR(1:end-no_shift);
-                            these_FR(1:no_shift)=these_FR(no_shift);
-                        else
-                            these_FR(1:end-no_shift)=these_FR(no_shift+1:end);
-                            these_FR(1:end-no_shift+1:end)=these_FR(no_shift);
-                        end
-                    end
+%                     %Now do the time shift
+%                     no_shift=floor(t_shift/(time_span(2)-time_span(1)));
+% 
+%                     if all_handles(fileNo).handles_out.shift_time==1
+%                         if no_shift>0
+%                             these_FR(no_shift+1:end)=these_FR(1:end-no_shift);
+%                             these_FR(1:no_shift)=these_FR(no_shift);
+%                         else
+%                             these_FR(1:end-no_shift)=these_FR(no_shift+1:end);
+%                             these_FR(1:end-no_shift+1:end)=these_FR(no_shift);
+%                         end
+%                     end
 
 
                     firingRates(n,s,1:T,trNo)=these_FR;
@@ -496,6 +497,13 @@ if all_files_present==1
             this_p=handles_out.file(fileNo).output_data_odor.p(ii_p);
             min_ii=ii_p;
             if this_p<handles_out.file(fileNo).output_data_odor.pFDR
+
+                 %get the dF/F
+                dFFsplus=zeros(length(time_span),trialNum(min_ii,1));
+                dFFsplus(:,:)=firingRates(min_ii,1,:,1:trialNum(min_ii,1));
+                dFFsminus=zeros(length(time_span),trialNum(min_ii,2));
+                dFFsminus(:,:)=firingRates(min_ii,2,:,1:trialNum(min_ii,2));
+
                 if show_figures==1
 
                     try
@@ -511,12 +519,7 @@ if all_files_present==1
                     hold on
                 end
 
-                %get the dF/F
-
-                dFFsplus=zeros(length(time_span),trialNum(min_ii,1));
-                dFFsplus(:,:)=firingRates(min_ii,1,:,1:trialNum(min_ii,1));
-                dFFsminus=zeros(length(time_span),trialNum(min_ii,2));
-                dFFsminus(:,:)=firingRates(min_ii,2,:,1:trialNum(min_ii,2));
+               
 
                 try
                     %S-
@@ -912,10 +915,12 @@ if all_files_present==1
             if this_p<handles_out.file(fileNo).output_data_odor_Sm.pFDR
 
 
-                %         [min_p min_ii]=min(handles_out.file(fileNo).output_data_odor_Sm.p);
-                %
-                %
-                %         if min_p<handles_out.file(fileNo).output_data_odor_Sm.pFDR
+                %get the dF/F
+
+                dFFsplus=zeros(length(time_span),trialNum(min_ii,1));
+                dFFsplus(:,:)=firingRates(min_ii,1,:,1:trialNum(min_ii,1));
+                dFFsminus=zeros(length(time_span),trialNum(min_ii,2));
+                dFFsminus(:,:)=firingRates(min_ii,2,:,1:trialNum(min_ii,2));
 
                 if show_figures==1
 
@@ -931,12 +936,7 @@ if all_files_present==1
 
                     hold on
 
-                    %get the dF/F
 
-                    dFFsplus=zeros(length(time_span),trialNum(min_ii,1));
-                    dFFsplus(:,:)=firingRates(min_ii,1,:,1:trialNum(min_ii,1));
-                    dFFsminus=zeros(length(time_span),trialNum(min_ii,2));
-                    dFFsminus(:,:)=firingRates(min_ii,2,:,1:trialNum(min_ii,2));
 
                     try
                         %S-
@@ -1037,7 +1037,7 @@ if all_files_present==1
     hFig=figure(figureNo);
 
     ax=gca;ax.LineWidth=3;
-    set(hFig, 'units','normalized','position',[.2 .2 .6 .3])
+    set(hFig, 'units','normalized','position',[.2 .2 .3 .3])
 
     hold on
     bar_offset=0;
@@ -1098,12 +1098,12 @@ if all_files_present==1
         end
 
         if ~isempty(these_odor)
-            bar_offset=bar_offset+1;
+%             bar_offset=bar_offset+1;
             bar(bar_offset,mean(these_odor),'LineWidth', 3,'EdgeColor','none','FaceColor',[80/255 194/255 255/255])
             if length(these_odor)>2
                 %Violin plot
                 [mean_out, CIout]=drgViolinPoint(these_odor...
-                    ,edges,bar_offset,rand_offset,'k','k',3);
+                    ,edges,bar_offset,rand_offset,'k','k',5);
             end
 
             glm_sig.data(glm_sig_ii+1:glm_sig_ii+length(these_odor))=these_odor;
@@ -1128,13 +1128,14 @@ if all_files_present==1
         case 1
             %Ming
 
-            xticks([1 3 5])
+            xticks([0 1 2])
             labels='xticklabels({';
             for ii_label=2:4
                 labels=[labels '''' per_names{ii_label} ''', '];
             end
             labels=[labels(1:end-2) '})'];
             eval(labels)
+            xlim([-0.7 2.7])
         case 2
             %Fabio
             xticks(2*groups-1)
@@ -1181,7 +1182,7 @@ if all_files_present==1
     hFig=figure(figureNo);
 
     ax=gca;ax.LineWidth=3;
-    set(hFig, 'units','normalized','position',[.2 .2 .6 .3])
+    set(hFig, 'units','normalized','position',[.2 .2 .3 .3])
 
     hold on
     bar_offset=0;
@@ -1223,12 +1224,12 @@ if all_files_present==1
         end
 
         if ~isempty(these_odor)
-            bar_offset=bar_offset+1;
+%             bar_offset=bar_offset+1;
             bar(bar_offset,mean(these_odor),'LineWidth', 3,'EdgeColor','none','FaceColor',[80/255 194/255 255/255])
             if length(these_odor)>2
                 %Violin plot
                 [mean_out, CIout]=drgViolinPoint(these_odor...
-                    ,edges,bar_offset,rand_offset,'k','k',3);
+                    ,edges,bar_offset,rand_offset,'k','k',5);
             end
 
             glm_sig.data(glm_sig_ii+1:glm_sig_ii+length(these_odor))=these_odor;
@@ -1254,13 +1255,14 @@ if all_files_present==1
         case 1
             %Ming
 
-            xticks([1 3 5])
+            xticks([0 1 2])
             labels='xticklabels({';
             for ii_label=2:4
                 labels=[labels '''' per_names{ii_label} ''', '];
             end
             labels=[labels(1:end-2) '})'];
             eval(labels)
+            xlim([-0.7 2.7])
         case 2
             %Fabio
             xticks(2*groups-1)
@@ -1307,7 +1309,7 @@ if all_files_present==1
     hFig=figure(figureNo);
 
     ax=gca;ax.LineWidth=3;
-    set(hFig, 'units','normalized','position',[.2 .2 .6 .3])
+    set(hFig, 'units','normalized','position',[.2 .2 .3 .3])
 
     hold on
     bar_offset=0;
@@ -1354,7 +1356,7 @@ if all_files_present==1
         if length(these_odor)>2
             %Violin plot
             [mean_out, CIout]=drgViolinPoint(these_odor...
-                ,edges,bar_offset,rand_offset,'k','k',3);
+                ,edges,bar_offset,rand_offset,'k','k',5);
         end
 
         glm_sig.data(glm_sig_ii+1:glm_sig_ii+length(these_odor))=these_odor;
@@ -1385,6 +1387,7 @@ if all_files_present==1
             end
             labels=[labels(1:end-2) '})'];
             eval(labels)
+            xlim([-0.7 2.7])
         case 2
             %Fabio
             xticks(2*groups-1)
@@ -2238,6 +2241,7 @@ if all_files_present==1
 %         xlabel('Divegence time')
 %         title('Histogram for divergence time')
 
+
     end
     %Uncomment this if you want to browse through the figures
 %     tic
@@ -2249,5 +2253,7 @@ if all_files_present==1
 %     end
     pffft=1;
 
-
+    save([choiceBatchPathName choiceFileName(1:end-4) '.mat'],'handles','handles_out','handles_choices','-v7.3')
 end
+
+pffft=1;
