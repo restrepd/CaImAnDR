@@ -17,8 +17,8 @@ if exist('handles_choices')==0
     
     processing_algorithm=3; %Use 3
     k_fold=5; %Only used for processing_algorithm=2,
-    post_time=2; %The decoding model will be trained with all points in post_time sec interval starting post_shift secs after odor on
-    post_shift=-5; %Set to 0 if you want to train with odor on points
+    post_time=5; %The decoding model will be trained with all points in post_time sec interval starting post_shift secs after odor on
+    post_shift=0.5; %Set to 0 if you want to train with odor on points
 %     pre_time=5; %Used to calculate the decoding accuracy pre_time sec before post_shift
     MLalgo_to_use=[6]; %Vector with the decoding algorithms you want to use
     ii_cost=3;
@@ -1724,21 +1724,49 @@ for MLalgo=MLalgo_to_use
         handles_not_out.MLalgo(MLalgo).mean_post_label_sm=mean_post_label_sm;
         handles_not_out.MLalgo(MLalgo).mean_post_label_sp=mean_post_label_sp;
         handles_not_out.MLalgo(MLalgo).mean_all_label=mean_all_label;
+
+        %Now find all the trials
+        %epochs is a vector of the length of time that gives information on
+        %behavior
+        % 1=Final Valve
+        % 6=Hit (on for the duration of odor on)
+        % 7=Miss
+        % 8=FA
+        % 9=CR
         
         at_end=0;
         ii=1;
+        tr_ii=0;
         sp_ii=0;
+        hit_ii=0;
+        miss_ii=0;
         per_trial_sp_timecourse=[];
+        per_trial_hit_timecourse=[];
+        per_trial_miss_timecourse=[];
         epoch_before_sp=[];
         sm_ii=0;
+        cr_ii=0;
+        fa_ii=0;
         per_trial_sm_timecourse=[];
+        per_trial_cr_timecourse=[];
+        per_trial_fa_timecourse=[];
         epoch_before_sm=[];
         per_trial_scores_sp=[];
         per_trial_scores_sm=[];
-        
+        these_hits=[];
+        these_miss=[];
+        these_sp_hits=[];
+        these_sp_miss=[];
+        these_crs=[];
+        these_fas=[];
+        these_sm_crs=[];
+        these_sm_fas=[];
+        these_sps=[];
+        theese_sms=[];
+
         last_sp_sm=-1;
-        
-        
+
+
         while at_end==0
             next_ii=[];
             next_ii_sp=find(epochs_sp_post(ii:end)==1,1,'first');
@@ -1761,23 +1789,69 @@ for MLalgo=MLalgo_to_use
                     this_sp_sm=0;
                 end
             end
-            
+
             if ~isempty(next_ii)
                 if ((ii+next_ii-ii_span)>0)&((ii+next_ii+ii_span<length(label_traces)))
                     if this_sp_sm==1
+                        tr_ii=tr_ii+1;
                         sp_ii=sp_ii+1;
+
+                        these_crs(tr_ii)=0;
+                        these_fas(tr_ii)=0;
+                        these_sps(tr_ii)=1;
+                        these_sms(tr_ii)=0;
                         per_trial_sp_timecourse(sp_ii,:)=label_traces(ii+next_ii-ii_span:ii+next_ii+ii_span);
                         per_trial_scores_sp(sp_ii,1:2,:)=scores(ii+next_ii-ii_span:ii+next_ii+ii_span,:)';
                         epoch_before_sp(sp_ii)=last_sp_sm;
                         last_sp_sm=1;
+
+                        if epochs(ii+next_ii)==6
+                            hit_ii=hit_ii+1;
+                            per_trial_hit_timecourse(hit_ii,:)=label_traces(ii+next_ii-ii_span:ii+next_ii+ii_span);
+                            these_hits(tr_ii)=1;
+                            these_miss(tr_ii)=0;
+                            these_sp_hits(sp_ii)=1;
+                            these_sp_miss(sp_ii)=0;
+                        end
+                        if epochs(ii+next_ii)==7
+                            miss_ii=miss_ii+1;
+                            per_trial_miss_timecourse(miss_ii,:)=label_traces(ii+next_ii-ii_span:ii+next_ii+ii_span);
+                            these_hits(tr_ii)=0;
+                            these_miss(tr_ii)=1;
+                            these_sp_hits(sp_ii)=0;
+                            these_sp_miss(sp_ii)=1;
+                        end
+
                         ii_next_post=find(epochs_sp_post(ii+next_ii:end)==0,1,'first');
                         ii=ii+next_ii+ii_next_post;
                     else
                         sm_ii=sm_ii+1;
+                        tr_ii=tr_ii+1;
                         per_trial_sm_timecourse(sm_ii,:)=label_traces(ii+next_ii-ii_span:ii+next_ii+ii_span);
                         per_trial_scores_sm(sm_ii,1:2,:)=scores(ii+next_ii-ii_span:ii+next_ii+ii_span,:)';
                         epoch_before_sm(sm_ii)=last_sp_sm;
                         last_sp_sm=0;
+
+                        these_hits(tr_ii)=0;
+                        these_miss(tr_ii)=0;
+                        these_sps(tr_ii)=0;
+                        theese_sms(tr_ii)=1;
+                        if epochs(ii+next_ii)==9
+                            cr_ii=cr_ii+1;
+                            per_trial_cr_timecourse(cr_ii,:)=label_traces(ii+next_ii-ii_span:ii+next_ii+ii_span);
+                            these_crs(tr_ii)=1;
+                            these_fas(tr_ii)=0;
+                            these_sm_crs(sm_ii)=1;
+                            these_sm_fas(sm_ii)=0;
+                        end
+                        if epochs(ii+next_ii)==8
+                            fa_ii=fa_ii+1;
+                            per_trial_fa_timecourse(fa_ii,:)=label_traces(ii+next_ii-ii_span:ii+next_ii+ii_span);
+                            these_crs(tr_ii)=0;
+                            these_fas(tr_ii)=1;
+                            these_sm_crs(sm_ii)=0;
+                            these_sm_fas(sm_ii)=1;
+                        end
                         ii_next_post=find(epochs_sm_post(ii+next_ii:end)==0,1,'first');
                         ii=ii+next_ii+ii_next_post;
                     end
@@ -1791,8 +1865,88 @@ for MLalgo=MLalgo_to_use
             else
                 at_end=1;
             end
-            
+
         end
+
+        handles_out.MLalgo(MLalgo).these_sm_crs=these_sm_crs;
+        handles_out.MLalgo(MLalgo).these_sm_fas=these_sm_fas;
+        handles_out.MLalgo(MLalgo).these_sp_hits=these_sp_hits;
+        handles_out.MLalgo(MLalgo).these_sp_miss=these_sp_miss;
+        handles_out.MLalgo(MLalgo).these_hits=these_hits;
+        handles_out.MLalgo(MLalgo).these_miss=these_miss;
+        handles_out.MLalgo(MLalgo).these_fas=these_fas;
+        handles_out.MLalgo(MLalgo).these_crs=these_crs;
+
+        pfft=1;
+%         
+%         at_end=0;
+%         ii=1;
+%         sp_ii=0;
+%         per_trial_sp_timecourse=[];
+%         epoch_before_sp=[];
+%         sm_ii=0;
+%         per_trial_sm_timecourse=[];
+%         epoch_before_sm=[];
+%         per_trial_scores_sp=[];
+%         per_trial_scores_sm=[];
+%         
+%         last_sp_sm=-1;
+%         
+%         
+%         while at_end==0
+%             next_ii=[];
+%             next_ii_sp=find(epochs_sp_post(ii:end)==1,1,'first');
+%             next_ii_sm=find(epochs_sm_post(ii:end)==1,1,'first');
+%             if (~isempty(next_ii_sp))&(~isempty(next_ii_sm))
+%                 if next_ii_sp<next_ii_sm
+%                     next_ii=next_ii_sp;
+%                     this_sp_sm=1;
+%                 else
+%                     next_ii=next_ii_sm;
+%                     this_sp_sm=0;
+%                 end
+%             else
+%                 if ~isempty(next_ii_sp)
+%                     next_ii=next_ii_sp;
+%                     this_sp_sm=1;
+%                 end
+%                 if ~isempty(next_ii_sm)
+%                     next_ii=next_ii_sm;
+%                     this_sp_sm=0;
+%                 end
+%             end
+%             
+%             if ~isempty(next_ii)
+%                 if ((ii+next_ii-ii_span)>0)&((ii+next_ii+ii_span<length(label_traces)))
+%                     if this_sp_sm==1
+%                         sp_ii=sp_ii+1;
+%                         per_trial_sp_timecourse(sp_ii,:)=label_traces(ii+next_ii-ii_span:ii+next_ii+ii_span);
+%                         per_trial_scores_sp(sp_ii,1:2,:)=scores(ii+next_ii-ii_span:ii+next_ii+ii_span,:)';
+%                         epoch_before_sp(sp_ii)=last_sp_sm;
+%                         last_sp_sm=1;
+%                         ii_next_post=find(epochs_sp_post(ii+next_ii:end)==0,1,'first');
+%                         ii=ii+next_ii+ii_next_post;
+%                     else
+%                         sm_ii=sm_ii+1;
+%                         per_trial_sm_timecourse(sm_ii,:)=label_traces(ii+next_ii-ii_span:ii+next_ii+ii_span);
+%                         per_trial_scores_sm(sm_ii,1:2,:)=scores(ii+next_ii-ii_span:ii+next_ii+ii_span,:)';
+%                         epoch_before_sm(sm_ii)=last_sp_sm;
+%                         last_sp_sm=0;
+%                         ii_next_post=find(epochs_sm_post(ii+next_ii:end)==0,1,'first');
+%                         ii=ii+next_ii+ii_next_post;
+%                     end
+%                 else
+%                     if  ((ii+next_ii+ii_span>length(label_traces)))
+%                         at_end=1;
+%                     else
+%                         ii=ii+next_ii;
+%                     end
+%                 end
+%             else
+%                 at_end=1;
+%             end
+%             
+%         end
         
         handles_out.MLalgo(MLalgo).per_trial_sp_timecourse=per_trial_sp_timecourse;
         handles_not_out.MLalgo(MLalgo).epoch_before_sp=epoch_before_sp;
@@ -1896,10 +2050,28 @@ for MLalgo=MLalgo_to_use
             plot(time_span',mean(moving_mean_per_trial_sm_timecourse,1)','-','Color',[158/255 31/255 99/255],'DisplayName','S-')
             plot(time_span',mean(moving_mean_per_trial_sp_timecourse,1)', '-','Color',[0 114/255 178/255],'DisplayName','S+');
             
-            text(30,0.75,'S-','Color',[158/255 31/255 99/255])
-            text(30,0.65,'S+','Color',[0 114/255 178/255])
             
-            ylim([0.3 1])
+            xlim([-7 15])
+            ylim([0 1])
+
+            this_ylim=ylim;
+
+
+            %FV
+            plot([-1.5 0],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'LineWidth',5, Color=[0.9 0.9 0.9])
+            plot([-1.5 -1.5],[this_ylim],'-','Color',[0.5 0.5 0.5])
+
+            %Odor on markers
+            plot([0 0],this_ylim,'-k')
+            odorhl=plot([0 mean(delta_odor)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-k','LineWidth',5);
+            plot([mean(delta_odor) mean(delta_odor)],this_ylim,'-k')
+
+            %Reinforcement markers
+            plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on)],this_ylim,'-r')
+            reinfhl=plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on+delta_reinf)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-r','LineWidth',5);
+            plot([mean(delta_odor_on_reinf_on+delta_reinf) mean(delta_odor_on_reinf_on+delta_reinf)],this_ylim,'-r')
+
+
             title(['Label prediction per trial for ' classifier_names{MLalgo} ' and p value threshold ' num2str(p_threshold)])
             xlabel('Time(sec)')
             ylabel('Label prediction, S+=1, S-=0')
@@ -2046,6 +2218,197 @@ for MLalgo=MLalgo_to_use
             title(['Posterior probability for S+ or S- prediction for S- trials ' classifier_names{MLalgo} ' ' num2str(p_threshold)])
             xlabel('Time(sec)')
             ylabel('Posterior probability')
+
+            %Plot error trials
+            %Plot the prediction for S+ and S- and the correct predictions
+            figNo=figNo+1;
+            try
+                close(figNo)
+            catch
+            end
+            
+            hFig = figure(figNo);
+            
+            set(hFig, 'units','normalized','position',[.05 .1 .3 .3])
+            
+%             subplot(2,1,1)
+            hold on
+            
+            %Plot CRs
+            if sum(these_sm_crs)>=3
+                CIsm = bootci(1000, @mean, moving_mean_per_trial_sm_timecourse(logical(these_sm_crs),:));
+                meansm=mean(moving_mean_per_trial_sm_timecourse(logical(these_sm_crs),:),1);
+                CIsm(1,:)=meansm-CIsm(1,:);
+                CIsm(2,:)=CIsm(2,:)-meansm;
+
+                [hlsm, hpsm] = boundedline(time_span',mean(moving_mean_per_trial_sm_timecourse(logical(these_sm_crs),:),1)', CIsm', '-b');
+            else
+                plot(time_span',mean(moving_mean_per_trial_sm_timecourse(logical(these_sm_crs),:),1)','-b')
+            end
+
+            %Plot FAs
+            if sum(these_sm_fas)>=3
+                CIsm = bootci(1000, @mean, moving_mean_per_trial_sm_timecourse(logical(these_sm_fas),:));
+                meansm=mean(moving_mean_per_trial_sm_timecourse(logical(these_sm_fas),:),1);
+                CIsm(1,:)=meansm-CIsm(1,:);
+                CIsm(2,:)=CIsm(2,:)-meansm;
+
+                [hlsm, hpsm] = boundedline(time_span',mean(moving_mean_per_trial_sm_timecourse(logical(these_sm_fas),:),1)', CIsm','-m');
+            else
+                plot(time_span',mean(moving_mean_per_trial_sm_timecourse(logical(these_sm_fas),:),1)','-m')
+            end
+            
+        %Plot Hits
+            if sum(these_sp_hits)>=3
+                CIsm = bootci(1000, @mean, moving_mean_per_trial_sp_timecourse(logical(these_sp_hits),:));
+                meansm=mean(moving_mean_per_trial_sp_timecourse(logical(these_sp_hits),:),1);
+                CIsm(1,:)=meansm-CIsm(1,:);
+                CIsm(2,:)=CIsm(2,:)-meansm;
+
+                [hlsm, hpsm] = boundedline(time_span',mean(moving_mean_per_trial_sp_timecourse(logical(these_sp_hits),:),1)', CIsm', '-r');
+            else
+                plot(time_span',mean(moving_mean_per_trial_sp_timecourse(logical(these_sp_hits),:),1)','-r')
+            end
+
+            %Plot Miss
+            if sum(these_sp_miss)>=3
+                CIsm = bootci(1000, @mean, moving_mean_per_trial_sp_timecourse(logical(these_sp_miss),:));
+                meansm=mean(moving_mean_per_trial_sp_timecourse(logical(these_sp_miss),:),1);
+                CIsm(1,:)=meansm-CIsm(1,:);
+                CIsm(2,:)=CIsm(2,:)-meansm;
+
+                [hlsm, hpsm] = boundedline(time_span',mean(moving_mean_per_trial_sp_timecourse(logical(these_sp_miss),:),1)', CIsm','-c');
+            else
+                plot(time_span',mean(moving_mean_per_trial_sp_timecourse(logical(these_sp_miss),:),1)','-c')
+            end
+
+            plot(time_span',mean(moving_mean_per_trial_sm_timecourse(logical(these_sm_crs),:),1)','-b')
+            plot(time_span',mean(moving_mean_per_trial_sm_timecourse(logical(these_sm_fas),:),1)','-m')
+            plot(time_span',mean(moving_mean_per_trial_sp_timecourse(logical(these_sp_hits),:),1)','-r')
+            plot(time_span',mean(moving_mean_per_trial_sp_timecourse(logical(these_sp_miss),:),1)','-c')
+            
+            
+            xlim([-7 15])
+            ylim([0 1])
+
+            this_ylim=ylim;
+
+
+            %FV
+            plot([-1.5 0],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'LineWidth',5, Color=[0.9 0.9 0.9])
+            plot([-1.5 -1.5],[this_ylim],'-','Color',[0.5 0.5 0.5])
+
+            %Odor on markers
+            plot([0 0],this_ylim,'-k')
+            odorhl=plot([0 mean(delta_odor)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-k','LineWidth',5);
+            plot([mean(delta_odor) mean(delta_odor)],this_ylim,'-k')
+
+            %Reinforcement markers
+            plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on)],this_ylim,'-r')
+            reinfhl=plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on+delta_reinf)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-r','LineWidth',5);
+            plot([mean(delta_odor_on_reinf_on+delta_reinf) mean(delta_odor_on_reinf_on+delta_reinf)],this_ylim,'-r')
+
+
+            title(['Prediction, hit=red, miss=cyan, fa=magenta, cr=blue'])
+            xlabel('Time(sec)')
+            ylabel('Prediction, S+=1, S-=0')
+
+            %plot accuracy
+            figNo=figNo+1;
+            try
+                close(figNo)
+            catch
+            end
+
+            hFig = figure(figNo);
+
+            set(hFig, 'units','normalized','position',[.05 .1 .3 .3])
+            hold on
+
+            CIsm = bootci(1000, @mean, this_correct_predict_sh);
+            meansm=mean(this_correct_predict_sh,1);
+            CIsm(1,:)=meansm-CIsm(1,:);
+            CIsm(2,:)=CIsm(2,:)-meansm;
+
+            [hlsm, hpsm] = boundedline(time_span',mean(this_correct_predict_sh,1)', CIsm', 'k');
+
+            if sum(these_hits)>=3
+                CIsm = bootci(1000, @mean, this_correct_predict(logical(these_hits),:));
+                meansm=mean(this_correct_predict(logical(these_hits),:),1);
+                CIsm(1,:)=meansm-CIsm(1,:);
+                CIsm(2,:)=CIsm(2,:)-meansm;
+
+                [hlsm, hpsm] = boundedline(time_span',mean(this_correct_predict(logical(these_hits),:),1)', CIsm', '-r');
+            else
+                plot(time_span',mean(this_correct_predict(logical(these_hits),:),1)', '-r');
+            end
+
+            if sum(these_miss)>=3
+                CIsm = bootci(1000, @mean, this_correct_predict(logical(these_miss),:));
+                meansm=mean(this_correct_predict(logical(these_miss),:),1);
+                CIsm(1,:)=meansm-CIsm(1,:);
+                CIsm(2,:)=CIsm(2,:)-meansm;
+
+                [hlsm, hpsm] = boundedline(time_span',mean(this_correct_predict(logical(these_miss),:),1)', CIsm', '-c');
+            else
+                plot(time_span',mean(this_correct_predict(logical(these_miss),:),1)', '-c');
+            end
+
+            if sum(these_crs)>=3
+                CIsm = bootci(1000, @mean, this_correct_predict(logical(these_crs),:));
+                meansm=mean(this_correct_predict(logical(these_crs),:),1);
+                CIsm(1,:)=meansm-CIsm(1,:);
+                CIsm(2,:)=CIsm(2,:)-meansm;
+
+                [hlsm, hpsm] = boundedline(time_span',mean(this_correct_predict(logical(these_crs),:),1)', CIsm', '-b');
+            else
+                plot(time_span',mean(this_correct_predict(logical(these_crs),:),1)', '-b');
+            end
+
+            if sum(these_fas)>=3
+                CIsm = bootci(1000, @mean, this_correct_predict(logical(these_fas),:));
+                meansm=mean(this_correct_predict(logical(these_fas),:),1);
+                CIsm(1,:)=meansm-CIsm(1,:);
+                CIsm(2,:)=CIsm(2,:)-meansm;
+
+                [hlsm, hpsm] = boundedline(time_span',mean(this_correct_predict(logical(these_fas),:),1)', CIsm', '-m');
+            else
+                plot(time_span',mean(this_correct_predict(logical(these_fas),:),1)', '-m');
+            end
+
+
+
+            plot(time_span',mean(this_correct_predict(logical(these_hits),:),1)', '-r');
+            plot(time_span',mean(this_correct_predict(logical(these_miss),:),1)', '-c');
+            plot(time_span',mean(this_correct_predict(logical(these_crs),:),1)', '-b');
+            plot(time_span',mean(this_correct_predict(logical(these_fas),:),1)', '-m');
+
+            plot(time_span',mean(this_correct_predict_sh,1)', '-k');
+
+            xlim([-7 15])
+            ylim([0.2 1])
+
+            this_ylim=ylim;
+
+
+            %FV
+            plot([-1.5 0],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'LineWidth',5, Color=[0.9 0.9 0.9])
+            plot([-1.5 -1.5],[this_ylim],'-','Color',[0.5 0.5 0.5])
+
+            %Odor on markers
+            plot([0 0],this_ylim,'-k')
+            odorhl=plot([0 mean(delta_odor)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-k','LineWidth',5);
+            plot([mean(delta_odor) mean(delta_odor)],this_ylim,'-k')
+
+            %Reinforcement markers
+            plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on)],this_ylim,'-r')
+            reinfhl=plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on+delta_reinf)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-r','LineWidth',5);
+            plot([mean(delta_odor_on_reinf_on+delta_reinf) mean(delta_odor_on_reinf_on+delta_reinf)],this_ylim,'-r')
+
+
+            title(['Accuracy v3 hit=red, miss=cyan, cr=blue, fa=magenta'])
+            xlabel('Time(sec)')
+            ylabel('Accuracy')
             
         end
     else
