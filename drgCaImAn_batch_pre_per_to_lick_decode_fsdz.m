@@ -16,7 +16,7 @@ eval(['handles=' choiceFileName(1:end-2) ';'])
 handles.choiceFileName=choiceFileName;
 handles.choiceBatchPathName=choiceBatchPathName;
 
-new_no_files=handles.no_files;
+% new_no_files=handles.no_files;
 
 if isfield(handles,'processing_algo')
     processing_algo=handles.processing_algo;
@@ -75,7 +75,7 @@ if all_files_present==1
     
     
     %Process each file separately
-    for fileNo=first_file:length(handles.FileName_pre_per)
+    for fileNo=first_file:handles.no_files
         tic
         first_toc=toc;
 
