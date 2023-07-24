@@ -142,7 +142,7 @@ miss_per_trial=[];
 cr_per_trial=[];
 fa_per_trial=[];
 
-if convert_z==2
+if (convert_z==2)||(convert_z==1)
     std_traces=zeros(1,size(traces,1));
     for trace_no=1:size(traces,1)
         std_traces(trace_no)=std(traces(trace_no,:));
@@ -198,14 +198,21 @@ while (at_end==0)
             cr_per_trial=[cr_per_trial 0];
             fa_per_trial=[fa_per_trial 0];
             trNo=trNo+1;
-            if convert_z==2
-                mean_trace_before=mean(traces(:,this_ii+next_ii+ii_pre(1):this_ii+next_ii+ii_pre(2)),2);
-                mean_trace_before=repmat(mean_trace_before,1,size(traces(:,this_ii+next_ii-no_points_before:this_ii+next_ii+no_points_after-1),2));
-                these_std_traces=repmat(std_traces,1,size(traces(:,this_ii+next_ii-no_points_before:this_ii+next_ii+no_points_after-1),2));
-                measurements_per_trial(1:no_points_before+no_points_after,:,trNo)=((traces(:,this_ii+next_ii-no_points_before:this_ii+next_ii+no_points_after-1)...
-                    -mean_trace_before)./these_std_traces)';
-            else
-                measurements_per_trial(1:no_points_before+no_points_after,:,trNo)=traces(:,this_ii+next_ii-no_points_before:this_ii+next_ii+no_points_after-1)';
+            switch convert_z
+                case 1
+                    %                     mean_trace_before=mean(traces(:,this_ii+next_ii+ii_pre(1):this_ii+next_ii+ii_pre(2)),2);
+                    %                     mean_trace_before=repmat(mean_trace_before,1,size(traces(:,this_ii+next_ii-no_points_before:this_ii+next_ii+no_points_after-1),2));
+                    these_std_traces=repmat(std_traces,1,size(traces(:,this_ii+next_ii-no_points_before:this_ii+next_ii+no_points_after-1),2));
+                    measurements_per_trial(1:no_points_before+no_points_after,:,trNo)=((traces(:,this_ii+next_ii-no_points_before:this_ii+next_ii+no_points_after-1)...
+                        )./these_std_traces)';
+                case 2
+                    mean_trace_before=mean(traces(:,this_ii+next_ii+ii_pre(1):this_ii+next_ii+ii_pre(2)),2);
+                    mean_trace_before=repmat(mean_trace_before,1,size(traces(:,this_ii+next_ii-no_points_before:this_ii+next_ii+no_points_after-1),2));
+                    these_std_traces=repmat(std_traces,1,size(traces(:,this_ii+next_ii-no_points_before:this_ii+next_ii+no_points_after-1),2));
+                    measurements_per_trial(1:no_points_before+no_points_after,:,trNo)=((traces(:,this_ii+next_ii-no_points_before:this_ii+next_ii+no_points_after-1)...
+                        -mean_trace_before)./these_std_traces)';
+                otherwise
+                    measurements_per_trial(1:no_points_before+no_points_after,:,trNo)=traces(:,this_ii+next_ii-no_points_before:this_ii+next_ii+no_points_after-1)';
             end
             %             measurements_per_trial(1:no_points_before+no_points_after,:,trNo)=traces(:,this_ii+next_ii:this_ii+next_ii+no_points_before+no_points_after-1)';
             ii_sp_post=ii_sp_post+1;

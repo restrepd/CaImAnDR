@@ -2729,145 +2729,199 @@ end
 
 pCorr_no=3; %Do proficient only
 
-    switch is_Fabio
-        case 0
-            these_gr_out=group_sets(pCorr_no,:);
-        case 1
-            these_pcorr=[1];
-        case 2
-            these_gr_out=these_groups_out;
-    end
+switch is_Fabio
+    case 0
+        these_gr_out=group_sets(pCorr_no,:);
+    case 1
+        these_pcorr=[1];
+    case 2
+        these_gr_out=these_groups_out;
+end
 
-    ii_mouse_inc=0;
-    per_mouse_prediction_sp_hit=[];
-    per_mouse_prediction_sp_miss=[];
-    per_mouse_prediction_sm_cr=[];
-    per_mouse_prediction_sm_fa=[];
+ii_mouse_inc_hit=0;
+ii_mouse_inc_miss=0;
+ii_mouse_inc_cr=0;
+ii_mouse_inc_fa=0;
+per_mouse_prediction_sp_hit=[];
+per_mouse_prediction_sp_miss=[];
+per_mouse_prediction_sm_cr=[];
+per_mouse_prediction_sm_fa=[];
 
-    for mouseNo=1:length(handles_out2.mouse_names)
-        ii_sessions_inc=0;
-        this_mouse_prediction_sp_hit=[];
-        this_mouse_prediction_sp_miss=[];
-        this_mouse_prediction_sm_cr=[];
-        this_mouse_prediction_sm_fa=[];
-        include_mouse=0;
+for mouseNo=1:length(handles_out2.mouse_names)
 
-        for grNo=these_gr_out
-%         for grNo=group_sets(pCorr_no,:)
-%         for grNo=these_groups_out
-            if ~isempty(per_mouse_pred.group(grNo).mouse(mouseNo).mean_prediction_mean_sp)
-                for ii_sessions=1:size(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sm,1)
-                    ii_sessions_inc=ii_sessions_inc+1;
-                    this_mouse_prediction_sp(ii_sessions_inc,:)=per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sp(ii_sessions,:);
-                    this_mouse_prediction_sm(ii_sessions_inc,:)=per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sm(ii_sessions,:);
-                end
-                include_mouse=1;
+    %Extract hits per mouse
+    ii_sessions_inc=0;
+    this_mouse_prediction_sp_hit=[];
+    include_mouse=0;
+
+    for grNo=these_gr_out
+        if ~isempty(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sp_hit)
+            for ii_sessions=1:size(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sp_hit,1)
+                ii_sessions_inc=ii_sessions_inc+1;
+                this_mouse_prediction_sp_hit(ii_sessions_inc,:)=per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sp_hit(ii_sessions,:);
             end
+            include_mouse=1;
         end
-        if include_mouse==1
-            ii_mouse_inc=ii_mouse_inc+1;
-            per_mouse_prediction_sp(ii_mouse_inc,:)=mean(this_mouse_prediction_sp,1);
-            per_mouse_prediction_sm(ii_mouse_inc,:)=mean(this_mouse_prediction_sm,1);
-        end
-
-%         if ~isempty(per_mouse_pred.group(grNo).mouse(mouseNo).mean_prediction_mean_sp)
-%             ii_m_included=ii_m_included+1;
-%             these_mean_prediction_mean_sp(ii_m_included,:)=per_mouse_pred.group(grNo).mouse(mouseNo).mean_prediction_mean_sp;
-%             these_mean_prediction_mean_sm(ii_m_included,:)=per_mouse_pred.group(grNo).mouse(mouseNo).mean_prediction_mean_sm;
-%         end
     end
-% 
-%     for mouseNo=1:length(handles_out2.mouse_names)
-%         this_mouse_accuracy=[];
-%         this_mouse_accuracy_sh=[];
-%         ii_sessions_inc=0;
-%         include_mouse=0;
-%         for grNo=group_sets(pCorr_no,:)
-%             if ~isempty(per_mouse_acc.group(grNo).mouse(mouseNo).mean_accuracy)
-%                 for ii_sessions=1:size(per_mouse_acc.group(grNo).mouse(mouseNo).accuracy)
-%                     ii_sessions_inc=ii_sessions_inc+1;
-%                     this_mouse_accuracy(ii_sessions_inc,:)=per_mouse_acc.group(grNo).mouse(mouseNo).accuracy(ii_sessions,:);
-%                     this_mouse_accuracy_sh(ii_sessions_inc,:)=per_mouse_acc.group(grNo).mouse(mouseNo).mean_accuracy_sh;
-%                 end
-%                 include_mouse=1;
-%             end
-%         end
-%         if include_mouse==1
-%             ii_m_included=ii_m_included+1;
-%             these_mean_per_mouse_accuracy(ii_m_included,:)=mean(this_mouse_accuracy,1);
-%             these_mean_per_mouse_accuracy_sh(ii_m_included,:)=mean(this_mouse_accuracy_sh,1);
-%         end
-%     end
-
-    if size(per_mouse_prediction_sp,1)>2
-
-
-        figureNo = figureNo + 1;
-        try
-            close(figureNo)
-        catch
-        end
-        hFig=figure(figureNo);
-        hold on
-
-        ax=gca;ax.LineWidth=3;
-        set(hFig, 'units','normalized','position',[.2 .2 .3 .3])
-
-        CIpv = bootci(1000, @mean, per_mouse_prediction_sp);
-        meanpv=mean(per_mouse_prediction_sp,1);
-        CIpv(1,:)=meanpv-CIpv(1,:);
-        CIpv(2,:)=CIpv(2,:)-meanpv;
-
-        [hlpvl, hppvl] = boundedline(time_span',mean(per_mouse_prediction_sp,1)', CIpv', 'cmap',[0 114/255 178/255]);
-
-        CIpv = bootci(1000, @mean, per_mouse_prediction_sm);
-        meanpv=mean(per_mouse_prediction_sm,1);
-        CIpv(1,:)=meanpv-CIpv(1,:);
-        CIpv(2,:)=CIpv(2,:)-meanpv;
-
-
-        [hlpvl, hppvl] = boundedline(time_span',mean(per_mouse_prediction_sm,1)', CIpv', 'cmap',[158/255 31/255 99/255]);
-
-%         for ii_session=1:size(these_mean_accuracy,1)
-%             plot(time_span',smoothdata(these_mean_accuracy(ii_session,:)','gaussian',100),'Color',[100/255 100/255 100/255],'LineWidth',1)
-%         end
-% 
-%         plot(time_span',mean(these_mean_accuracy,1)', 'k','LineWidth',1.5);
-
-        plot(time_span',mean(per_mouse_prediction_sp,1)', 'Color',[0 114/255 178/255]);
-
- 
-     
-
-        ylim([-0.1 1.1])
-        this_ylim=ylim;
-       
-
-        xlim([-10 20])
-
-        this_grNo=floor((grNo-1)/4)+1;
-        ii_pcorr=grNo-4*(this_grNo-1);
-
-      
-        
-        %FV
-        rectangle(Position=[-1.5,this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)),1.5,0.03*(this_ylim(2)-this_ylim(1))], FaceColor=[0.9 0.9 0.9], EdgeColor=[0.9 0.9 0.9])
-        plot([-1.5 -1.5],[this_ylim],'-','Color',[0.5 0.5 0.5])
-
-        %Odor on markers
-        plot([0 0],this_ylim,'-k')
-        odorhl=plot([0 delta_odor],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-k','LineWidth',5);
-        plot([delta_odor delta_odor],this_ylim,'-k')
-
-        %Reinforcement markers
-        plot([delta_odor_on_reinf_on delta_odor_on_reinf_on],this_ylim,'-r')
-        reinfhl=plot([delta_odor_on_reinf_on delta_odor_on_reinf_on+delta_reinf],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-r','LineWidth',5);
-        plot([delta_odor_on_reinf_on+delta_reinf delta_odor_on_reinf_on+delta_reinf],this_ylim,'-r')
-
-
-        title(['Prediction for ' per_corr_set_label{pCorr_no}])
-
+    if include_mouse==1
+        ii_mouse_inc_hit=ii_mouse_inc_hit+1;
+        per_mouse_prediction_sp_hit(ii_mouse_inc_hit,:)=mean(this_mouse_prediction_sp_hit,1);
     end
+
+    %Extract miss per mouse
+    ii_sessions_inc=0;
+    this_mouse_prediction_sp_miss=[];
+    include_mouse=0;
+
+    for grNo=these_gr_out
+        if ~isempty(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sp_miss)
+            for ii_sessions=1:size(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sp_miss,1)
+                ii_sessions_inc=ii_sessions_inc+1;
+                this_mouse_prediction_sp_miss(ii_sessions_inc,:)=per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sp_miss(ii_sessions,:);
+            end
+            include_mouse=1;
+        end
+    end
+    if include_mouse==1
+        ii_mouse_inc_miss=ii_mouse_inc_miss+1;
+        per_mouse_prediction_sp_miss(ii_mouse_inc_miss,:)=mean(this_mouse_prediction_sp_miss,1);
+    end
+
+    %Extract cr per mouse
+    ii_sessions_inc=0;
+    this_mouse_prediction_sm_cr=[];
+    include_mouse=0;
+
+    for grNo=these_gr_out
+        if ~isempty(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sm_cr)
+            for ii_sessions=1:size(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sm_cr,1)
+                ii_sessions_inc=ii_sessions_inc+1;
+                this_mouse_prediction_sm_cr(ii_sessions_inc,:)=per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sm_cr(ii_sessions,:);
+            end
+            include_mouse=1;
+        end
+    end
+    if include_mouse==1
+        ii_mouse_inc_cr=ii_mouse_inc_cr+1;
+        per_mouse_prediction_sm_cr(ii_mouse_inc_cr,:)=mean(this_mouse_prediction_sm_cr,1);
+    end
+
+
+    %Extract fa per mouse
+    ii_sessions_inc=0;
+    this_mouse_prediction_sm_fa=[];
+    include_mouse=0;
+
+    for grNo=these_gr_out
+        if ~isempty(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sm_fa)
+            for ii_sessions=1:size(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sm_fa,1)
+                ii_sessions_inc=ii_sessions_inc+1;
+                this_mouse_prediction_sm_fa(ii_sessions_inc,:)=per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sm_fa(ii_sessions,:);
+            end
+            include_mouse=1;
+        end
+    end
+    if include_mouse==1
+        ii_mouse_inc_fa=ii_mouse_inc_fa+1;
+        per_mouse_prediction_sm_fa(ii_mouse_inc_fa,:)=mean(this_mouse_prediction_sm_fa,1);
+    end
+
+end
+
+
+figureNo = figureNo + 1;
+try
+    close(figureNo)
+catch
+end
+hFig=figure(figureNo);
+hold on
+
+ax=gca;ax.LineWidth=3;
+set(hFig, 'units','normalized','position',[.2 .2 .3 .3])
+
+%Plot hits
+if size(per_mouse_prediction_sp_hit,1)>=3
+    CIpv = bootci(1000, @mean, per_mouse_prediction_sp_hit);
+    meanpv=mean(per_mouse_prediction_sp_hit,1);
+    CIpv(1,:)=meanpv-CIpv(1,:);
+    CIpv(2,:)=CIpv(2,:)-meanpv;
+
+    [hlpvl, hppvl] = boundedline(time_span',mean(per_mouse_prediction_sp_hit,1)', CIpv', '-r');
+else
+    plot(time_span',mean(per_mouse_prediction_sp_hit,1)', '-r');
+end
+
+%Plot miss
+if size(per_mouse_prediction_sp_miss,1)>=3
+    CIpv = bootci(1000, @mean, per_mouse_prediction_sp_miss);
+    meanpv=mean(per_mouse_prediction_sp_miss,1);
+    CIpv(1,:)=meanpv-CIpv(1,:);
+    CIpv(2,:)=CIpv(2,:)-meanpv;
+
+    [hlpvl, hppvl] = boundedline(time_span',mean(per_mouse_prediction_sp_miss,1)', CIpv', '-c');
+else
+    plot(time_span',mean(per_mouse_prediction_sp_miss,1)', '-c');
+end
+
+%Plot cr
+if size(per_mouse_prediction_sm_cr,1)>=3
+    CIpv = bootci(1000, @mean, per_mouse_prediction_sm_cr);
+    meanpv=mean(per_mouse_prediction_sm_cr,1);
+    CIpv(1,:)=meanpv-CIpv(1,:);
+    CIpv(2,:)=CIpv(2,:)-meanpv;
+
+    [hlpvl, hppvl] = boundedline(time_span',mean(per_mouse_prediction_sm_cr,1)', CIpv', '-b');
+else
+    plot(time_span',mean(per_mouse_prediction_sm_cr,1)', '-b');
+end
+
+%Plot fa
+if size(per_mouse_prediction_sm_fa,1)>=3
+    CIpv = bootci(1000, @mean, per_mouse_prediction_sm_fa);
+    meanpv=mean(per_mouse_prediction_sm_fa,1);
+    CIpv(1,:)=meanpv-CIpv(1,:);
+    CIpv(2,:)=CIpv(2,:)-meanpv;
+
+    [hlpvl, hppvl] = boundedline(time_span',mean(per_mouse_prediction_sm_fa,1)', CIpv', '-m');
+else
+    plot(time_span',mean(per_mouse_prediction_sm_fa,1)', '-m');
+end
+
+plot(time_span',mean(per_mouse_prediction_sp_miss,1)', '-c');
+plot(time_span',mean(per_mouse_prediction_sp_hit,1)', '-r');
+plot(time_span',mean(per_mouse_prediction_sm_fa,1)', '-m');
+plot(time_span',mean(per_mouse_prediction_sm_cr,1)', '-b');
+
+ylim([-0.1 1.1])
+this_ylim=ylim;
+
+
+xlim([-7 15])
+
+this_grNo=floor((grNo-1)/4)+1;
+ii_pcorr=grNo-4*(this_grNo-1);
+
+%FV
+plot([-1.5 0],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'LineWidth',5, Color=[0.9 0.9 0.9])
+plot([-1.5 -1.5],[this_ylim],'-','Color',[0.5 0.5 0.5])
+
+%Odor on markers
+plot([0 0],this_ylim,'-k')
+odorhl=plot([0 delta_odor],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-k','LineWidth',5);
+plot([delta_odor delta_odor],this_ylim,'-k')
+
+%Reinforcement markers
+plot([delta_odor_on_reinf_on delta_odor_on_reinf_on],this_ylim,'-r')
+reinfhl=plot([delta_odor_on_reinf_on delta_odor_on_reinf_on+delta_reinf],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-r','LineWidth',5);
+plot([delta_odor_on_reinf_on+delta_reinf delta_odor_on_reinf_on+delta_reinf],this_ylim,'-r')
+
+
+title(['Prediction for proficient, hit=red, miss=cyan, fa=magenta, cr=blue'])
+xlabel('Time(sec)')
+ylabel('Prediction, S+=1, S-=0')
+
+
 
 % end 
 
@@ -2893,131 +2947,245 @@ input_pred_data=[];
 % for grNo=1:no_pcorr*length(these_groups)
 bar_offset=0;
 
+perCorr_no=3;
+switch is_Fabio
+    case 0
+        these_gr_out=group_sets(perCorr_no,:);
+    case 1
+        these_pcorr=[1];
+    case 2
+        these_gr_out=these_groups_out;
+end
 
-for perCorr_no=these_pcorr
-    switch is_Fabio
-        case 0
-            these_gr_out=group_sets(perCorr_no,:);
-        case 1
-            these_pcorr=[1];
-        case 2
-            these_gr_out=these_groups_out;
-    end
+for window_no=1:size(time_periods_eu,1)
 
-    for window_no=1:size(time_periods_eu,1)
+    per_mouse_mean_pred_sp_hit=[];
+    per_mouse_mean_pred_sp_miss=[];
+    per_mouse_mean_pred_sm_cr=[];
+    per_mouse_mean_pred_sm_fa=[];
+    all_session_pred_sp_hit=[];
+    all_session_pred_sp_miss=[];
+    all_session_pred_sm_cr=[];
+    all_session_pred_sm_fa=[];
 
-        per_mouse_mean_pred_sp=[];
-        per_mouse_mean_pred_sm=[];
-        all_session_pred_sp=[];
-        all_session_pred_sm=[];
+    %Get per session and per mouse
 
-        %Get per session and per mouse
-        ii_m_included=0;
-        for mouseNo=1:length(handles_out2.mouse_names)
-            these_preds_sp=[];
-            these_preds_sm=[];
+    %fa
+    ii_m_included_fa=0;
+    for mouseNo=1:length(handles_out2.mouse_names)
+        these_preds=[];
 
-            include_mouse=0;
-            for grNo=these_gr_out
-%             for grNo=group_sets(perCorr_no,:)
-                %             for grNo=these_groups_out
-                if ~isempty(per_mouse_acc.group(grNo).mouse(mouseNo).mean_accuracy)
-                    include_mouse=1;
-                    for ii_sessions=1:size(per_mouse_acc.group(grNo).mouse(mouseNo).accuracy)
-                        if size(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sp,1)>0
-                            t_from=time_periods_eu(window_no,1);
-                            t_to=time_periods_eu(window_no,2);
-                            this_pred_sp=mean(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sp(ii_sessions,(time_span>=t_from)&(time_span<=t_to)) );
-                            this_pred_sm=mean(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sm(ii_sessions,(time_span>=t_from)&(time_span<=t_to)) );
-                            these_preds_sp=[these_preds_sp this_pred_sp];
-                            these_preds_sm=[these_preds_sm this_pred_sm];
-                        end
-                    end
-                else
-                    pffft=1;
+        include_mouse=0;
+        for grNo=these_gr_out
+            if ~isempty(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sm_fa)
+                include_mouse=1;
+                for ii_sessions=1:size(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sm_fa,1)
+                    t_from=time_periods_eu(window_no,1);
+                    t_to=time_periods_eu(window_no,2);
+                    this_pred=mean(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sm_fa(ii_sessions,(time_span>=t_from)&(time_span<=t_to)) );
+                    these_preds=[these_preds this_pred];
                 end
             end
-            if include_mouse==1
-                ii_m_included=ii_m_included+1;
-                per_mouse_mean_pred_sp(1,ii_m_included)=mean(these_preds_sp);
-                per_mouse_mean_pred_sm(1,ii_m_included)=mean(these_preds_sm);
-                all_session_pred_sp=[all_session_pred_sp these_preds_sp];
-                all_session_pred_sm=[all_session_pred_sm these_preds_sm];
+        end
+        if include_mouse==1
+            ii_m_included_fa=ii_m_included_fa+1;
+            per_mouse_mean_pred_sm_fa(1,ii_m_included_fa)=mean(these_preds);
+            all_session_pred_sm_fa=[all_session_pred_sm_fa these_preds];
 
-                glm_pred.data(glm_pred_ii+1:glm_pred_ii+length(these_preds_sp))=these_preds_sp;
-                glm_pred.pcorr(glm_pred_ii+1:glm_pred_ii+length(these_preds_sp))=perCorr_no*ones(1,length(these_preds_sp));
-                glm_pred.window(glm_pred_ii+1:glm_pred_ii+length(these_preds_sp))=window_no*ones(1,length(these_preds_sp));
-                glm_pred.shuffled(glm_pred_ii+1:glm_pred_ii+length(these_preds_sp))=ones(1,length(these_preds_sp));
-                glm_pred.mouse_nos(glm_pred_ii+1:glm_pred_ii+length(these_preds_sp))=mouseNo*ones(1,length(these_preds_sp));
-                glm_pred_ii=glm_pred_ii+length(these_preds_sp);
-
-                 glm_pred.data(glm_pred_ii+1:glm_pred_ii+length(these_preds_sm))=these_preds_sm;
-                glm_pred.pcorr(glm_pred_ii+1:glm_pred_ii+length(these_preds_sm))=perCorr_no*ones(1,length(these_preds_sm));
-                glm_pred.window(glm_pred_ii+1:glm_pred_ii+length(these_preds_sm))=window_no*ones(1,length(these_preds_sm));
-                glm_pred.shuffled(glm_pred_ii+1:glm_pred_ii+length(these_preds_sm))=zeros(1,length(these_preds_sm));
-                glm_pred.mouse_nos(glm_pred_ii+1:glm_pred_ii+length(these_preds_sm))=mouseNo*ones(1,length(these_preds_sm));
-                glm_pred_ii=glm_pred_ii+length(these_preds_sm);
-
-            end
+            glm_pred.data(glm_pred_ii+1:glm_pred_ii+length(these_preds))=these_preds;
+            glm_pred.window(glm_pred_ii+1:glm_pred_ii+length(these_preds))=window_no*ones(1,length(these_preds));
+            glm_pred.trial_type(glm_pred_ii+1:glm_pred_ii+length(these_preds))=0*ones(1,length(these_preds));
+            glm_pred.mouse_nos(glm_pred_ii+1:glm_pred_ii+length(these_preds))=mouseNo*ones(1,length(these_preds));
+            glm_pred_ii=glm_pred_ii+length(these_preds);
 
         end
-
-        id_pred_ii=id_pred_ii+1;
-        input_pred_data(id_pred_ii).data=all_session_pred_sp;
-        input_pred_data(id_pred_ii).description=['S+ ' per_corr_set_label{perCorr_no} ' ' window_label{window_no}];
-
-
-        id_pred_ii=id_pred_ii+1;
-        input_pred_data(id_pred_ii).data=all_session_pred_sm;
-        input_pred_data(id_pred_ii).description=['S- ' per_corr_set_label{perCorr_no} ' ' window_label{window_no}];
-
-
-        %S-
-        bar(bar_offset,mean(all_session_pred_sm),'LineWidth', 3,'EdgeColor','none','FaceColor',[158/255 31/255 99/255])
-
-        %Violin plot
-        if ~isempty(all_session_pred_sm)
-            [mean_out, CIout]=drgViolinPoint(all_session_pred_sm...
-                ,edges,bar_offset,rand_offset,'k','k',2);
-        end
-
-
-
-        bar_offset=bar_offset+1;
-
-        %S+
-        bar(bar_offset,mean(all_session_pred_sp),'LineWidth', 3,'EdgeColor','none','FaceColor',[0 114/255 178/255])
-
-        %Violin plot
-        if ~isempty(all_session_pred_sp)
-            [mean_out, CIout]=drgViolinPoint(all_session_pred_sp...
-                ,edges,bar_offset,rand_offset,'k','k',2);
-        end
-
-
-
-        for ii_mouse=1:ii_m_included
-            plot([bar_offset-1 bar_offset],[per_mouse_mean_pred_sm(ii_mouse) per_mouse_mean_pred_sp(ii_mouse)],'-','Color',[150/255 150/255 150/255],'LineWidth',2 )
-        end
-
-        bar_offset=bar_offset+1;
-
 
     end
+
+    id_pred_ii=id_pred_ii+1;
+    input_pred_data(id_pred_ii).data=all_session_pred_sm_fa;
+    input_pred_data(id_pred_ii).description=['FA ' window_label{window_no}];
+
+
+    %FA
+    bar(bar_offset,mean(all_session_pred_sm_fa),'LineWidth', 3,'EdgeColor','none','FaceColor','m')
+
+    %Violin plot
+    if ~isempty(all_session_pred_sm_fa)
+        [mean_out, CIout]=drgViolinPoint(all_session_pred_sm_fa...
+            ,edges,bar_offset,rand_offset,'k','k',2);
+    end
+
     bar_offset=bar_offset+1;
+
+    %cr
+    ii_m_included_cr=0;
+    for mouseNo=1:length(handles_out2.mouse_names)
+        these_preds=[];
+
+        include_mouse=0;
+        for grNo=these_gr_out
+            if ~isempty(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sm_cr)
+                include_mouse=1;
+                for ii_sessions=1:size(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sm_cr,1)
+                    t_from=time_periods_eu(window_no,1);
+                    t_to=time_periods_eu(window_no,2);
+                    this_pred=mean(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sm_cr(ii_sessions,(time_span>=t_from)&(time_span<=t_to)) );
+                    these_preds=[these_preds this_pred];
+                end
+            end
+        end
+        if include_mouse==1
+            ii_m_included_cr=ii_m_included_cr+1;
+            per_mouse_mean_pred_sm_cr(1,ii_m_included_cr)=mean(these_preds);
+            all_session_pred_sm_cr=[all_session_pred_sm_cr these_preds];
+
+            glm_pred.data(glm_pred_ii+1:glm_pred_ii+length(these_preds))=these_preds;
+            glm_pred.window(glm_pred_ii+1:glm_pred_ii+length(these_preds))=window_no*ones(1,length(these_preds));
+            glm_pred.trial_type(glm_pred_ii+1:glm_pred_ii+length(these_preds))=1*ones(1,length(these_preds));
+            glm_pred.mouse_nos(glm_pred_ii+1:glm_pred_ii+length(these_preds))=mouseNo*ones(1,length(these_preds));
+            glm_pred_ii=glm_pred_ii+length(these_preds);
+
+        end
+
+    end
+
+    id_pred_ii=id_pred_ii+1;
+    input_pred_data(id_pred_ii).data=all_session_pred_sm_cr;
+    input_pred_data(id_pred_ii).description=['CR ' window_label{window_no}];
+
+
+    %CR
+    bar(bar_offset,mean(all_session_pred_sm_cr),'LineWidth', 3,'EdgeColor','none','FaceColor','b')
+
+    %Violin plot
+    if ~isempty(all_session_pred_sm_cr)
+        [mean_out, CIout]=drgViolinPoint(all_session_pred_sm_cr...
+            ,edges,bar_offset,rand_offset,'k','k',2);
+    end
+
+    bar_offset=bar_offset+1;
+
+    %miss
+    ii_m_included_miss=0;
+    for mouseNo=1:length(handles_out2.mouse_names)
+        these_preds=[];
+
+        include_mouse=0;
+        for grNo=these_gr_out
+            if ~isempty(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sp_miss)
+                include_mouse=1;
+                for ii_sessions=1:size(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sp_miss,1)
+                    t_from=time_periods_eu(window_no,1);
+                    t_to=time_periods_eu(window_no,2);
+                    this_pred=mean(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sp_miss(ii_sessions,(time_span>=t_from)&(time_span<=t_to)) );
+                    these_preds=[these_preds this_pred];
+                end
+            end
+        end
+        if include_mouse==1
+            ii_m_included_miss=ii_m_included_miss+1;
+            per_mouse_mean_pred_sp_miss(1,ii_m_included_miss)=mean(these_preds);
+            all_session_pred_sp_miss=[all_session_pred_sp_miss these_preds];
+
+            glm_pred.data(glm_pred_ii+1:glm_pred_ii+length(these_preds))=these_preds;
+            glm_pred.window(glm_pred_ii+1:glm_pred_ii+length(these_preds))=window_no*ones(1,length(these_preds));
+            glm_pred.trial_type(glm_pred_ii+1:glm_pred_ii+length(these_preds))=2*ones(1,length(these_preds));
+            glm_pred.mouse_nos(glm_pred_ii+1:glm_pred_ii+length(these_preds))=mouseNo*ones(1,length(these_preds));
+            glm_pred_ii=glm_pred_ii+length(these_preds);
+
+        end
+
+    end
+
+    id_pred_ii=id_pred_ii+1;
+    input_pred_data(id_pred_ii).data=all_session_pred_sp_miss;
+    input_pred_data(id_pred_ii).description=['Miss ' window_label{window_no}];
+
+
+    %Miss
+    bar(bar_offset,mean(all_session_pred_sp_miss),'LineWidth', 3,'EdgeColor','none','FaceColor','c')
+
+    %Violin plot
+    if ~isempty(all_session_pred_sp_miss)
+        [mean_out, CIout]=drgViolinPoint(all_session_pred_sp_miss...
+            ,edges,bar_offset,rand_offset,'k','k',2);
+    end
+
+    bar_offset=bar_offset+1;
+
+    %miss
+    ii_m_included_hit=0;
+    for mouseNo=1:length(handles_out2.mouse_names)
+        these_preds=[];
+
+        include_mouse=0;
+        for grNo=these_gr_out
+            if ~isempty(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sp_hit)
+                include_mouse=1;
+                for ii_sessions=1:size(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sp_hit,1)
+                    t_from=time_periods_eu(window_no,1);
+                    t_to=time_periods_eu(window_no,2);
+                    this_pred=mean(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sp_hit(ii_sessions,(time_span>=t_from)&(time_span<=t_to)) );
+                    these_preds=[these_preds this_pred];
+                end
+            end
+        end
+        if include_mouse==1
+            ii_m_included_hit=ii_m_included_hit+1;
+            per_mouse_mean_pred_sp_hit(1,ii_m_included_hit)=mean(these_preds);
+            all_session_pred_sp_hit=[all_session_pred_sp_hit these_preds];
+
+            glm_pred.data(glm_pred_ii+1:glm_pred_ii+length(these_preds))=these_preds;
+            glm_pred.window(glm_pred_ii+1:glm_pred_ii+length(these_preds))=window_no*ones(1,length(these_preds));
+            glm_pred.trial_type(glm_pred_ii+1:glm_pred_ii+length(these_preds))=3*ones(1,length(these_preds));
+            glm_pred.mouse_nos(glm_pred_ii+1:glm_pred_ii+length(these_preds))=mouseNo*ones(1,length(these_preds));
+            glm_pred_ii=glm_pred_ii+length(these_preds);
+
+        end
+
+    end
+
+    id_pred_ii=id_pred_ii+1;
+    input_pred_data(id_pred_ii).data=all_session_pred_sp_hit;
+    input_pred_data(id_pred_ii).description=['Hit ' window_label{window_no}];
+
+
+    %Hit
+    bar(bar_offset,mean(all_session_pred_sp_hit),'LineWidth', 3,'EdgeColor','none','FaceColor','r')
+
+    %Violin plot
+    if ~isempty(all_session_pred_sp_hit)
+        [mean_out, CIout]=drgViolinPoint(all_session_pred_sp_hit...
+            ,edges,bar_offset,rand_offset,'k','k',2);
+    end
+
+    bar_offset=bar_offset+1;
+
+    for ii_mouse=1:4
+        plot([bar_offset-4 bar_offset-3],[per_mouse_mean_pred_sm_fa(ii_mouse) per_mouse_mean_pred_sm_cr(ii_mouse)],'-','Color',[150/255 150/255 150/255],'LineWidth',2 )
+        plot([bar_offset-3 bar_offset-2],[per_mouse_mean_pred_sm_cr(ii_mouse) per_mouse_mean_pred_sp_miss(ii_mouse)],'-','Color',[150/255 150/255 150/255],'LineWidth',2 )
+        plot([bar_offset-2 bar_offset-1],[per_mouse_mean_pred_sp_miss(ii_mouse) per_mouse_mean_pred_sp_hit(ii_mouse)],'-','Color',[150/255 150/255 150/255],'LineWidth',2 )
+    end
+
+    bar_offset=bar_offset+1;
+
+
 end
+bar_offset=bar_offset+1;
+
 
 % xticks([1 3 5 7 9 11 13 15])
 % xticklabels({'Base','PreFV','PreOdor','Odor','Base','PreFV','PreOdor','Odor'})
 
-xticks([0.5 2.5 4.5 7.5 9.5 11.5])
-xticklabels({'Pre','Odor','Reinf','Pre','Odor','Reinf'})
+xticks([0 1 2 3 5 6 7 8 10 11 12 13])
+xticklabels({'PreFA','PreCR','PreMiss','PreHit','OdorFA','OdorCR','OdorMiss','OdorHit','RinfFA','ReinfCR','ReinfMiss','ReinfHit'})
 
 
-title(['Prediction for ' handles_out2.classifier_names{iiMLalgo}])
-ylabel('Prediction')
+title(['Prediction for proficient, hit=red, miss=cyan, fa=magenta, cr=blue'])
+ylabel('Prediction, S+=1, S-=0')
 ylim([0 1.1])
-xlim([-1 13])
+xlim([-1 14])
 
 %     text(1,1,'45-65%')
 %     text(6,1,'65-80%')
@@ -3032,9 +3200,9 @@ fprintf(fileID, ['\nglm for decoding prediction\n']);
 fprintf(1, ['\nwindow 0: Base, 1:PreFV, 2:PreOdor, 3:Odor\n'])
 fprintf(fileID, ['\nwindow 0: Base, 1:PreFV, 2:PreOdor, 3:Odor\n']);
 
-tbl = table(glm_pred.data',glm_pred.pcorr',glm_pred.window',...
-    'VariableNames',{'accuracy','percent_correct','window'});
-mdl = fitglm(tbl,'accuracy~percent_correct+window+percent_correct*window'...
+tbl = table(glm_pred.data',glm_pred.window',glm_pred.trial_type',...
+    'VariableNames',{'prediction','window','trial_type'});
+mdl = fitglm(tbl,'prediction~window+trial_type+tryal_type*window'...
     ,'CategoricalVars',[2,3])
 
 
