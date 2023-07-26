@@ -3339,6 +3339,39 @@ if all_files_present==1
 
         end
 
+        %Plot forward vs reversed d prime
+
+        figureNo = figureNo + 1;
+        try
+            close(figureNo)
+        catch
+        end
+        hFig=figure(figureNo);
+
+        ax=gca;ax.LineWidth=3;
+        set(hFig, 'units','normalized','position',[.3 .2 .3 .3])
+
+        hold on
+
+        for ii=1:length(handles_out.all_div_frp_d_prime12_reversed_max)
+            plot(handles_out.all_div_frp_d_prime12_forward_max(ii),handles_out.all_div_frp_d_prime12_reversed_max(ii),'ok','MarkerSize',5)
+        end
+
+        this_ylim=ylim;
+        this_xlim=xlim;
+
+        plot(this_xlim, this_xlim,'-k')
+
+        ax = gca;
+        ax.XAxisLocation = 'origin';
+        ax.YAxisLocation = 'origin';
+
+        xlabel('Forward d prime')
+        ylabel('Reversed d prime')
+
+
+        title(['maximum d prime deviation'])
+
     end
 
     pffft=1;
