@@ -16,11 +16,12 @@ prof_labels{3}='proficient';
 %     2 4.1];
 
 time_periods_eu=[
+            -4.5 -3.5
             -1 0;
             3.1 4.1;
-            4.4 5.4];
+            4.5 5.5];
 
-% period_labels{1}='Baseline';
+period_labels{1}='Baseline';
 period_labels{2}='Pre';
 period_labels{3}='Odor';
 period_labels{4}='Reinf';
@@ -352,7 +353,7 @@ if all_files_present==1
         CIeu(1,:)=meaneu-CIeu(1,:);
         CIeu(2,:)=CIeu(2,:)-meaneu;
 
-        [hlsp, hpsp] = boundedline(trimmed_time_span',meaneu', CIeu', 'cmap',[150/255 150/255 150/255]);
+        [hlsp, hpsp] = boundedline(trimmed_time_span',meaneu', CIeu', 'cmap',[244/255 165/255 30/255]);
         meaneu_w=meaneu;
  
         CIeu = bootci(1000, @mean, per_mouse_delta_zdist_euclid');
@@ -363,15 +364,16 @@ if all_files_present==1
         [hlsp, hpsp] = boundedline(trimmed_time_span',meaneu', CIeu', 'cmap',[0/255 0/255 0/255]);
         meaneu_b=meaneu;
 
-        CIeu = bootci(1000, @mean, per_mouse_delta_zdist_euclid'-per_mouse_delta_zdist_euclid_within');
-        meaneu=mean(per_mouse_delta_zdist_euclid'-per_mouse_delta_zdist_euclid_within',1);
-        CIeu(1,:)=meaneu-CIeu(1,:);
-        CIeu(2,:)=CIeu(2,:)-meaneu;
+%         CIeu = bootci(1000, @mean, per_mouse_delta_zdist_euclid'-per_mouse_delta_zdist_euclid_within');
+%         meaneu=mean(per_mouse_delta_zdist_euclid'-per_mouse_delta_zdist_euclid_within',1);
+%         CIeu(1,:)=meaneu-CIeu(1,:);
+%         CIeu(2,:)=CIeu(2,:)-meaneu;
+% 
+%         [hlsp, hpsp] = boundedline(trimmed_time_span',meaneu', CIeu', 'cmap',[244/255 165/255 30/255]);
 
-        [hlsp, hpsp] = boundedline(trimmed_time_span',meaneu', CIeu', 'cmap',[244/255 165/255 30/255]);
-
-        plot(trimmed_time_span',meaneu_w','Color',[150/255 150/255 150/255]);
         plot(trimmed_time_span',meaneu_b','Color',[0/255 0/255 0/255]);
+        plot(trimmed_time_span',meaneu_w','Color',[244/255 165/255 30/255]);
+      
 
         this_ylim=ylim;
 
@@ -447,7 +449,7 @@ if all_files_present==1
     hold on
 
     edges=[-3:0.5:10];
-    rand_offset=0.8;
+    rand_offset=0.4;
     rand_offsetbw=0.2;
 
     bar_offset=0;
@@ -513,25 +515,39 @@ if all_files_present==1
 
             %between within bar graph
             figure(figNo-1)
+
             %Basline bar within
             bar_offset=bar_offset+1;
-            bar(bar_offset,mean(all_delta_zdist_euclid_within),'LineWidth', 3,'EdgeColor','none','FaceColor',[80/255 194/255 255/255])
+
+            if ii_pc_group==1
+                hp=bar(bar_offset,mean(all_delta_zdist_euclid_within),'LineWidth', 3,'EdgeColor','none','FaceColor',[80/255 194/255 255/255]);
+                hatchfill2(hp,'single','HatchAngle',45,'hatchcolor',[244/255 165/255 30/255]);
+            else
+                hp=bar(bar_offset,mean(all_delta_zdist_euclid_within),'LineWidth', 3,'EdgeColor','none','FaceColor',[0 114/255 178/255]);
+                hatchfill2(hp,'single','HatchAngle',45,'hatchcolor',[244/255 165/255 30/255]);
+            end
 
             if length(all_delta_zdist_euclid_within)>2
                 %Violin plot
                 [mean_out, CIout]=drgViolinPoint(all_delta_zdist_euclid_within...
-                    ,edges,bar_offset,rand_offset,'k','k',1);
+                    ,edges,bar_offset,rand_offset,'k','k',2);
             end
 
 
             %Baseline bar between
             bar_offset=bar_offset+1;
-            bar(bar_offset,mean(all_delta_zdist_euclid),'LineWidth', 3,'EdgeColor','none','FaceColor',[0 114/255 178/255])
+            if ii_pc_group==1
+                hp=bar(bar_offset,mean(all_delta_zdist_euclid),'LineWidth', 3,'EdgeColor','none','FaceColor',[80/255 194/255 255/255])
+                hatchfill2(hp,'single','HatchAngle',45,'hatchcolor','k');
+            else
+                hp=bar(bar_offset,mean(all_delta_zdist_euclid),'LineWidth', 3,'EdgeColor','none','FaceColor',[0 114/255 178/255])
+                hatchfill2(hp,'single','HatchAngle',45,'hatchcolor','k');
+            end
 
             if length(all_delta_zdist_euclid)>2
                 %Violin plot
                 [mean_out, CIout]=drgViolinPoint(all_delta_zdist_euclid...
-                    ,edges,bar_offset,rand_offset,'k','k',1);
+                    ,edges,bar_offset,rand_offset,'k','k',2);
             end
 
             for ii_mouse=1:length(per_mouse_delta_zdist_euclid)
@@ -541,7 +557,11 @@ if all_files_present==1
             %Bar graph within-between
             figure(figNo)
             bar_offsetbw=bar_offsetbw+1;
-            bar(bar_offsetbw,mean(per_mouse_delta_zdist_euclid-per_mouse_delta_zdist_euclid_within),'LineWidth', 3,'EdgeColor','none','FaceColor',[0 114/255 178/255])
+            if ii_pc_group==1
+                bar(bar_offsetbw,mean(per_mouse_delta_zdist_euclid-per_mouse_delta_zdist_euclid_within),'LineWidth', 3,'EdgeColor','none','FaceColor',[80/255 194/255 255/255])
+            else
+                bar(bar_offsetbw,mean(per_mouse_delta_zdist_euclid-per_mouse_delta_zdist_euclid_within),'LineWidth', 3,'EdgeColor','none','FaceColor',[0 114/255 178/255])
+            end
 
             if length(per_mouse_delta_zdist_euclid)>2
                 %Violin plot
@@ -554,17 +574,19 @@ if all_files_present==1
         bar_offsetbw=bar_offsetbw+1;
     end
 
-    
+     
     figure(figNo-1)
-    xticks([1.5 3.5 5.5 8.5 10.5 12.5])
-    xticklabels({'Pre','Odor','Reinf','Pre','Odor','Reinf'})
-
+    xticks([1.5 3.5 5.5 7.5 10.5 12.5 14.5 16.5])
+    xticklabels({'Base','Pre','Odor','Reinf','Base','Pre','Odor','Reinf'})
+    xtickangle(45)
+ 
     ylabel('Euclidean distance')
     title('Euclidean distance')
 
     figure(figNo)
-    xticks([1 2 3 5 6 7])
-    xticklabels({'Pre','Odor','Reinf','Pre','Odor','Reinf'})
+    xticks([1 2 3 4 6 7 8 9])
+    xticklabels({'Base','Pre','Odor','Reinf','Base','Pre','Odor','Reinf'})
+    ylim([-1.5 0.2])
 
     ylabel('Euclidean distance between-within')
     title('Euclidean distance between-within')
@@ -572,27 +594,13 @@ if all_files_present==1
 
 
     %Perform the glm
-
-
-    fprintf(1, ['\nglm for euclidean distance including mice\n'])
-    fprintf(fileID, ['\nglm for euclidean distance including mice\n']);
-
-    tbl = table(glm_ed.data',glm_ed.pcorr',glm_ed.window',glm_ed.between',glm_ed.mice',...
-        'VariableNames',{'euclidean_distance','p_correct','time_window','between_vs_within','mice'});
-    mdl = fitglm(tbl,'euclidean_distance~p_correct+time_window+between_vs_within+mice'...
-        ,'CategoricalVars',[2,3,4,5])
-
-    fprintf(1, ['\nNote: mice did not differ, do glm without mice as categorical variable\n'])
-    fprintf(fileID, ['\nNote: mice did not differ, do glm without mice as categorical variable\n']);
-
-    fprintf(1, ['\nglm for euclidean distance without mice as categorical variable\n'])
-    fprintf(fileID, ['\nglm for euclidean distance without mice as categorical variable\n']);
+    fprintf(1, ['\nglm for euclidean distancee\n'])
+    fprintf(fileID, ['\nglm for euclidean distance\n']);
 
     tbl = table(glm_ed.data',glm_ed.pcorr',glm_ed.window',glm_ed.between',...
         'VariableNames',{'euclidean_distance','p_correct','time_window','between_vs_within'});
     mdl = fitglm(tbl,'euclidean_distance~p_correct+time_window+between_vs_within+p_correct*time_window*between_vs_within'...
         ,'CategoricalVars',[2,3,4])
-
 
     txt = evalc('mdl');
     txt=regexp(txt,'<strong>','split');
@@ -736,7 +744,7 @@ if all_files_present==1
     hold on
 
     edges=[-3:0.5:10];
-    rand_offset=0.8;
+    rand_offset=0.4;
 
     bar_offset=0;
 
@@ -789,9 +797,11 @@ if all_files_present==1
             input_data(id_ii).data=all_meandFF_sm;
             input_data(id_ii).description=[period_labels{ii_t_period} ' S- ' prof_labels{ii_pc_group}];
 
-            %Basline bar within
+            
+
+            %Basline bar S-
             bar_offset=bar_offset+1;
-            bar(bar_offset,mean(all_meandFF_sm),'LineWidth', 3,'EdgeColor','none','FaceColor',[80/255 194/255 255/255])
+            bar(bar_offset,mean(all_meandFF_sm),'LineWidth', 3,'EdgeColor','none','FaceColor',[238/255 111/255 179/255])
 
             if length(all_meandFF_sm)>2
                 %Violin plot
@@ -800,9 +810,9 @@ if all_files_present==1
             end
 
 
-            %Baseline bar between
+            %Baseline bar S+
             bar_offset=bar_offset+1;
-            bar(bar_offset,mean(all_meandFF_sp),'LineWidth', 3,'EdgeColor','none','FaceColor',[0 114/255 178/255])
+            bar(bar_offset,mean(all_meandFF_sp),'LineWidth', 3,'EdgeColor','none','FaceColor',[80/255 194/255 255/255])
 
             if length(all_meandFF_sp)>2
                 %Violin plot
@@ -817,8 +827,12 @@ if all_files_present==1
         bar_offset=bar_offset+1;
     end
 
-      xticks([1.5 3.5 5.5 8.5 10.5 12.5])
-    xticklabels({'Pre','Odor','Reinf','Pre','Odor','Reinf'})
+    xticks([1.5 3.5 5.5 7.5 10.5 12.5 14.5 16.5])
+    xticklabels({'Base','Pre','Odor','Reinf','Base','Pre','Odor','Reinf'})
+    xtickangle(45)
+
+%       xticks([1.5 3.5 5.5 8.5 10.5 12.5])
+%     xticklabels({'Pre','Odor','Reinf','Pre','Odor','Reinf'})
 
     ylabel('mean dFF')
 
@@ -826,20 +840,18 @@ if all_files_present==1
 
     %Perform the glm
 
+% 
+%     fprintf(1, ['\nglm for mean dFF including mice\n'])
+%     fprintf(fileID, ['\nglm for mean dFF including mice\n']);
+% 
+%     tbl = table(glm_dFF.data',glm_dFF.pcorr',glm_dFF.window',glm_dFF.spm',glm_dFF.mice',...
+%         'VariableNames',{'mean_dFF','p_correct','time_window','sp_vs_sm','mice'});
+%     mdl = fitglm(tbl,'mean_dFF~p_correct+time_window+sp_vs_sm+mice'...
+%         ,'CategoricalVars',[2,3,4,5])
 
-    fprintf(1, ['\nglm for mean dFF including mice\n'])
-    fprintf(fileID, ['\nglm for mean dFF including mice\n']);
 
-    tbl = table(glm_dFF.data',glm_dFF.pcorr',glm_dFF.window',glm_dFF.spm',glm_dFF.mice',...
-        'VariableNames',{'mean_dFF','p_correct','time_window','sp_vs_sm','mice'});
-    mdl = fitglm(tbl,'mean_dFF~p_correct+time_window+sp_vs_sm+mice'...
-        ,'CategoricalVars',[2,3,4,5])
-
-    fprintf(1, ['\nNote: mice did not differ, do glm without mice as categorical variable\n'])
-    fprintf(fileID, ['\nNote: mice did not differ, do glm without mice as categorical variable\n']);
-
-    fprintf(1, ['\nglm for mean dFF without mice as categorical variable\n'])
-    fprintf(fileID, ['\nglm for mean dFF without mice as categorical variable\n']);
+    fprintf(1, ['\nglm for mean dFF\n'])
+    fprintf(fileID, ['\nglm for mean dFF\n']);
 
     tbl = table(glm_dFF.data',glm_dFF.pcorr',glm_dFF.window',glm_dFF.spm',...
         'VariableNames',{'mean_dFF','p_correct','time_window','sp_vs_sm'});
@@ -1015,7 +1027,7 @@ if all_files_present==1
     hold on
 
     edges=[-50:5:50];
-    rand_offset=0.8;
+    rand_offset=0.4;
 
     bar_offset=0;
 
@@ -1441,8 +1453,8 @@ if all_files_present==1
     hold on
 
     edges=[-1:0.5:5];
-    rand_offset_s=0.8;
-    rand_offset=0.2;
+    rand_offset_s=0.5;
+    rand_offset=0.3;
 
 
     bar_offset=0;
@@ -2024,7 +2036,7 @@ if all_files_present==1
     hold on
 
     edges=[0:0.5:12];
-    rand_offset=0.2;
+    rand_offset=0.3;
 
     bar_offset=0;
 

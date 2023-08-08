@@ -289,8 +289,6 @@ if is_mat==0
                     handles_out2.group_no(grNo).ii_thr(ii_out).MLalgo(iiMLalgo).mean_correct_predict_sh(ii,1:length(this_mean_correct_predict_sh))=this_mean_correct_predict_sh;
 
                     this_per_trial_sp_timecourse=handles_out.ii_out(ii_out).handles_out.MLalgo(iiMLalgo).per_trial_sp_timecourse;
-                    this_per_trial_sm_timecourse=handles_out.ii_out(ii_out).handles_out.MLalgo(iiMLalgo).per_trial_sm_timecourse;
-
                     this_prediction_mean_per_trial_sp_timecourse = movmean(this_per_trial_sp_timecourse',moving_mean_n)';
                     this_mean_prediction_mean_per_trial_sp_timecourse=mean(this_prediction_mean_per_trial_sp_timecourse);
                     handles_out2.group_no(grNo).ii_thr(ii_out).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_sp_timecourse(ii,1:length(this_mean_prediction_mean_per_trial_sp_timecourse))=this_mean_prediction_mean_per_trial_sp_timecourse;
@@ -298,8 +296,26 @@ if is_mat==0
                     these_sp_hits=handles_out.ii_out(ii_out).handles_out.MLalgo(iiMLalgo).these_sp_hits;
                     if  sum(these_sp_hits)>0
                         handles_out2.group_no(grNo).ii_thr(ii_out).MLalgo(iiMLalgo).hit_included(ii)=1;
-%                         this_prediction_mean_per_trial_sp_timecourse = movmean(this_per_trial_sp_timecourse(logical(these_sp_hits),:)',moving_mean_n)';
-%                         handles_out2.group_no(grNo).ii_thr(ii_out).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_sp_timecourse_hit(ii,1:length(this_mean_prediction_mean_per_trial_sp_timecourse))=this_mean_prediction_mean_per_trial_sp_timecourse;
+
+                        %Prediction
+                        this_per_trial_hit_timecourse=handles_out.ii_out(ii_out).handles_out.MLalgo(iiMLalgo).per_trial_sp_timecourse(logical(these_sp_hits),:);
+                        this_prediction_mean_per_trial_hit_timecourse = movmean(this_per_trial_hit_timecourse',moving_mean_n)';
+                        if size(this_prediction_mean_per_trial_hit_timecourse,1)~=1
+                            this_mean_prediction_mean_per_trial_hit_timecourse=mean(this_prediction_mean_per_trial_hit_timecourse);
+                        else
+                            this_mean_prediction_mean_per_trial_hit_timecourse=this_prediction_mean_per_trial_hit_timecourse;
+                        end
+                        handles_out2.group_no(grNo).ii_thr(ii_out).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_hit_timecourse(ii,1:length(this_mean_prediction_mean_per_trial_hit_timecourse))=this_mean_prediction_mean_per_trial_hit_timecourse;
+
+                        %licks
+                        these_per_trial_hit_lick_timecourse=handles_out.ii_out(ii_out).handles_out.MLalgo(iiMLalgo).per_trial_hit_licks;
+                        this_mean_per_trial_hit_lick_timecourse = movmean(these_per_trial_hit_lick_timecourse',moving_mean_n)';
+                        if size(this_mean_per_trial_hit_lick_timecourse,1)~=1
+                            this_mean_mean_per_trial_hit_lick_timecourse=mean(this_mean_per_trial_hit_lick_timecourse);
+                        else
+                            this_mean_mean_per_trial_hit_lick_timecourse=this_mean_per_trial_hit_lick_timecourse;
+                        end
+                        handles_out2.group_no(grNo).ii_thr(ii_out).MLalgo(iiMLalgo).mean_per_trial_hit_lick_timecourse(ii,1:length(this_mean_mean_per_trial_hit_lick_timecourse))=this_mean_mean_per_trial_hit_lick_timecourse;
                     else
                         handles_out2.group_no(grNo).ii_thr(ii_out).MLalgo(iiMLalgo).hit_included(ii)=0;
                     end
@@ -307,12 +323,32 @@ if is_mat==0
                     these_sp_miss=handles_out.ii_out(ii_out).handles_out.MLalgo(iiMLalgo).these_sp_miss;
                     if  sum(these_sp_miss)>0
                         handles_out2.group_no(grNo).ii_thr(ii_out).MLalgo(iiMLalgo).miss_included(ii)=1;
-%                         this_prediction_mean_per_trial_sp_timecourse = movmean(this_per_trial_sp_timecourse(logical(these_sp_miss),:)',moving_mean_n)';
-%                         handles_out2.group_no(grNo).ii_thr(ii_out).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_sp_timecourse_miss(ii,1:length(this_mean_prediction_mean_per_trial_sp_timecourse))=this_mean_prediction_mean_per_trial_sp_timecourse;
+
+                        %Prediction
+                        this_per_trial_miss_timecourse=handles_out.ii_out(ii_out).handles_out.MLalgo(iiMLalgo).per_trial_sp_timecourse(logical(these_sp_miss),:);
+                        this_prediction_mean_per_trial_miss_timecourse = movmean(this_per_trial_miss_timecourse',moving_mean_n)';
+                        if size(this_prediction_mean_per_trial_miss_timecourse,1)~=1
+                            this_mean_prediction_mean_per_trial_miss_timecourse=mean(this_prediction_mean_per_trial_miss_timecourse);
+                        else
+                            this_mean_prediction_mean_per_trial_miss_timecourse=this_prediction_mean_per_trial_miss_timecourse;
+                        end
+                        handles_out2.group_no(grNo).ii_thr(ii_out).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_miss_timecourse(ii,1:length(this_mean_prediction_mean_per_trial_miss_timecourse))=this_mean_prediction_mean_per_trial_miss_timecourse;
+
+                        %licks
+                        these_per_trial_miss_lick_timecourse=handles_out.ii_out(ii_out).handles_out.MLalgo(iiMLalgo).per_trial_miss_licks;
+                        this_mean_per_trial_miss_lick_timecourse = movmean(these_per_trial_miss_lick_timecourse',moving_mean_n)';
+                        if size(this_mean_per_trial_miss_lick_timecourse,1)~=1
+                            this_mean_mean_per_trial_miss_lick_timecourse=mean(this_mean_per_trial_miss_lick_timecourse);
+                        else
+                            this_mean_mean_per_trial_miss_lick_timecourse=this_mean_per_trial_miss_lick_timecourse;
+                        end
+                        handles_out2.group_no(grNo).ii_thr(ii_out).MLalgo(iiMLalgo).mean_per_trial_miss_lick_timecourse(ii,1:length(this_mean_mean_per_trial_miss_lick_timecourse))=this_mean_mean_per_trial_miss_lick_timecourse;
+
                     else
                         handles_out2.group_no(grNo).ii_thr(ii_out).MLalgo(iiMLalgo).miss_included(ii)=0;
                     end
 
+                    this_per_trial_sm_timecourse=handles_out.ii_out(ii_out).handles_out.MLalgo(iiMLalgo).per_trial_sm_timecourse;
                     this_prediction_mean_per_trial_sm_timecourse = movmean(this_per_trial_sm_timecourse',moving_mean_n)';
                     this_mean_prediction_mean_per_trial_sm_timecourse=mean(this_prediction_mean_per_trial_sm_timecourse);
                     handles_out2.group_no(grNo).ii_thr(ii_out).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_sm_timecourse(ii,1:length(this_mean_prediction_mean_per_trial_sm_timecourse))=this_mean_prediction_mean_per_trial_sm_timecourse;
@@ -320,17 +356,53 @@ if is_mat==0
                     these_sm_crs=handles_out.ii_out(ii_out).handles_out.MLalgo(iiMLalgo).these_sm_crs;
                     if  sum(these_sm_crs)>0
                         handles_out2.group_no(grNo).ii_thr(ii_out).MLalgo(iiMLalgo).cr_included(ii)=1;
-%                         this_prediction_mean_per_trial_sm_timecourse = movmean(this_per_trial_sm_timecourse(logical(these_sm_crs),:)',moving_mean_n)';
-%                         handles_out2.group_no(grNo).ii_thr(ii_out).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_sm_timecourse_cr(ii,1:length(this_mean_prediction_mean_per_trial_sm_timecourse))=this_mean_prediction_mean_per_trial_sm_timecourse;
+
+                        %Prediction
+                        this_per_trial_cr_timecourse=handles_out.ii_out(ii_out).handles_out.MLalgo(iiMLalgo).per_trial_sm_timecourse(logical(these_sm_crs),:);
+                        this_prediction_mean_per_trial_cr_timecourse = movmean(this_per_trial_cr_timecourse',moving_mean_n)';
+                        if size(this_prediction_mean_per_trial_cr_timecourse,1)~=1
+                            this_mean_prediction_mean_per_trial_cr_timecourse=mean(this_prediction_mean_per_trial_cr_timecourse);
+                        else
+                            this_mean_prediction_mean_per_trial_cr_timecourse=this_prediction_mean_per_trial_cr_timecourse;
+                        end
+                        handles_out2.group_no(grNo).ii_thr(ii_out).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_cr_timecourse(ii,1:length(this_mean_prediction_mean_per_trial_cr_timecourse))=this_mean_prediction_mean_per_trial_cr_timecourse;
+
+                        %licks
+                        these_per_trial_cr_lick_timecourse=handles_out.ii_out(ii_out).handles_out.MLalgo(iiMLalgo).per_trial_cr_licks;
+                        this_mean_per_trial_cr_lick_timecourse = movmean(these_per_trial_cr_lick_timecourse',moving_mean_n)';
+                        if size(this_mean_per_trial_cr_lick_timecourse,1)~=1
+                            this_mean_mean_per_trial_cr_lick_timecourse=mean(this_mean_per_trial_cr_lick_timecourse);
+                        else
+                            this_mean_mean_per_trial_cr_lick_timecourse=this_mean_per_trial_cr_lick_timecourse;
+                        end
+                        handles_out2.group_no(grNo).ii_thr(ii_out).MLalgo(iiMLalgo).mean_per_trial_cr_lick_timecourse(ii,1:length(this_mean_mean_per_trial_cr_lick_timecourse))=this_mean_mean_per_trial_cr_lick_timecourse;
                     else
-                         handles_out2.group_no(grNo).ii_thr(ii_out).MLalgo(iiMLalgo).cr_included=0;
+                        handles_out2.group_no(grNo).ii_thr(ii_out).MLalgo(iiMLalgo).cr_included=0;
                     end
 
                     these_sm_fas=handles_out.ii_out(ii_out).handles_out.MLalgo(iiMLalgo).these_sm_fas;
                     if  sum(these_sm_fas)>0
                         handles_out2.group_no(grNo).ii_thr(ii_out).MLalgo(iiMLalgo).fa_included(ii)=1;
-%                         this_prediction_mean_per_trial_sm_timecourse = movmean(this_per_trial_sm_timecourse(logical(these_sm_fas),:)',moving_mean_n)';
-%                         handles_out2.group_no(grNo).ii_thr(ii_out).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_sm_timecourse_fa(ii,1:length(this_mean_prediction_mean_per_trial_sm_timecourse))=this_mean_prediction_mean_per_trial_sm_timecourse;
+
+                        %Prediction
+                        this_per_trial_fa_timecourse=handles_out.ii_out(ii_out).handles_out.MLalgo(iiMLalgo).per_trial_sm_timecourse(logical(these_sm_fas),:);
+                        this_prediction_mean_per_trial_fa_timecourse = movmean(this_per_trial_fa_timecourse',moving_mean_n)';
+                        if size(this_prediction_mean_per_trial_fa_timecourse,1)~=1
+                            this_mean_prediction_mean_per_trial_fa_timecourse=mean(this_prediction_mean_per_trial_fa_timecourse);
+                        else
+                            this_mean_prediction_mean_per_trial_fa_timecourse=this_prediction_mean_per_trial_fa_timecourse;
+                        end
+                        handles_out2.group_no(grNo).ii_thr(ii_out).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_fa_timecourse(ii,1:length(this_mean_prediction_mean_per_trial_fa_timecourse))=this_mean_prediction_mean_per_trial_fa_timecourse;
+
+                        %licks
+                        these_per_trial_fa_lick_timecourse=handles_out.ii_out(ii_out).handles_out.MLalgo(iiMLalgo).per_trial_fa_licks;
+                        this_mean_per_trial_fa_lick_timecourse = movmean(these_per_trial_fa_lick_timecourse',moving_mean_n)';
+                        if size(this_mean_per_trial_fa_lick_timecourse,1)~=1
+                            this_mean_mean_per_trial_fa_lick_timecourse=mean(this_mean_per_trial_fa_lick_timecourse);
+                        else
+                            this_mean_mean_per_trial_fa_lick_timecourse=this_mean_per_trial_fa_lick_timecourse;
+                        end
+                        handles_out2.group_no(grNo).ii_thr(ii_out).MLalgo(iiMLalgo).mean_per_trial_fa_lick_timecourse(ii,1:length(this_mean_mean_per_trial_fa_lick_timecourse))=this_mean_mean_per_trial_fa_lick_timecourse;
                     else
                         handles_out2.group_no(grNo).ii_thr(ii_out).MLalgo(iiMLalgo).fa_included(ii)=0;
                     end
@@ -2044,6 +2116,8 @@ for mouseNo=1:length(handles_out2.mouse_names)
             these_prediction_mean_sm=[];
             these_prediction_mean_sm_cr=[];
             these_prediction_mean_sm_fa=[];
+            these_licks_mean_sm_cr=[];
+            these_licks_mean_sm_fa=[];
             ii_included=0;
             ii_cr_included=0;
             ii_fa_included=0;
@@ -2080,12 +2154,27 @@ for mouseNo=1:length(handles_out2.mouse_names)
                         for ii_tsp=1:ii_tspan
 
                             if time_span(ii_tsp)>this_time_span(end)
-                                these_prediction_mean_sm_cr(ii_cr_included,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_sm_timecourse(ii_f,end);
+                                these_prediction_mean_sm_cr(ii_cr_included,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_cr_timecourse(ii_f,end);
                             else
                                 ii_0=find(this_time_span<=time_span(ii_tsp),1,'last');
                                 ii_1=find(this_time_span>time_span(ii_tsp),1,'first');
-                                these_prediction_mean_sm_cr(ii_cr_included,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_sm_timecourse(ii_f,ii_0)+...
-                                    (handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_sm_timecourse(ii_f,ii_1)-handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_sm_timecourse(ii_f,ii_0))...
+                                these_prediction_mean_sm_cr(ii_cr_included,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_cr_timecourse(ii_f,ii_0)+...
+                                    (handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_cr_timecourse(ii_f,ii_1)...
+                                    -handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_cr_timecourse(ii_f,ii_0))...
+                                    *(time_span(ii_tsp)-this_time_span(ii_0))/(this_time_span(ii_1)-this_time_span(ii_0));
+                            end
+                        end
+
+                        for ii_tsp=1:ii_tspan
+
+                            if time_span(ii_tsp)>this_time_span(end)
+                                these_licks_mean_sm_cr(ii_cr_included,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_per_trial_cr_lick_timecourse(ii_f,end);
+                            else
+                                ii_0=find(this_time_span<=time_span(ii_tsp),1,'last');
+                                ii_1=find(this_time_span>time_span(ii_tsp),1,'first');
+                                these_licks_mean_sm_cr(ii_cr_included,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_per_trial_cr_lick_timecourse(ii_f,ii_0)+...
+                                    (handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_per_trial_cr_lick_timecourse(ii_f,ii_1)...
+                                    -handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_per_trial_cr_lick_timecourse(ii_f,ii_0))...
                                     *(time_span(ii_tsp)-this_time_span(ii_0))/(this_time_span(ii_1)-this_time_span(ii_0));
                             end
                         end
@@ -2100,12 +2189,27 @@ for mouseNo=1:length(handles_out2.mouse_names)
                         for ii_tsp=1:ii_tspan
 
                             if time_span(ii_tsp)>this_time_span(end)
-                                these_prediction_mean_sm_fa(ii_fa_included,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_sm_timecourse(ii_f,end);
+                                these_prediction_mean_sm_fa(ii_fa_included,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_fa_timecourse(ii_f,end);
                             else
                                 ii_0=find(this_time_span<=time_span(ii_tsp),1,'last');
                                 ii_1=find(this_time_span>time_span(ii_tsp),1,'first');
-                                these_prediction_mean_sm_fa(ii_fa_included,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_sm_timecourse(ii_f,ii_0)+...
-                                    (handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_sm_timecourse(ii_f,ii_1)-handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_sm_timecourse(ii_f,ii_0))...
+                                these_prediction_mean_sm_fa(ii_fa_included,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_fa_timecourse(ii_f,ii_0)+...
+                                    (handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_fa_timecourse(ii_f,ii_1)...
+                                    -handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_fa_timecourse(ii_f,ii_0))...
+                                    *(time_span(ii_tsp)-this_time_span(ii_0))/(this_time_span(ii_1)-this_time_span(ii_0));
+                            end
+                        end
+
+                          for ii_tsp=1:ii_tspan
+
+                            if time_span(ii_tsp)>this_time_span(end)
+                                these_licks_mean_sm_fa(ii_fa_included,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_per_trial_fa_lick_timecourse(ii_f,end);
+                            else
+                                ii_0=find(this_time_span<=time_span(ii_tsp),1,'last');
+                                ii_1=find(this_time_span>time_span(ii_tsp),1,'first');
+                                these_licks_mean_sm_fa(ii_fa_included,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_per_trial_fa_lick_timecourse(ii_f,ii_0)+...
+                                    (handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_per_trial_fa_lick_timecourse(ii_f,ii_1)...
+                                    -handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_per_trial_fa_lick_timecourse(ii_f,ii_0))...
                                     *(time_span(ii_tsp)-this_time_span(ii_0))/(this_time_span(ii_1)-this_time_span(ii_0));
                             end
                         end
@@ -2143,6 +2247,8 @@ for mouseNo=1:length(handles_out2.mouse_names)
             per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sm=these_prediction_mean_sm;
             per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sm_cr=these_prediction_mean_sm_cr;
             per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sm_fa=these_prediction_mean_sm_fa;
+            per_mouse_pred.group(grNo).mouse(mouseNo).licks_sm_cr=these_licks_mean_sm_cr;
+            per_mouse_pred.group(grNo).mouse(mouseNo).licks_sm_fa=these_licks_mean_sm_fa;
             per_mouse_pred.group(grNo).mouse(mouseNo).t_mean__prediction_mean_sm=time_span';
 
             %Extrapolate all points onto the longest ii_tspan
@@ -2150,6 +2256,8 @@ for mouseNo=1:length(handles_out2.mouse_names)
             these_prediction_mean_sp=[];
             these_prediction_mean_sp_hit=[];
             these_prediction_mean_sp_miss=[];
+            these_licks_mean_sp_hit=[];
+            these_licks_mean_sp_miss=[];
             ii_included=0;
             ii_hit_included=0;
             ii_miss_included=0;
@@ -2182,12 +2290,29 @@ for mouseNo=1:length(handles_out2.mouse_names)
                         for ii_tsp=1:ii_tspan
 
                             if time_span(ii_tsp)>this_time_span(end)
-                                these_prediction_mean_sp_hit(ii_hit_included,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_sp_timecourse(ii_f,end);
+                                these_prediction_mean_sp_hit(ii_hit_included,ii_tsp)=...
+                                    handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_hit_timecourse(ii_f,end);
                             else
                                 ii_0=find(this_time_span<=time_span(ii_tsp),1,'last');
                                 ii_1=find(this_time_span>time_span(ii_tsp),1,'first');
-                                these_prediction_mean_sp_hit(ii_hit_included,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_sp_timecourse(ii_f,ii_0)+...
-                                    (handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_sp_timecourse(ii_f,ii_1)-handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_sp_timecourse(ii_f,ii_0))...
+                                these_prediction_mean_sp_hit(ii_hit_included,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_hit_timecourse(ii_f,ii_0)+...
+                                    (handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_hit_timecourse(ii_f,ii_1)...
+                                    -handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_hit_timecourse(ii_f,ii_0))...
+                                    *(time_span(ii_tsp)-this_time_span(ii_0))/(this_time_span(ii_1)-this_time_span(ii_0));
+                            end
+                        end
+
+                         for ii_tsp=1:ii_tspan
+
+                            if time_span(ii_tsp)>this_time_span(end)
+                                these_licks_mean_sp_hit(ii_hit_included,ii_tsp)=...
+                                    handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_per_trial_hit_lick_timecourse(ii_f,end);
+                            else
+                                ii_0=find(this_time_span<=time_span(ii_tsp),1,'last');
+                                ii_1=find(this_time_span>time_span(ii_tsp),1,'first');
+                                these_licks_mean_sp_hit(ii_hit_included,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_per_trial_hit_lick_timecourse(ii_f,ii_0)+...
+                                    (handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_per_trial_hit_lick_timecourse(ii_f,ii_1)...
+                                    -handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_per_trial_hit_lick_timecourse(ii_f,ii_0))...
                                     *(time_span(ii_tsp)-this_time_span(ii_0))/(this_time_span(ii_1)-this_time_span(ii_0));
                             end
                         end
@@ -2202,12 +2327,29 @@ for mouseNo=1:length(handles_out2.mouse_names)
                         for ii_tsp=1:ii_tspan
 
                             if time_span(ii_tsp)>this_time_span(end)
-                                these_prediction_mean_sp_miss(ii_miss_included,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_sp_timecourse(ii_f,end);
+                                these_prediction_mean_sp_miss(ii_miss_included,ii_tsp)=...
+                                    handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_miss_timecourse(ii_f,end);
                             else
                                 ii_0=find(this_time_span<=time_span(ii_tsp),1,'last');
                                 ii_1=find(this_time_span>time_span(ii_tsp),1,'first');
-                                these_prediction_mean_sp_miss(ii_miss_included,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_sp_timecourse(ii_f,ii_0)+...
-                                    (handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_sp_timecourse(ii_f,ii_1)-handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_sp_timecourse(ii_f,ii_0))...
+                                these_prediction_mean_sp_miss(ii_miss_included,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_miss_timecourse(ii_f,ii_0)+...
+                                    (handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_miss_timecourse(ii_f,ii_1)...
+                                    -handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_prediction_mean_per_trial_miss_timecourse(ii_f,ii_0))...
+                                    *(time_span(ii_tsp)-this_time_span(ii_0))/(this_time_span(ii_1)-this_time_span(ii_0));
+                            end
+                        end
+
+                        for ii_tsp=1:ii_tspan
+
+                            if time_span(ii_tsp)>this_time_span(end)
+                                these_licks_mean_sp_miss(ii_miss_included,ii_tsp)=...
+                                    handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_per_trial_miss_lick_timecourse(ii_f,end);
+                            else
+                                ii_0=find(this_time_span<=time_span(ii_tsp),1,'last');
+                                ii_1=find(this_time_span>time_span(ii_tsp),1,'first');
+                                these_licks_mean_sp_miss(ii_miss_included,ii_tsp)=handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_per_trial_miss_lick_timecourse(ii_f,ii_0)+...
+                                    (handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_per_trial_miss_lick_timecourse(ii_f,ii_1)...
+                                    -handles_out2.group_no(grNo).ii_thr(ii_thr).MLalgo(iiMLalgo).mean_per_trial_miss_lick_timecourse(ii_f,ii_0))...
                                     *(time_span(ii_tsp)-this_time_span(ii_0))/(this_time_span(ii_1)-this_time_span(ii_0));
                             end
                         end
@@ -2246,6 +2388,8 @@ for mouseNo=1:length(handles_out2.mouse_names)
             per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sp=these_prediction_mean_sp;
             per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sp_hit=these_prediction_mean_sp_hit;
             per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sp_miss=these_prediction_mean_sp_miss;
+             per_mouse_pred.group(grNo).mouse(mouseNo).licks_sp_hit=these_licks_mean_sp_hit;
+            per_mouse_pred.group(grNo).mouse(mouseNo).licks_sp_miss=these_licks_mean_sp_miss;
             per_mouse_pred.group(grNo).mouse(mouseNo).t_mean__prediction_mean_sp=time_span';
 
             if show_per_mouse==1
@@ -2725,7 +2869,7 @@ if is_mat==0
 end
 
 
-%Now try to do the error analysis
+%Now try to do the error analysis for predictions
 
 pCorr_no=3; %Do proficient only
 
@@ -2752,6 +2896,25 @@ for mouseNo=1:length(handles_out2.mouse_names)
     %Extract hits per mouse
     ii_sessions_inc=0;
     this_mouse_prediction_sp_hit=[];
+    include_mouse=0;
+
+    for grNo=these_gr_out
+        if ~isempty(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sp_hit)
+            for ii_sessions=1:size(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sp_hit,1)
+                ii_sessions_inc=ii_sessions_inc+1;
+                this_mouse_prediction_sp_hit(ii_sessions_inc,:)=per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sp_hit(ii_sessions,:);
+            end
+            include_mouse=1;
+        end
+    end
+    if include_mouse==1
+        ii_mouse_inc_hit=ii_mouse_inc_hit+1;
+        per_mouse_prediction_sp_hit(ii_mouse_inc_hit,:)=mean(this_mouse_prediction_sp_hit,1);
+    end
+
+    %Extract hit licks per mouse
+    ii_sessions_inc=0;
+    this_mouse_lick_hit=[];
     include_mouse=0;
 
     for grNo=these_gr_out
@@ -2828,6 +2991,7 @@ for mouseNo=1:length(handles_out2.mouse_names)
 
 end
 
+%Plot prediction for hit, miss, cr and fa
 
 figureNo = figureNo + 1;
 try
@@ -2956,6 +3120,7 @@ switch is_Fabio
     case 2
         these_gr_out=these_groups_out;
 end
+per_session=[];
 
 for window_no=1:size(time_periods_eu,1)
 
@@ -3016,6 +3181,8 @@ for window_no=1:size(time_periods_eu,1)
             ,edges,bar_offset,rand_offset,'k','k',2);
     end
 
+    per_session.window(window_no).all_session_pred_sm_fa=all_session_pred_sm_fa;
+
     bar_offset=bar_offset+1;
 
     %cr
@@ -3063,6 +3230,8 @@ for window_no=1:size(time_periods_eu,1)
         [mean_out, CIout]=drgViolinPoint(all_session_pred_sm_cr...
             ,edges,bar_offset,rand_offset,'k','k',2);
     end
+
+    per_session.window(window_no).all_session_pred_sm_cr=all_session_pred_sm_cr;
 
     bar_offset=bar_offset+1;
 
@@ -3112,6 +3281,8 @@ for window_no=1:size(time_periods_eu,1)
             ,edges,bar_offset,rand_offset,'k','k',2);
     end
 
+    per_session.window(window_no).all_session_pred_sp_miss=all_session_pred_sp_miss;
+
     bar_offset=bar_offset+1;
 
     %miss
@@ -3160,6 +3331,8 @@ for window_no=1:size(time_periods_eu,1)
             ,edges,bar_offset,rand_offset,'k','k',2);
     end
 
+    per_session.window(window_no).all_session_pred_sp_hit=all_session_pred_sp_hit;
+
     bar_offset=bar_offset+1;
 
     for ii_mouse=1:4
@@ -3202,7 +3375,7 @@ fprintf(fileID, ['\nwindow 0: Base, 1:PreFV, 2:PreOdor, 3:Odor\n']);
 
 tbl = table(glm_pred.data',glm_pred.window',glm_pred.trial_type',...
     'VariableNames',{'prediction','window','trial_type'});
-mdl = fitglm(tbl,'prediction~window+trial_type+tryal_type*window'...
+mdl = fitglm(tbl,'prediction~window+trial_type+trial_type*window'...
     ,'CategoricalVars',[2,3])
 
 
@@ -3221,6 +3394,548 @@ fprintf(fileID, ['\n\nRanksum or t-test p values for decoding prediction\n']);
  
 
 [output_data] = drgMutiRanksumorTtest(input_pred_data, fileID,0);
+
+
+%Plot lick fraction for hit, miss, cr and fa
+
+
+ii_mouse_inc_hit=0;
+ii_mouse_inc_miss=0;
+ii_mouse_inc_cr=0;
+ii_mouse_inc_fa=0;
+per_mouse_licks_sp_hit=[];
+per_mouse_licks_sp_miss=[];
+per_mouse_licks_sm_cr=[];
+per_mouse_licks_sm_fa=[];
+
+for mouseNo=1:length(handles_out2.mouse_names)
+
+    %Extract hits per mouse
+    ii_sessions_inc=0;
+    this_mouse_licks_sp_hit=[];
+    include_mouse=0;
+
+    for grNo=these_gr_out
+        if ~isempty(per_mouse_pred.group(grNo).mouse(mouseNo).licks_sp_hit)
+            for ii_sessions=1:size(per_mouse_pred.group(grNo).mouse(mouseNo).licks_sp_hit,1)
+                ii_sessions_inc=ii_sessions_inc+1;
+                this_mouse_licks_sp_hit(ii_sessions_inc,:)=per_mouse_pred.group(grNo).mouse(mouseNo).licks_sp_hit(ii_sessions,:);
+            end
+            include_mouse=1;
+        end
+    end
+    if include_mouse==1
+        ii_mouse_inc_hit=ii_mouse_inc_hit+1;
+        per_mouse_licks_sp_hit(ii_mouse_inc_hit,:)=mean(this_mouse_licks_sp_hit,1);
+    end
+
+    %Extract hit licks per mouse
+    ii_sessions_inc=0;
+    this_mouse_lick_hit=[];
+    include_mouse=0;
+
+    for grNo=these_gr_out
+        if ~isempty(per_mouse_pred.group(grNo).mouse(mouseNo).licks_sp_hit)
+            for ii_sessions=1:size(per_mouse_pred.group(grNo).mouse(mouseNo).licks_sp_hit,1)
+                ii_sessions_inc=ii_sessions_inc+1;
+                this_mouse_licks_sp_hit(ii_sessions_inc,:)=per_mouse_pred.group(grNo).mouse(mouseNo).licks_sp_hit(ii_sessions,:);
+            end
+            include_mouse=1;
+        end
+    end
+    if include_mouse==1
+        ii_mouse_inc_hit=ii_mouse_inc_hit+1;
+        per_mouse_licks_sp_hit(ii_mouse_inc_hit,:)=mean(this_mouse_licks_sp_hit,1);
+    end
+
+    %Extract miss per mouse
+    ii_sessions_inc=0;
+    this_mouse_licks_sp_miss=[];
+    include_mouse=0;
+
+    for grNo=these_gr_out
+        if ~isempty(per_mouse_pred.group(grNo).mouse(mouseNo).licks_sp_miss)
+            for ii_sessions=1:size(per_mouse_pred.group(grNo).mouse(mouseNo).licks_sp_miss,1)
+                ii_sessions_inc=ii_sessions_inc+1;
+                this_mouse_licks_sp_miss(ii_sessions_inc,:)=per_mouse_pred.group(grNo).mouse(mouseNo).licks_sp_miss(ii_sessions,:);
+            end
+            include_mouse=1;
+        end
+    end
+    if include_mouse==1
+        ii_mouse_inc_miss=ii_mouse_inc_miss+1;
+        per_mouse_licks_sp_miss(ii_mouse_inc_miss,:)=mean(this_mouse_licks_sp_miss,1);
+    end
+
+    %Extract cr per mouse
+    ii_sessions_inc=0;
+    this_mouse_licks_sm_cr=[];
+    include_mouse=0;
+
+    for grNo=these_gr_out
+        if ~isempty(per_mouse_pred.group(grNo).mouse(mouseNo).licks_sm_cr)
+            for ii_sessions=1:size(per_mouse_pred.group(grNo).mouse(mouseNo).licks_sm_cr,1)
+                ii_sessions_inc=ii_sessions_inc+1;
+                this_mouse_licks_sm_cr(ii_sessions_inc,:)=per_mouse_pred.group(grNo).mouse(mouseNo).licks_sm_cr(ii_sessions,:);
+            end
+            include_mouse=1;
+        end
+    end
+    if include_mouse==1
+        ii_mouse_inc_cr=ii_mouse_inc_cr+1;
+        per_mouse_licks_sm_cr(ii_mouse_inc_cr,:)=mean(this_mouse_licks_sm_cr,1);
+    end
+
+
+    %Extract fa per mouse
+    ii_sessions_inc=0;
+    this_mouse_licks_sm_fa=[];
+    include_mouse=0;
+
+    for grNo=these_gr_out
+        if ~isempty(per_mouse_pred.group(grNo).mouse(mouseNo).licks_sm_fa)
+            for ii_sessions=1:size(per_mouse_pred.group(grNo).mouse(mouseNo).licks_sm_fa,1)
+                ii_sessions_inc=ii_sessions_inc+1;
+                this_mouse_licks_sm_fa(ii_sessions_inc,:)=per_mouse_pred.group(grNo).mouse(mouseNo).licks_sm_fa(ii_sessions,:);
+            end
+            include_mouse=1;
+        end
+    end
+    if include_mouse==1
+        ii_mouse_inc_fa=ii_mouse_inc_fa+1;
+        per_mouse_licks_sm_fa(ii_mouse_inc_fa,:)=mean(this_mouse_licks_sm_fa,1);
+    end
+
+end
+
+figureNo = figureNo + 1;
+try
+    close(figureNo)
+catch
+end
+hFig=figure(figureNo);
+hold on
+
+ax=gca;ax.LineWidth=3;
+set(hFig, 'units','normalized','position',[.2 .2 .3 .3])
+
+%Plot hits
+if size(per_mouse_licks_sp_hit,1)>=3
+    CIpv = bootci(1000, @mean, per_mouse_licks_sp_hit);
+    meanpv=mean(per_mouse_licks_sp_hit,1);
+    CIpv(1,:)=meanpv-CIpv(1,:);
+    CIpv(2,:)=CIpv(2,:)-meanpv;
+
+    [hlpvl, hppvl] = boundedline(time_span',mean(per_mouse_licks_sp_hit,1)', CIpv', '-r');
+else
+    plot(time_span',mean(per_mouse_licks_sp_hit,1)', '-r');
+end
+
+%Plot miss
+if size(per_mouse_licks_sp_miss,1)>=3
+    CIpv = bootci(1000, @mean, per_mouse_licks_sp_miss);
+    meanpv=mean(per_mouse_licks_sp_miss,1);
+    CIpv(1,:)=meanpv-CIpv(1,:);
+    CIpv(2,:)=CIpv(2,:)-meanpv;
+
+    [hlpvl, hppvl] = boundedline(time_span',mean(per_mouse_licks_sp_miss,1)', CIpv', '-c');
+else
+    plot(time_span',mean(per_mouse_licks_sp_miss,1)', '-c');
+end
+
+%Plot cr
+if size(per_mouse_licks_sm_cr,1)>=3
+    CIpv = bootci(1000, @mean, per_mouse_licks_sm_cr);
+    meanpv=mean(per_mouse_licks_sm_cr,1);
+    CIpv(1,:)=meanpv-CIpv(1,:);
+    CIpv(2,:)=CIpv(2,:)-meanpv;
+
+    [hlpvl, hppvl] = boundedline(time_span',mean(per_mouse_licks_sm_cr,1)', CIpv', '-b');
+else
+    plot(time_span',mean(per_mouse_licks_sm_cr,1)', '-b');
+end
+
+%Plot fa
+if size(per_mouse_licks_sm_fa,1)>=3
+    CIpv = bootci(1000, @mean, per_mouse_licks_sm_fa);
+    meanpv=mean(per_mouse_licks_sm_fa,1);
+    CIpv(1,:)=meanpv-CIpv(1,:);
+    CIpv(2,:)=CIpv(2,:)-meanpv;
+
+    [hlpvl, hppvl] = boundedline(time_span',mean(per_mouse_licks_sm_fa,1)', CIpv', '-m');
+else
+    plot(time_span',mean(per_mouse_licks_sm_fa,1)', '-m');
+end
+
+plot(time_span',mean(per_mouse_licks_sp_miss,1)', '-c');
+plot(time_span',mean(per_mouse_licks_sp_hit,1)', '-r');
+plot(time_span',mean(per_mouse_licks_sm_fa,1)', '-m');
+plot(time_span',mean(per_mouse_licks_sm_cr,1)', '-b');
+
+ylim([-0.1 1.1])
+this_ylim=ylim;
+
+
+xlim([-7 15])
+
+this_grNo=floor((grNo-1)/4)+1;
+ii_pcorr=grNo-4*(this_grNo-1);
+
+%FV
+plot([-1.5 0],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'LineWidth',5, Color=[0.9 0.9 0.9])
+plot([-1.5 -1.5],[this_ylim],'-','Color',[0.5 0.5 0.5])
+
+%Odor on markers
+plot([0 0],this_ylim,'-k')
+odorhl=plot([0 delta_odor],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-k','LineWidth',5);
+plot([delta_odor delta_odor],this_ylim,'-k')
+
+%Reinforcement markers
+plot([delta_odor_on_reinf_on delta_odor_on_reinf_on],this_ylim,'-r')
+reinfhl=plot([delta_odor_on_reinf_on delta_odor_on_reinf_on+delta_reinf],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-r','LineWidth',5);
+plot([delta_odor_on_reinf_on+delta_reinf delta_odor_on_reinf_on+delta_reinf],this_ylim,'-r')
+
+
+title(['Lick fraction for proficient, hit=red, miss=cyan, fa=magenta, cr=blue'])
+xlabel('Time(sec)')
+ylabel('Lick fraction')
+
+
+
+% end 
+
+%Bar graph for glm prediction
+figureNo = figureNo + 1;
+try
+    close(figureNo)
+catch
+end
+hFig=figure(figureNo);
+hold on
+
+ax=gca;ax.LineWidth=3;
+set(hFig, 'units','normalized','position',[.2 .2 .6 .3])
+
+glm_lick=[];
+glm_lick_ii=0;
+
+
+id_lick_ii=0;
+input_lick_data=[];
+
+% for grNo=1:no_pcorr*length(these_groups)
+bar_offset=0;
+
+perCorr_no=3;
+switch is_Fabio
+    case 0
+        these_gr_out=group_sets(perCorr_no,:);
+    case 1
+        these_pcorr=[1];
+    case 2
+        these_gr_out=these_groups_out;
+end
+
+for window_no=1:size(time_periods_eu,1)
+
+    per_mouse_mean_lick_sp_hit=[];
+    per_mouse_mean_lick_sp_miss=[];
+    per_mouse_mean_lick_sm_cr=[];
+    per_mouse_mean_lick_sm_fa=[];
+    all_session_lick_sp_hit=[];
+    all_session_lick_sp_miss=[];
+    all_session_lick_sm_cr=[];
+    all_session_lick_sm_fa=[];
+
+    %Get per session and per mouse
+
+    %fa
+    ii_m_included_fa=0;
+    for mouseNo=1:length(handles_out2.mouse_names)
+        these_licks=[];
+
+        include_mouse=0;
+        for grNo=these_gr_out
+            if ~isempty(per_mouse_pred.group(grNo).mouse(mouseNo).licks_sm_fa)
+                include_mouse=1;
+                for ii_sessions=1:size(per_mouse_pred.group(grNo).mouse(mouseNo).licks_sm_fa,1)
+                    t_from=time_periods_eu(window_no,1);
+                    t_to=time_periods_eu(window_no,2);
+                    this_lick=mean(per_mouse_pred.group(grNo).mouse(mouseNo).licks_sm_fa(ii_sessions,(time_span>=t_from)&(time_span<=t_to)) );
+                    these_licks=[these_licks this_lick];
+                end
+            end
+        end
+        if include_mouse==1
+            ii_m_included_fa=ii_m_included_fa+1;
+            per_mouse_mean_lick_sm_fa(1,ii_m_included_fa)=mean(these_licks);
+            all_session_lick_sm_fa=[all_session_lick_sm_fa these_licks];
+
+            glm_lick.data(glm_lick_ii+1:glm_lick_ii+length(these_licks))=these_licks;
+            glm_lick.window(glm_lick_ii+1:glm_lick_ii+length(these_licks))=window_no*ones(1,length(these_licks));
+            glm_lick.trial_type(glm_lick_ii+1:glm_lick_ii+length(these_licks))=0*ones(1,length(these_licks));
+            glm_lick.mouse_nos(glm_lick_ii+1:glm_lick_ii+length(these_licks))=mouseNo*ones(1,length(these_licks));
+            glm_lick_ii=glm_lick_ii+length(these_licks);
+
+        end
+
+    end
+
+    id_lick_ii=id_lick_ii+1;
+    input_lick_data(id_lick_ii).data=all_session_lick_sm_fa;
+    input_lick_data(id_lick_ii).description=['FA ' window_label{window_no}];
+
+
+    %FA
+    bar(bar_offset,mean(all_session_lick_sm_fa),'LineWidth', 3,'EdgeColor','none','FaceColor','m')
+
+    %Violin plot
+    if ~isempty(all_session_lick_sm_fa)
+        [mean_out, CIout]=drgViolinPoint(all_session_lick_sm_fa...
+            ,edges,bar_offset,rand_offset,'k','k',2);
+    end
+
+    per_session.window(window_no).all_session_lick_sm_fa=all_session_lick_sm_fa;
+    bar_offset=bar_offset+1;
+
+    %cr
+    ii_m_included_cr=0;
+    for mouseNo=1:length(handles_out2.mouse_names)
+        these_licks=[];
+
+        include_mouse=0;
+        for grNo=these_gr_out
+            if ~isempty(per_mouse_pred.group(grNo).mouse(mouseNo).licks_sm_cr)
+                include_mouse=1;
+                for ii_sessions=1:size(per_mouse_pred.group(grNo).mouse(mouseNo).licks_sm_cr,1)
+                    t_from=time_periods_eu(window_no,1);
+                    t_to=time_periods_eu(window_no,2);
+                    this_lick=mean(per_mouse_pred.group(grNo).mouse(mouseNo).licks_sm_cr(ii_sessions,(time_span>=t_from)&(time_span<=t_to)) );
+                    these_licks=[these_licks this_lick];
+                end
+            end
+        end
+        if include_mouse==1
+            ii_m_included_cr=ii_m_included_cr+1;
+            per_mouse_mean_lick_sm_cr(1,ii_m_included_cr)=mean(these_licks);
+            all_session_lick_sm_cr=[all_session_lick_sm_cr these_licks];
+
+            glm_lick.data(glm_lick_ii+1:glm_lick_ii+length(these_licks))=these_licks;
+            glm_lick.window(glm_lick_ii+1:glm_lick_ii+length(these_licks))=window_no*ones(1,length(these_licks));
+            glm_lick.trial_type(glm_lick_ii+1:glm_lick_ii+length(these_licks))=1*ones(1,length(these_licks));
+            glm_lick.mouse_nos(glm_lick_ii+1:glm_lick_ii+length(these_licks))=mouseNo*ones(1,length(these_licks));
+            glm_lick_ii=glm_lick_ii+length(these_licks);
+
+        end
+
+    end
+
+    id_lick_ii=id_lick_ii+1;
+    input_lick_data(id_lick_ii).data=all_session_lick_sm_cr;
+    input_lick_data(id_lick_ii).description=['CR ' window_label{window_no}];
+
+
+    %CR
+    bar(bar_offset,mean(all_session_lick_sm_cr),'LineWidth', 3,'EdgeColor','none','FaceColor','b')
+
+    %Violin plot
+    if ~isempty(all_session_lick_sm_cr)
+        [mean_out, CIout]=drgViolinPoint(all_session_lick_sm_cr...
+            ,edges,bar_offset,rand_offset,'k','k',2);
+    end
+
+    per_session.window(window_no).all_session_lick_sm_cr=all_session_lick_sm_cr;
+    bar_offset=bar_offset+1;
+
+    %miss
+    ii_m_included_miss=0;
+    for mouseNo=1:length(handles_out2.mouse_names)
+        these_licks=[];
+
+        include_mouse=0;
+        for grNo=these_gr_out
+            if ~isempty(per_mouse_pred.group(grNo).mouse(mouseNo).licks_sp_miss)
+                include_mouse=1;
+                for ii_sessions=1:size(per_mouse_pred.group(grNo).mouse(mouseNo).licks_sp_miss,1)
+                    t_from=time_periods_eu(window_no,1);
+                    t_to=time_periods_eu(window_no,2);
+                    this_lick=mean(per_mouse_pred.group(grNo).mouse(mouseNo).licks_sp_miss(ii_sessions,(time_span>=t_from)&(time_span<=t_to)) );
+                    these_licks=[these_licks this_lick];
+                end
+            end
+        end
+        if include_mouse==1
+            ii_m_included_miss=ii_m_included_miss+1;
+            per_mouse_mean_lick_sp_miss(1,ii_m_included_miss)=mean(these_licks);
+            all_session_lick_sp_miss=[all_session_lick_sp_miss these_licks];
+
+            glm_lick.data(glm_lick_ii+1:glm_lick_ii+length(these_licks))=these_licks;
+            glm_lick.window(glm_lick_ii+1:glm_lick_ii+length(these_licks))=window_no*ones(1,length(these_licks));
+            glm_lick.trial_type(glm_lick_ii+1:glm_lick_ii+length(these_licks))=2*ones(1,length(these_licks));
+            glm_lick.mouse_nos(glm_lick_ii+1:glm_lick_ii+length(these_licks))=mouseNo*ones(1,length(these_licks));
+            glm_lick_ii=glm_lick_ii+length(these_licks);
+
+        end
+
+    end
+
+    id_lick_ii=id_lick_ii+1;
+    input_lick_data(id_lick_ii).data=all_session_lick_sp_miss;
+    input_lick_data(id_lick_ii).description=['Miss ' window_label{window_no}];
+
+
+    %Miss
+    bar(bar_offset,mean(all_session_lick_sp_miss),'LineWidth', 3,'EdgeColor','none','FaceColor','c')
+
+    %Violin plot
+    if ~isempty(all_session_lick_sp_miss)
+        [mean_out, CIout]=drgViolinPoint(all_session_lick_sp_miss...
+            ,edges,bar_offset,rand_offset,'k','k',2);
+    end
+
+    per_session.window(window_no).all_session_lick_sp_miss=all_session_lick_sp_miss;
+    bar_offset=bar_offset+1;
+
+    %miss
+    ii_m_included_hit=0;
+    for mouseNo=1:length(handles_out2.mouse_names)
+        these_licks=[];
+
+        include_mouse=0;
+        for grNo=these_gr_out
+            if ~isempty(per_mouse_pred.group(grNo).mouse(mouseNo).licks_sp_hit)
+                include_mouse=1;
+                for ii_sessions=1:size(per_mouse_pred.group(grNo).mouse(mouseNo).licks_sp_hit,1)
+                    t_from=time_periods_eu(window_no,1);
+                    t_to=time_periods_eu(window_no,2);
+                    this_lick=mean(per_mouse_pred.group(grNo).mouse(mouseNo).licks_sp_hit(ii_sessions,(time_span>=t_from)&(time_span<=t_to)) );
+                    these_licks=[these_licks this_lick];
+                end
+            end
+        end
+        if include_mouse==1
+            ii_m_included_hit=ii_m_included_hit+1;
+            per_mouse_mean_lick_sp_hit(1,ii_m_included_hit)=mean(these_licks);
+            all_session_lick_sp_hit=[all_session_lick_sp_hit these_licks];
+
+            glm_lick.data(glm_lick_ii+1:glm_lick_ii+length(these_licks))=these_licks;
+            glm_lick.window(glm_lick_ii+1:glm_lick_ii+length(these_licks))=window_no*ones(1,length(these_licks));
+            glm_lick.trial_type(glm_lick_ii+1:glm_lick_ii+length(these_licks))=3*ones(1,length(these_licks));
+            glm_lick.mouse_nos(glm_lick_ii+1:glm_lick_ii+length(these_licks))=mouseNo*ones(1,length(these_licks));
+            glm_lick_ii=glm_lick_ii+length(these_licks);
+
+        end
+
+    end
+
+    id_lick_ii=id_lick_ii+1;
+    input_lick_data(id_lick_ii).data=all_session_lick_sp_hit;
+    input_lick_data(id_lick_ii).description=['Hit ' window_label{window_no}];
+
+
+    %Hit
+    bar(bar_offset,mean(all_session_lick_sp_hit),'LineWidth', 3,'EdgeColor','none','FaceColor','r')
+
+    %Violin plot
+    if ~isempty(all_session_lick_sp_hit)
+        [mean_out, CIout]=drgViolinPoint(all_session_lick_sp_hit...
+            ,edges,bar_offset,rand_offset,'k','k',2);
+    end
+
+    per_session.window(window_no).all_session_lick_sp_hit=all_session_lick_sp_hit;
+    bar_offset=bar_offset+1;
+
+    for ii_mouse=1:4
+        plot([bar_offset-4 bar_offset-3],[per_mouse_mean_lick_sm_fa(ii_mouse) per_mouse_mean_lick_sm_cr(ii_mouse)],'-','Color',[150/255 150/255 150/255],'LineWidth',2 )
+        plot([bar_offset-3 bar_offset-2],[per_mouse_mean_lick_sm_cr(ii_mouse) per_mouse_mean_lick_sp_miss(ii_mouse)],'-','Color',[150/255 150/255 150/255],'LineWidth',2 )
+        plot([bar_offset-2 bar_offset-1],[per_mouse_mean_lick_sp_miss(ii_mouse) per_mouse_mean_lick_sp_hit(ii_mouse)],'-','Color',[150/255 150/255 150/255],'LineWidth',2 )
+    end
+
+    bar_offset=bar_offset+1;
+
+
+end
+bar_offset=bar_offset+1;
+
+
+% xticks([1 3 5 7 9 11 13 15])
+% xticklabels({'Base','PreFV','PreOdor','Odor','Base','PreFV','PreOdor','Odor'})
+
+xticks([0 1 2 3 5 6 7 8 10 11 12 13])
+xticklabels({'PreFA','PreCR','PreMiss','PreHit','OdorFA','OdorCR','OdorMiss','OdorHit','RinfFA','ReinfCR','ReinfMiss','ReinfHit'})
+
+
+title(['Lick fraction proficient, hit=red, miss=cyan, fa=magenta, cr=blue'])
+ylabel('Lick fraction')
+ylim([0 1.1])
+xlim([-1 14])
+
+%     text(1,1,'45-65%')
+%     text(6,1,'65-80%')
+%     text(11,1,'>80%')
+
+ 
+
+%Perform the glm not including shuffled
+fprintf(1, ['\nglm for decoding lick fraction\n'])
+fprintf(fileID, ['\nglm for decoding lick fraction\n']);
+
+fprintf(1, ['\nwindow 0: Base, 1:PreFV, 2:PreOdor, 3:Odor\n'])
+fprintf(fileID, ['\nwindow 0: Base, 1:PreFV, 2:PreOdor, 3:Odor\n']);
+
+tbl = table(glm_lick.data',glm_lick.window',glm_lick.trial_type',...
+    'VariableNames',{'lick_f','window','trial_type'});
+mdl = fitglm(tbl,'lick_f~window+trial_type+trial_type*window'...
+    ,'CategoricalVars',[2,3])
+
+
+txt = evalc('mdl');
+txt=regexp(txt,'<strong>','split');
+txt=cell2mat(txt);
+txt=regexp(txt,'</strong>','split');
+txt=cell2mat(txt);
+
+fprintf(fileID,'%s\n', txt);
+
+
+%Do the ranksum/t-test
+fprintf(1, ['\n\nRanksum or t-test p values for decoding lick fraction\n'])
+fprintf(fileID, ['\n\nRanksum or t-test p values for decoding lick fraction\n']);
+ 
+
+[output_data] = drgMutiRanksumorTtest(input_lick_data, fileID,0);
+
+%Now plot the relationship between prediction and lick fraction
+window_labels{1}='Pre';
+window_labels{2}='Odor';
+window_labels{3}='Reinforcement';
+for window_no=1:3
+    figureNo = figureNo + 1;
+    try
+        close(figureNo)
+    catch
+    end
+    hFig=figure(figureNo);
+    hold on
+
+    ax=gca;ax.LineWidth=3;
+    set(hFig, 'units','normalized','position',[.2 .2 .3 .3])
+
+    hold on
+    plot(per_session.window(window_no).all_session_lick_sm_cr,per_session.window(window_no).all_session_pred_sm_cr,'ob')
+    plot(per_session.window(window_no).all_session_lick_sm_fa,per_session.window(window_no).all_session_pred_sm_fa,'om')
+    plot(per_session.window(window_no).all_session_lick_sp_hit,per_session.window(window_no).all_session_pred_sp_hit,'or')
+    plot(per_session.window(window_no).all_session_lick_sp_miss,per_session.window(window_no).all_session_pred_sp_miss,'oc')
+
+    xlim([-0.05 0.7])
+    ylim([0 1])
+    xlabel('lick fraction')
+    ylabel('prediction')
+    title(['Prediction vs. lick fraction ' window_labels{window_no}])
+end
+
+
+
 fclose(fileID);
 
 pfft=1;

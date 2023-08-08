@@ -2,10 +2,10 @@ function handles_out=drgCaImAn_pval_batch(handles_choices)
 %This program performs a survey of ROI responsiveness to S+ and S-
 % and divergent responses to S+ and S-
 %
-% if show_figures==1 the user can save the responsive/divergent 
+% if show_figures==1 the user can save the responsive/divergent
 % ROI timecourse figures when he/she presses "k" in the keyboard
-% 
-% the program surveys ROI cross correlations and evaluates 
+%
+% the program surveys ROI cross correlations and evaluates
 % the hierarchical clustering of the ROIs using the maltab linkage function
 % with unweighted average euclidean distance (UPGMA)
 % the input a pval handles_choices file with the pre_per file location and all
@@ -61,6 +61,46 @@ if isfield(handles,'show_figures')
 else
     show_figures=0;
 end
+figureNo=0;
+
+pre_t=[-3 -1.5];
+odor_t=[-1 5.5]; %0 5.5 yields a large number of positive traces
+use_pFDR=4; %0=use t-test or ranksum with p<p_value_sig, 1=use pFDR, 2=use bootstrapping, 3= glm, 4= glm with pFDR
+% pre_t_dprime=[-1.5 6.5];
+
+handles_out.pre_t=pre_t;
+handles_out.odor_t=odor_t;
+handles_out.use_pFDR=use_pFDR;
+
+handles_in.min_tr_div=12;
+handles_in.min_tr_resp=6;
+
+switch use_pFDR
+    case {0, 1}
+        %choices for case 1 and 0
+        fv_t=[-1 0];
+        %choices for case 0
+        p_value_sig=0.001;
+
+        handles_in.fv_t=[-1 0];
+        handles_in.p_value_sig=p_value_sig;
+
+    case 2
+        %bootstrap
+        handles_in.pre_t=[-3 -2];
+        handles_in.dt_required=2;
+        handles_in.t_start=-2.5;
+        handles_in.t_end=7.5;
+        handles_in.pre_start=-7;
+        handles_in.pre_end=-1.5;
+    case {3, 4}
+        %glm
+        %choices for case 3
+        handles_in.t_start=-1;
+        handles_in.t_end=4.5;
+        handles_in.pre_t_start=-4;
+        handles_in.pre_t_end=-1.5;
+end
 
 %Choices for simulations and how files are grouped
 process_pcorr=1; %If this is 1 then each group, percent correct is processed separately
@@ -85,9 +125,9 @@ delta_odor=4.127634e+00;
 delta_odor_on_reinf_on=4.415787e+00;
 delta_reinf=4.078266e-01;
 
-pre_t=[-3 -2];
-fv_t=[-1 0];
-odor_t=[0.5 5.5];
+% pre_t=[-3 -2];
+% fv_t=[-1 0];
+% odor_t=[0.5 5.5];
 
 % Time events of interest (e.g. stimulus onset/offset, cues etc.)
 % They are marked on the plots with vertical lines
@@ -369,18 +409,18 @@ if all_files_present==1
                         end
                     end
 
-%                     %Now do the time shift
-%                     no_shift=floor(t_shift/(time_span(2)-time_span(1)));
-% 
-%                     if all_handles(fileNo).handles_out.shift_time==1
-%                         if no_shift>0
-%                             these_FR(no_shift+1:end)=these_FR(1:end-no_shift);
-%                             these_FR(1:no_shift)=these_FR(no_shift);
-%                         else
-%                             these_FR(1:end-no_shift)=these_FR(no_shift+1:end);
-%                             these_FR(1:end-no_shift+1:end)=these_FR(no_shift);
-%                         end
-%                     end
+                    %                     %Now do the time shift
+                    %                     no_shift=floor(t_shift/(time_span(2)-time_span(1)));
+                    %
+                    %                     if all_handles(fileNo).handles_out.shift_time==1
+                    %                         if no_shift>0
+                    %                             these_FR(no_shift+1:end)=these_FR(1:end-no_shift);
+                    %                             these_FR(1:no_shift)=these_FR(no_shift);
+                    %                         else
+                    %                             these_FR(1:end-no_shift)=these_FR(no_shift+1:end);
+                    %                             these_FR(1:end-no_shift+1:end)=these_FR(no_shift);
+                    %                         end
+                    %                     end
 
 
                     firingRates(n,s,1:T,trNo)=these_FR;
@@ -394,116 +434,214 @@ if all_files_present==1
 
 
         %Now do p-vals
-
-
-        %do t-test or ranksum
         handles_out.file(fileNo).no_neurons=N;
 
+        %Now calculate p-vals
 
-        %Pre period
-        id_ii=0;
-        input_data=[];
-        for n=1:N
+        switch use_pFDR
+            case {0,1}
+                %do t-test or ranksum
+                %                 handles_out.file(fileNo).no_neurons=N;
 
-            %S+
-            s=1;
-            id_ii=id_ii+1;
-            for trNo=1:trialNum(n,s)
-                input_data(id_ii).data(trNo)=mean(firingRates(n,s,(time_span>=pre_t(1))&(time_span<pre_t(2)),trNo),3);
-            end
-            input_data(id_ii).description=['Neuron ' num2str(n) ' S+'];
 
-            %S-
-            s=2;
-            id_ii=id_ii+1;
-            for trNo=1:trialNum(n,s)
-                input_data(id_ii).data(trNo)=mean(firingRates(n,s,(time_span>=pre_t(1))&(time_span<pre_t(2)),trNo),3);
-            end
+                %Pre period
+                id_ii=0;
+                input_data=[];
+                for n=1:N
 
-            input_data(id_ii).description=['Neuron ' num2str(n) ' S-'];
+                    %S+
+                    s=1;
+                    id_ii=id_ii+1;
+                    for trNo=1:trialNum(n,s)
+                        input_data(id_ii).data(trNo)=mean(firingRates(n,s,(time_span>=pre_t(1))&(time_span<pre_t(2)),trNo),3);
+                    end
+                    input_data(id_ii).description=['Neuron ' num2str(n) ' S+'];
+
+                    %S-
+                    s=2;
+                    id_ii=id_ii+1;
+                    for trNo=1:trialNum(n,s)
+                        input_data(id_ii).data(trNo)=mean(firingRates(n,s,(time_span>=pre_t(1))&(time_span<pre_t(2)),trNo),3);
+                    end
+
+                    input_data(id_ii).description=['Neuron ' num2str(n) ' S-'];
+                end
+
+                fprintf(1, ['Ranksum or t test for pre period for file No ' num2str(fileNo) '\n']);
+                fprintf(1, ['Percent correct behavior for this file is ' num2str(pCorr_per_file(fileNo)) '\n']);
+
+                [handles_out.file(fileNo).output_data_pre] = drgPairsRanksumorTtest(input_data);
+
+                %FV period
+                id_ii=0;
+                input_data=[];
+                for n=1:N
+
+                    %S+
+                    s=1;
+                    id_ii=id_ii+1;
+                    for trNo=1:trialNum(n,s)
+                        input_data(id_ii).data(trNo)=mean(firingRates(n,s,(time_span>=fv_t(1))&(time_span<fv_t(2)),trNo),3);
+                    end
+                    input_data(id_ii).description=['Neuron ' num2str(n) ' S+'];
+
+                    %S-
+                    s=2;
+                    id_ii=id_ii+1;
+                    for trNo=1:trialNum(n,s)
+                        input_data(id_ii).data(trNo)=mean(firingRates(n,s,(time_span>=fv_t(1))&(time_span<fv_t(2)),trNo),3);
+                    end
+
+                    input_data(id_ii).description=['Neuron ' num2str(n) ' S-'];
+                end
+
+                fprintf(1, ['Ranksum or t test for final valve period for file No ' num2str(fileNo) '\n']);
+                fprintf(1, ['Percent correct behavior for this file is ' num2str(pCorr_per_file(fileNo)) '\n']);
+
+                [handles_out.file(fileNo).output_data_FV] = drgPairsRanksumorTtest(input_data);
+
+                %Odor
+                id_ii=0;
+                input_data=[];
+                for n=1:N
+
+                    %S+
+                    s=1;
+                    id_ii=id_ii+1;
+                    for trNo=1:trialNum(n,s)
+                        input_data(id_ii).data(trNo)=mean(firingRates(n,s,(time_span>=odor_t(1))&(time_span<odor_t(2)),trNo),3);
+                    end
+                    input_data(id_ii).description=['Neuron ' num2str(n) ' S+'];
+
+                    %S-
+                    s=2;
+                    id_ii=id_ii+1;
+                    for trNo=1:trialNum(n,s)
+                        input_data(id_ii).data(trNo)=mean(firingRates(n,s,(time_span>=odor_t(1))&(time_span<odor_t(2)),trNo),3);
+                    end
+
+                    input_data(id_ii).description=['Neuron ' num2str(n) ' S-'];
+                end
+
+                fprintf(1, ['Ranksum or t test for odor period for file No ' num2str(fileNo) '\n']);
+                [handles_out.file(fileNo).output_data_odor] = drgPairsRanksumorTtest(input_data);
+
+                %                 handles_out.output_data_pre=[handles_out.output_data_pre handles_out.file(fileNo).output_data_pre.no_significant_pFDR];
+                %                 handles_out.output_data_FV=[handles_out.output_data_FV handles_out.file(fileNo).output_data_FV.no_significant_pFDR];
+                %                 handles_out.output_data_odor=[handles_out.output_data_odor handles_out.file(fileNo).output_data_odor.no_significant_pFDR];
+                %                 handles_out.output_data_N=[handles_out.output_data_N N];
+            case 3
+                all_p_vals=[];
+                for ii_p=1:handles_out.file(fileNo).no_neurons
+
+                    min_ii=ii_p;
+
+                    %get the dF/F
+                    dFFsplus=zeros(length(time_span),trialNum(min_ii,1));
+                    dFFsplus(:,:)=firingRates(min_ii,1,:,1:trialNum(min_ii,1));
+                    dFFsminus=zeros(length(time_span),trialNum(min_ii,2));
+                    dFFsminus(:,:)=firingRates(min_ii,2,:,1:trialNum(min_ii,2));
+
+
+                    handles_in.time_span=time_span;
+                    handles_in.dFFsplus=dFFsplus;
+                    handles_in.dFFsminus=dFFsminus;
+
+                    fprintf(1, ['Divergence glm for file No ' num2str(fileNo) ' ROI no ' num2str(ii_p)]);
+                    [handles_out.file(fileNo).output_data_odor.sig_div_glm(ii_p),handles_out.file(fileNo).output_data_odor.div_p_glm(ii_p),...
+                        handles_out.file(fileNo).output_data_odor.total_trials(ii_p)]=drgCaImAn_glm_dFF_div(handles_in);
+                    fprintf(1, [' significance= ' num2str(handles_out.file(fileNo).output_data_odor.sig_div_glm(ii_p)) '\n']);
+                    all_p_vals(ii_p)=handles_out.file(fileNo).output_data_odor.div_p_glm(ii_p);
+
+                end
+                pFDR = drsFDRpval(all_p_vals);
+                handles_out.file(fileNo).output_data_odor.pFDR=pFDR;
+                for ii_p=1:handles_out.file(fileNo).no_neurons
+                    if handles_out.file(fileNo).output_data_odor.div_p_glm(ii_p)<=0.05
+                        handles_out.file(fileNo).output_data_odor.sig_div_glm(ii_p)=1;
+                    else
+                        handles_out.file(fileNo).output_data_odor.sig_div_glm(ii_p)=0;
+                    end
+                end
+            case 4
+                all_p_vals=[];
+                for ii_p=1:handles_out.file(fileNo).no_neurons
+
+                    min_ii=ii_p;
+
+                    %get the dF/F
+                    dFFsplus=zeros(length(time_span),trialNum(min_ii,1));
+                    dFFsplus(:,:)=firingRates(min_ii,1,:,1:trialNum(min_ii,1));
+                    dFFsminus=zeros(length(time_span),trialNum(min_ii,2));
+                    dFFsminus(:,:)=firingRates(min_ii,2,:,1:trialNum(min_ii,2));
+
+
+                    handles_in.time_span=time_span;
+                    handles_in.dFFsplus=dFFsplus;
+                    handles_in.dFFsminus=dFFsminus;
+
+ 
+                    [handles_out.file(fileNo).output_data_odor.sig_div_glm(ii_p),handles_out.file(fileNo).output_data_odor.div_p_glm(ii_p)...
+                        ,handles_out.file(fileNo).output_data_odor.total_trials(ii_p)]=drgCaImAn_glm_dFF_div(handles_in);
+                    fprintf(1, ['Divergence glm for file No ' num2str(fileNo) ' neuron no ' num2str(ii_p) ' significance= ' num2str(handles_out.file(fileNo).output_data_odor.sig_div_glm(ii_p)) '\n']);
+                    all_p_vals(ii_p)=handles_out.file(fileNo).output_data_odor.div_p_glm(ii_p);
+
+                end
+                pFDR = drsFDRpval(all_p_vals);
+                handles_out.file(fileNo).output_data_odor.pFDR=pFDR;
+                for ii_p=1:handles_out.file(fileNo).no_neurons
+                    if handles_out.file(fileNo).output_data_odor.div_p_glm(ii_p)<=pFDR
+                        handles_out.file(fileNo).output_data_odor.sig_div_glm(ii_p)=1;
+                    else
+                        handles_out.file(fileNo).output_data_odor.sig_div_glm(ii_p)=0;
+                    end
+                end
         end
-
-        fprintf(1, ['Ranksum or t test for pre period for file No ' num2str(fileNo) '\n']);
-        fprintf(1, ['Percent correct behavior for this file is ' num2str(pCorr_per_file(fileNo)) '\n']);
-
-        [handles_out.file(fileNo).output_data_pre] = drgPairsRanksumorTtest(input_data);
-
-        %FV period
-        id_ii=0;
-        input_data=[];
-        for n=1:N
-
-            %S+
-            s=1;
-            id_ii=id_ii+1;
-            for trNo=1:trialNum(n,s)
-                input_data(id_ii).data(trNo)=mean(firingRates(n,s,(time_span>=fv_t(1))&(time_span<fv_t(2)),trNo),3);
-            end
-            input_data(id_ii).description=['Neuron ' num2str(n) ' S+'];
-
-            %S-
-            s=2;
-            id_ii=id_ii+1;
-            for trNo=1:trialNum(n,s)
-                input_data(id_ii).data(trNo)=mean(firingRates(n,s,(time_span>=fv_t(1))&(time_span<fv_t(2)),trNo),3);
-            end
-
-            input_data(id_ii).description=['Neuron ' num2str(n) ' S-'];
-        end
-
-        fprintf(1, ['Ranksum or t test for final valve period for file No ' num2str(fileNo) '\n']);
-        fprintf(1, ['Percent correct behavior for this file is ' num2str(pCorr_per_file(fileNo)) '\n']);
-
-        [handles_out.file(fileNo).output_data_FV] = drgPairsRanksumorTtest(input_data);
-
-        %Odor
-        id_ii=0;
-        input_data=[];
-        for n=1:N
-
-            %S+
-            s=1;
-            id_ii=id_ii+1;
-            for trNo=1:trialNum(n,s)
-                input_data(id_ii).data(trNo)=mean(firingRates(n,s,(time_span>=odor_t(1))&(time_span<odor_t(2)),trNo),3);
-            end
-            input_data(id_ii).description=['Neuron ' num2str(n) ' S+'];
-
-            %S-
-            s=2;
-            id_ii=id_ii+1;
-            for trNo=1:trialNum(n,s)
-                input_data(id_ii).data(trNo)=mean(firingRates(n,s,(time_span>=odor_t(1))&(time_span<odor_t(2)),trNo),3);
-            end
-
-            input_data(id_ii).description=['Neuron ' num2str(n) ' S-'];
-        end
-
-        fprintf(1, ['Ranksum or t test for odor period for file No ' num2str(fileNo) '\n']);
-        [handles_out.file(fileNo).output_data_odor] = drgPairsRanksumorTtest(input_data);
-
-        handles_out.output_data_pre=[handles_out.output_data_pre handles_out.file(fileNo).output_data_pre.no_significant_pFDR];
-        handles_out.output_data_FV=[handles_out.output_data_FV handles_out.file(fileNo).output_data_FV.no_significant_pFDR];
-        handles_out.output_data_odor=[handles_out.output_data_odor handles_out.file(fileNo).output_data_odor.no_significant_pFDR];
-        handles_out.output_data_N=[handles_out.output_data_N N];
-
         first_fig=1;
-        
+
 
         %Show the figure for divergent dFF in the odor period if p<pFDR
         %Save the dFFSplus and dFFSminus
 
-        for ii_p=1:length(handles_out.file(fileNo).output_data_odor.p)
-            this_p=handles_out.file(fileNo).output_data_odor.p(ii_p);
+        for ii_p=1:handles_out.file(fileNo).no_neurons
+
             min_ii=ii_p;
-            if this_p<handles_out.file(fileNo).output_data_odor.pFDR
 
-                 %get the dF/F
-                dFFsplus=zeros(length(time_span),trialNum(min_ii,1));
-                dFFsplus(:,:)=firingRates(min_ii,1,:,1:trialNum(min_ii,1));
-                dFFsminus=zeros(length(time_span),trialNum(min_ii,2));
-                dFFsminus(:,:)=firingRates(min_ii,2,:,1:trialNum(min_ii,2));
+            %get the dF/F
+            dFFsplus=zeros(length(time_span),trialNum(min_ii,1));
+            dFFsplus(:,:)=firingRates(min_ii,1,:,1:trialNum(min_ii,1));
+            dFFsminus=zeros(length(time_span),trialNum(min_ii,2));
+            dFFsminus(:,:)=firingRates(min_ii,2,:,1:trialNum(min_ii,2));
 
+            %             this_p=handles_out.file(fileNo).output_data_odor.p(ii_p);
+            %
+            %             if this_p<handles_out.file(fileNo).output_data_odor.pFDR
+
+
+
+
+            sig_p=0;
+            switch use_pFDR
+                case 0
+                    this_p=handles_out.file(fileNo).output_data_odor.p(ii_p);
+                    if this_p<=p_value_sig
+                        sig_p=1;
+                    end
+                case 1
+                    this_p=handles_out.file(fileNo).output_data_odor.p(ii_p);
+                    if this_p<handles_out.file(fileNo).output_data_odor.pFDR
+                        sig_p=1;
+                    end
+                case 2
+                    if handles_out.file(fileNo).output_data_odor.sig_div_boot(ii_p)==1
+                        sig_p=1;
+                    end
+                case {3,4}
+                    if handles_out.file(fileNo).output_data_odor.sig_div_glm(ii_p)==1
+                        sig_p=1;
+                    end
+            end
+            if sig_p==1
                 if show_figures==1
 
                     try
@@ -519,7 +657,7 @@ if all_files_present==1
                     hold on
                 end
 
-               
+
 
                 try
                     %S-
@@ -596,46 +734,46 @@ if all_files_present==1
                     handles_out.all_div_dFFspm(length(time_span)+1:2*length(time_span),handles_out.all_div_ii_dFF)=mean(dFFsminus')';
 
                     %First time for divergence
-                    all_done=0;
-                    ii=find(time_span>=pre_t(2),1,'first');
-                    dt_required=0.5;
-                    ii_required=ceil(dt_required/(time_span(2)-time_span(1)));
-                    ii_included=0;
-                    while all_done==0
+                all_done=0;
+                ii=find(time_span>=pre_t(2),1,'first');
+                dt_required=0.5;
+                ii_required=ceil(dt_required/(time_span(2)-time_span(1)));
+                ii_included=0;
+                while all_done==0
 
-                        if handles_out.all_div_delta_dFFsplus(handles_out.all_div_ii_dFF)-handles_out.all_div_delta_dFFsminus(handles_out.all_div_ii_dFF)>0
-                            handles_out.all_div_ii_dFF_div=find((meanpvsp(ii:end)-CIpvsp(1,ii:end))>(meanpvsm(ii:end)+CIpvsm(2,ii:end)),1,'first');
-                            if (~isempty(handles_out.all_div_ii_dFF_div))&(ii+handles_out.all_div_ii_dFF_div-1+ii_required<length(time_span))
-                                if sum((meanpvsp(ii+handles_out.all_div_ii_dFF_div-1:ii+handles_out.all_div_ii_dFF_div-1+ii_required)-CIpvsp(1,ii+handles_out.all_div_ii_dFF_div-1:ii+handles_out.all_div_ii_dFF_div-1+ii_required))...
-                                        >(meanpvsm(ii+handles_out.all_div_ii_dFF_div-1:ii+handles_out.all_div_ii_dFF_div-1+ii_required)+CIpvsm(2,ii+handles_out.all_div_ii_dFF_div-1:ii+handles_out.all_div_ii_dFF_div-1+ii_required)))...
-                                        ==length(meanpvsm(ii+handles_out.all_div_ii_dFF_div-1:ii+handles_out.all_div_ii_dFF_div-1+ii_required))
-                                    all_done=1;
-
-                                end
-                                ii=ii+handles_out.all_div_ii_dFF_div;
-                            else
+                    if handles_out.all_div_delta_dFFsplus(handles_out.all_div_ii_dFF)-handles_out.all_div_delta_dFFsminus(handles_out.all_div_ii_dFF)>0
+                        %Find where the signals differ by more than their CIs
+                        delta_ii=find((meanpvsp(ii:end)-CIpvsp(1,ii:end))>(meanpvsm(ii:end)+CIpvsm(2,ii:end)),1,'first');
+                        if (~isempty(delta_ii))&(ii+delta_ii-1+ii_required<length(time_span))
+                            if sum((meanpvsp(ii+delta_ii-1:ii+delta_ii-1+ii_required)-CIpvsp(1,ii+delta_ii-1:ii+delta_ii-1+ii_required))...
+                                    >(meanpvsm(ii+delta_ii-1:ii+delta_ii-1+ii_required)+CIpvsm(2,ii+delta_ii-1:ii+delta_ii-1+ii_required)))...
+                                    ==length(meanpvsm(ii+delta_ii-1:ii+delta_ii-1+ii_required))
                                 all_done=1;
-                                ii=NaN;
                             end
-
+                            ii=ii+delta_ii;
                         else
-                            handles_out.all_div_ii_dFF_div=find((meanpvsm(ii:end)-CIpvsm(1,ii:end))>(meanpvsp(ii:end)+CIpvsp(2,ii:end)),1,'first');
-                            if (~isempty(handles_out.all_div_ii_dFF_div))&(ii+handles_out.all_div_ii_dFF_div-1+ii_required<length(time_span))
-                                if sum((meanpvsm(ii+handles_out.all_div_ii_dFF_div-1:ii+handles_out.all_div_ii_dFF_div-1+ii_required)-CIpvsm(1,ii+handles_out.all_div_ii_dFF_div-1:ii+handles_out.all_div_ii_dFF_div-1+ii_required))...
-                                        >(meanpvsp(ii+handles_out.all_div_ii_dFF_div-1:ii+handles_out.all_div_ii_dFF_div-1+ii_required)+CIpvsp(2,ii+handles_out.all_div_ii_dFF_div-1:ii+handles_out.all_div_ii_dFF_div-1+ii_required)))...
-                                        ==length(meanpvsm(ii+handles_out.all_div_ii_dFF_div-1:ii+handles_out.all_div_ii_dFF_div-1+ii_required))
-                                    all_done=1;
+                            all_done=1;
+                            ii=length(time_span);
+                        end
 
-                                end
-                                ii=ii+handles_out.all_div_ii_dFF_div;
-                            else
+                    else
+                        delta_ii=find((meanpvsm(ii:end)-CIpvsm(1,ii:end))>(meanpvsp(ii:end)+CIpvsp(2,ii:end)),1,'first');
+                        if (~isempty(delta_ii))&(ii+delta_ii-1+ii_required<length(time_span))
+                            if sum((meanpvsm(ii+delta_ii-1:ii+delta_ii-1+ii_required)-CIpvsm(1,ii+delta_ii-1:ii+delta_ii-1+ii_required))...
+                                    >(meanpvsp(ii+delta_ii-1:ii+delta_ii-1+ii_required)+CIpvsp(2,ii+delta_ii-1:ii+delta_ii-1+ii_required)))...
+                                    ==length(meanpvsm(ii+delta_ii-1:ii+delta_ii-1+ii_required))
                                 all_done=1;
-                                ii=NaN;
-                            end
 
+                            end
+                            ii=ii+delta_ii;
+                        else
+                            all_done=1;
+                            ii=length(time_span);
                         end
 
                     end
+
+                end
                     handles_out.all_div_t(handles_out.all_div_ii_dFF)=time_span(ii);
 
                 catch
@@ -725,41 +863,80 @@ if all_files_present==1
         %         end
 
         %Is there an odorant response (regardless of divergence)
-        %Pre period
-
+        
         %S+ responses
-        id_ii=0;
-        input_data=[];
-        for n=1:N
+        switch use_pFDR
+            case {0,1}
+                
+                id_ii=0;
+                input_data=[];
+                for n=1:N
 
-            %S+ pre
-            s=1;
-            id_ii=id_ii+1;
-            for trNo=1:trialNum(n,s)
-                input_data(id_ii).data(trNo)=mean(firingRates(n,s,(time_span>=pre_t(1))&(time_span<pre_t(2)),trNo),3);
-            end
-            input_data(id_ii).description=['Neuron ' num2str(n) ' S+'];
+                    %S+ pre
+                    s=1;
+                    id_ii=id_ii+1;
+                    for trNo=1:trialNum(n,s)
+                        input_data(id_ii).data(trNo)=mean(firingRates(n,s,(time_span>=pre_t(1))&(time_span<pre_t(2)),trNo),3);
+                    end
+                    input_data(id_ii).description=['Neuron ' num2str(n) ' S+'];
 
-            %S+ odor
-            s=1;
-            id_ii=id_ii+1;
-            for trNo=1:trialNum(n,s)
-                input_data(id_ii).data(trNo)=mean(firingRates(n,s,(time_span>=odor_t(1))&(time_span<odor_t(2)),trNo),3);
-            end
+                    %S+ odor
+                    s=1;
+                    id_ii=id_ii+1;
+                    for trNo=1:trialNum(n,s)
+                        input_data(id_ii).data(trNo)=mean(firingRates(n,s,(time_span>=odor_t(1))&(time_span<odor_t(2)),trNo),3);
+                    end
 
-            input_data(id_ii).description=['Neuron ' num2str(n) ' S-'];
+                    input_data(id_ii).description=['Neuron ' num2str(n) ' S-'];
+                end
+
+                fprintf(1, ['Ranksum or t test for S+ odor response for file No ' num2str(fileNo) '\n']);
+                fprintf(1, ['Percent correct behavior for this file is ' num2str(pCorr_per_file(fileNo)) '\n']);
+
+                [handles_out.file(fileNo).output_data_odor_Sp] = drgPairsRanksumorTtest(input_data);
+
+            case 3
+                
+            case 4
+                all_p_vals=[];
+                for ii_p=1:handles_out.file(fileNo).no_neurons
+
+                    min_ii=ii_p;
+
+                    %get the dF/F
+                    dFFsplus=zeros(length(time_span),trialNum(min_ii,1));
+                    dFFsplus(:,:)=firingRates(min_ii,1,:,1:trialNum(min_ii,1));
+                    dFFsminus=zeros(length(time_span),trialNum(min_ii,2));
+                    dFFsminus(:,:)=firingRates(min_ii,2,:,1:trialNum(min_ii,2));
+
+
+                    handles_in.time_span=time_span;
+                    handles_in.dFF=dFFsplus;
+                    
+
+
+                    [handles_out.file(fileNo).output_data_odor_Sp.sig_resp_glm(ii_p),handles_out.file(fileNo).output_data_odor_Sp.p(ii_p)...
+                        ,handles_out.file(fileNo).output_data_odor_Sp.total_trials(ii_p)]=drgCaImAn_glm_dFF_response(handles_in);
+                    fprintf(1, ['Responsiveness glm for S+ for file No ' num2str(fileNo) ' neuron no ' num2str(ii_p) ' significance= ' num2str(handles_out.file(fileNo).output_data_odor_Sp.sig_resp_glm(ii_p)) '\n']);
+                    all_p_vals(ii_p)=handles_out.file(fileNo).output_data_odor_Sp.p(ii_p);
+
+                end
+                pFDR = drsFDRpval(all_p_vals);
+                handles_out.file(fileNo).output_data_odor_Sp.pFDR=pFDR;
+                for ii_p=1:handles_out.file(fileNo).no_neurons
+                    if handles_out.file(fileNo).output_data_odor_Sp.p(ii_p)<=pFDR
+                        handles_out.file(fileNo).output_data_odor_Sp.sig_resp_glm(ii_p)=1;
+                    else
+                        handles_out.file(fileNo).output_data_odor_Sp.sig_resp_glm(ii_p)=0;
+                    end
+                end
+
         end
-
-        fprintf(1, ['Ranksum or t test for S+ odor response for file No ' num2str(fileNo) '\n']);
-        fprintf(1, ['Percent correct behavior for this file is ' num2str(pCorr_per_file(fileNo)) '\n']);
-
-        [handles_out.file(fileNo).output_data_odor_Sp] = drgPairsRanksumorTtest(input_data);
-
         %Plot the timecourse if min_p<pFDR
 
         %         [min_p min_ii]=min(handles_out.file(fileNo).output_data_odor_Sp.p);
 
-        for ii_p=1:length(handles_out.file(fileNo).output_data_odor_Sp.p)
+        for ii_p=1:handles_out.file(fileNo).no_neurons
             this_p=handles_out.file(fileNo).output_data_odor_Sp.p(ii_p);
             min_ii=ii_p;
             if this_p<handles_out.file(fileNo).output_data_odor_Sp.pFDR
@@ -870,45 +1047,90 @@ if all_files_present==1
         end
 
         %S- responses
-        id_ii=0;
-        input_data=[];
-        for n=1:N
+        switch use_pFDR
+            case {0,1}
+                id_ii=0;
+                input_data=[];
+                for n=1:N
 
-            %S- pre
-            s=2;
-            id_ii=id_ii+1;
-            for trNo=1:trialNum(n,s)
-                input_data(id_ii).data(trNo)=mean(firingRates(n,s,(time_span>=pre_t(1))&(time_span<pre_t(2)),trNo),3);
-            end
-            input_data(id_ii).description=['Neuron ' num2str(n) ' S+'];
+                    %S- pre
+                    s=2;
+                    id_ii=id_ii+1;
+                    for trNo=1:trialNum(n,s)
+                        input_data(id_ii).data(trNo)=mean(firingRates(n,s,(time_span>=pre_t(1))&(time_span<pre_t(2)),trNo),3);
+                    end
+                    input_data(id_ii).description=['Neuron ' num2str(n) ' S+'];
 
-            %S- odor
-            s=2;
-            id_ii=id_ii+1;
-            for trNo=1:trialNum(n,s)
-                input_data(id_ii).data(trNo)=mean(firingRates(n,s,(time_span>=odor_t(1))&(time_span<odor_t(2)),trNo),3);
-            end
+                    %S- odor
+                    s=2;
+                    id_ii=id_ii+1;
+                    for trNo=1:trialNum(n,s)
+                        input_data(id_ii).data(trNo)=mean(firingRates(n,s,(time_span>=odor_t(1))&(time_span<odor_t(2)),trNo),3);
+                    end
 
-            input_data(id_ii).description=['Neuron ' num2str(n) ' S-'];
+                    input_data(id_ii).description=['Neuron ' num2str(n) ' S-'];
+                end
+
+                fprintf(1, ['Ranksum or t test for S- odor response for file No ' num2str(fileNo) '\n']);
+                fprintf(1, ['Percent correct behavior for this file is ' num2str(pCorr_per_file(fileNo)) '\n']);
+
+                [handles_out.file(fileNo).output_data_odor_Sm] = drgPairsRanksumorTtest(input_data);
+
+                handles_out.output_data_Sp=[handles_out.output_data_Sp handles_out.file(fileNo).output_data_odor_Sp.no_significant_pFDR];
+                handles_out.output_data_Sm=[handles_out.output_data_Sm handles_out.file(fileNo).output_data_odor_Sm.no_significant_pFDR];
+                odor_responses=logical(handles_out.file(fileNo).output_data_odor_Sp.p<handles_out.file(fileNo).output_data_odor_Sp.pFDR)|...
+                    logical(handles_out.file(fileNo).output_data_odor_Sm.p<handles_out.file(fileNo).output_data_odor_Sm.pFDR);
+                no_odor_responses=sum(odor_responses);
+                handles_out.output_data_SporSm=[handles_out.output_data_SporSm no_odor_responses];
+
+            case 3
+
+            case 4
+                all_p_vals=[];
+                for ii_p=1:handles_out.file(fileNo).no_neurons
+
+                    min_ii=ii_p;
+
+                    %get the dF/F
+                    dFFsplus=zeros(length(time_span),trialNum(min_ii,1));
+                    dFFsplus(:,:)=firingRates(min_ii,1,:,1:trialNum(min_ii,1));
+                    dFFsminus=zeros(length(time_span),trialNum(min_ii,2));
+                    dFFsminus(:,:)=firingRates(min_ii,2,:,1:trialNum(min_ii,2));
+
+
+                    handles_in.time_span=time_span;
+                    handles_in.dFF=dFFsminus;
+
+
+
+                    [handles_out.file(fileNo).output_data_odor_Sm.sig_resp_glm(ii_p),handles_out.file(fileNo).output_data_odor_Sm.p(ii_p)...
+                       ,handles_out.file(fileNo).output_data_odor_Sm.total_trials(ii_p)]=drgCaImAn_glm_dFF_response(handles_in);
+                    fprintf(1, ['Responsiveness glm for S+ for file No ' num2str(fileNo) ' neuron no ' num2str(ii_p) ' significance= ' num2str(handles_out.file(fileNo).output_data_odor_Sm.sig_resp_glm(ii_p)) '\n']);
+                    all_p_vals(ii_p)=handles_out.file(fileNo).output_data_odor_Sm.p(ii_p);
+
+                end
+                pFDR = drsFDRpval(all_p_vals);
+                handles_out.file(fileNo).output_data_odor_Sm.pFDR=pFDR;
+                for ii_p=1:handles_out.file(fileNo).no_neurons
+                    if handles_out.file(fileNo).output_data_odor_Sm.p(ii_p)<=pFDR
+                        handles_out.file(fileNo).output_data_odor_Sm.sig_resp_glm(ii_p)=1;
+                    else
+                        handles_out.file(fileNo).output_data_odor_Sm.sig_resp_glm(ii_p)=0;
+                    end
+                end
+
+                odor_responses=logical(handles_out.file(fileNo).output_data_odor_Sp.p<=handles_out.file(fileNo).output_data_odor_Sp.pFDR)|...
+                    logical(handles_out.file(fileNo).output_data_odor_Sm.p<=handles_out.file(fileNo).output_data_odor_Sm.pFDR);
+                no_odor_responses=sum(odor_responses);
+                handles_out.output_data_SporSm=[handles_out.output_data_SporSm no_odor_responses];
+
         end
-
-        fprintf(1, ['Ranksum or t test for S- odor response for file No ' num2str(fileNo) '\n']);
-        fprintf(1, ['Percent correct behavior for this file is ' num2str(pCorr_per_file(fileNo)) '\n']);
-
-        [handles_out.file(fileNo).output_data_odor_Sm] = drgPairsRanksumorTtest(input_data);
-
-        handles_out.output_data_Sp=[handles_out.output_data_Sp handles_out.file(fileNo).output_data_odor_Sp.no_significant_pFDR];
-        handles_out.output_data_Sm=[handles_out.output_data_Sm handles_out.file(fileNo).output_data_odor_Sm.no_significant_pFDR];
-        odor_responses=logical(handles_out.file(fileNo).output_data_odor_Sp.p<handles_out.file(fileNo).output_data_odor_Sp.pFDR)|...
-            logical(handles_out.file(fileNo).output_data_odor_Sm.p<handles_out.file(fileNo).output_data_odor_Sm.pFDR);
-        no_odor_responses=sum(odor_responses);
-        handles_out.output_data_SporSm=[handles_out.output_data_SporSm no_odor_responses];
 
 
 
         %Plot the timecourse for p<pFDR for the
         %S- response
-        for ii_p=1:length(handles_out.file(fileNo).output_data_odor_Sm.p)
+        for ii_p=1:handles_out.file(fileNo).no_neurons
             this_p=handles_out.file(fileNo).output_data_odor_Sm.p(ii_p);
             min_ii=ii_p;
             %Show the figure only if min_p<pFDR
@@ -1022,401 +1244,401 @@ if all_files_present==1
         end
     end
 
-    %Plot a bar graph showing percent signifcant divergence
-    glm_sig=[];
-    glm_sig_ii=0;
-    input_sig_data=[];
-    id_sig_ii=0;
-
-    figureNo=0;
-    figureNo = figureNo + 1;
-    try
-        close(figureNo)
-    catch
-    end
-    hFig=figure(figureNo);
-
-    ax=gca;ax.LineWidth=3;
-    set(hFig, 'units','normalized','position',[.2 .2 .3 .3])
-
-    hold on
-    bar_offset=0;
-    edges=[0:0.2:10];
-    rand_offset=0.8;
-
-    switch handles.group_algo
-        case 1
-            %Ming
-            groups=[1:3];
-        case 2
-            %Fabio
-            groups=unique(handles.group);
-    end
-
-    for grNo=groups
-        these_pre=[];
-        these_FV=[];
-        these_odor=[];
-
-        for mouseNo=unique(handles_out.mouseNo)
-
-            switch handles.group_algo
-                case 1
-                    %Ming
-                    switch grNo
-                        case 1
-                            files_included=(handles_out.perCorr>=45)&(handles_out.perCorr<=65)&(handles_out.mouseNo==mouseNo);
-                        case 2
-                            files_included=(handles_out.perCorr>65)&(handles_out.perCorr<80)&(handles_out.mouseNo==mouseNo);
-                        case 3
-                            files_included=(handles_out.perCorr>=80)&(handles_out.mouseNo==mouseNo);
-                    end
-                case 2
-                    %Fabio
-                    files_included=(handles.group==grNo)&(handles_out.mouseNo==mouseNo);
-            end
-
-            if sum(files_included)>0
-                n_pre=zeros(1,sum(files_included));
-                n_all=zeros(1,sum(files_included));
-                n_pre(1,:)=handles_out.output_data_pre(files_included);
-                n_all(1,:)=handles_out.output_data_N(files_included);
-                this_pre=n_pre./n_all;
-                these_pre=[these_pre 100*mean(this_pre)];
-
-                n_FV=zeros(1,sum(files_included));
-                n_FV(1,:)=handles_out.output_data_pre(files_included);
-                this_FV=n_FV./n_all;
-                these_FV=[these_FV 100*mean(this_FV)];
-
-                n_odor=zeros(1,sum(files_included));
-                n_odor(1,:)=handles_out.output_data_odor(files_included);
-                this_odor=n_odor./n_all;
-                these_odor=[these_odor 100*mean(this_odor)];
-            end
-
-        end
-
-        if ~isempty(these_odor)
-%             bar_offset=bar_offset+1;
-            bar(bar_offset,mean(these_odor),'LineWidth', 3,'EdgeColor','none','FaceColor',[80/255 194/255 255/255])
-            if length(these_odor)>2
-                %Violin plot
-                [mean_out, CIout]=drgViolinPoint(these_odor...
-                    ,edges,bar_offset,rand_offset,'k','k',5);
-            end
-
-            glm_sig.data(glm_sig_ii+1:glm_sig_ii+length(these_odor))=these_odor;
-            glm_sig.grNo(glm_sig_ii+1:glm_sig_ii+length(these_odor))=grNo*ones(1,length(these_odor));
-            glm_sig.epoch(glm_sig_ii+1:glm_sig_ii+length(these_odor))=1*ones(1,length(these_odor));
-            glm_sig_ii=glm_sig_ii+length(these_odor);
-
-            id_sig_ii=id_sig_ii+1;
-            input_sig_data(id_sig_ii).data=these_odor;
-            switch handles.group_algo
-                case 1
-                    input_sig_data(id_sig_ii).description=['Odor ' fr_per_names{grNo}];
-                case 2
-                    input_sig_data(id_sig_ii).description=['Odor ' handles.group_names{grNo}];
-            end
-        end
-
-        bar_offset=bar_offset+1;
-    end
-
-    switch handles.group_algo
-        case 1
-            %Ming
-
-            xticks([0 1 2])
-            labels='xticklabels({';
-            for ii_label=2:4
-                labels=[labels '''' per_names{ii_label} ''', '];
-            end
-            labels=[labels(1:end-2) '})'];
-            eval(labels)
-            xlim([-0.7 2.7])
-        case 2
-            %Fabio
-            xticks(2*groups-1)
-            labels='xticklabels({';
-            for ii_label=1:length(groups)
-                labels=[labels '''' handles.group_names{ii_label} ''', '];
-            end
-            labels=[labels(1:end-2) '})'];
-            eval(labels)
-    end
-
-
-    ylabel('% divergent')
-    title('Percent divergent ROIs per mouse')
-
-    %Perform the glm
-    fprintf(1, ['\nglm for percent divergent per mouse\n'])
-
-
-    tbl = table(glm_sig.data',glm_sig.grNo',...
-        'VariableNames',{'percent_divergent','percent_correct'});
-    mdl = fitglm(tbl,'percent_divergent~percent_correct'...
-        ,'CategoricalVars',[2])
-
-
-    txt = evalc('mdl');
-    txt=regexp(txt,'<strong>','split');
-    txt=cell2mat(txt);
-    txt=regexp(txt,'</strong>','split');
-    txt=cell2mat(txt);
-
-
-    %Plot a bar graph showing percent responding to S+
-    glm_sig=[];
-    glm_sig_ii=0;
-    input_sig_data=[];
-    id_sig_ii=0;
-
-    figureNo = figureNo + 1;
-    try
-        close(figureNo)
-    catch
-    end
-    hFig=figure(figureNo);
-
-    ax=gca;ax.LineWidth=3;
-    set(hFig, 'units','normalized','position',[.2 .2 .3 .3])
-
-    hold on
-    bar_offset=0;
-    edges=[0:0.2:10];
-    rand_offset=0.8;
-
-    for grNo=groups
-        these_pre=[];
-        these_FV=[];
-        these_odor=[];
-
-        for mouseNo=unique(handles_out.mouseNo)
-
-            switch handles.group_algo
-                case 1
-                    %Ming
-                    switch grNo
-                        case 1
-                            files_included=(handles_out.perCorr>=45)&(handles_out.perCorr<=65)&(handles_out.mouseNo==mouseNo);
-                        case 2
-                            files_included=(handles_out.perCorr>65)&(handles_out.perCorr<80)&(handles_out.mouseNo==mouseNo);
-                        case 3
-                            files_included=(handles_out.perCorr>=80)&(handles_out.mouseNo==mouseNo);
-                    end
-                case 2
-                    %Fabio
-                    files_included=(handles.group==grNo)&(handles_out.mouseNo==mouseNo);
-            end
-
-            if sum(files_included)>0
-                n_all=zeros(1,sum(files_included));
-                n_all(1,:)=handles_out.output_data_N(files_included);
-                n_odor=zeros(1,sum(files_included));
-                n_odor(1,:)=handles_out.output_data_Sp(files_included);
-                this_odor=n_odor./n_all;
-                these_odor=[these_odor 100*mean(this_odor)];
-            end
-
-        end
-
-        if ~isempty(these_odor)
-%             bar_offset=bar_offset+1;
-            bar(bar_offset,mean(these_odor),'LineWidth', 3,'EdgeColor','none','FaceColor',[80/255 194/255 255/255])
-            if length(these_odor)>2
-                %Violin plot
-                [mean_out, CIout]=drgViolinPoint(these_odor...
-                    ,edges,bar_offset,rand_offset,'k','k',5);
-            end
-
-            glm_sig.data(glm_sig_ii+1:glm_sig_ii+length(these_odor))=these_odor;
-            glm_sig.grNo(glm_sig_ii+1:glm_sig_ii+length(these_odor))=grNo*ones(1,length(these_odor));
-            glm_sig.epoch(glm_sig_ii+1:glm_sig_ii+length(these_odor))=1*ones(1,length(these_odor));
-            glm_sig_ii=glm_sig_ii+length(these_odor);
-
-            id_sig_ii=id_sig_ii+1;
-            input_sig_data(id_sig_ii).data=these_odor;
-
-            switch handles.group_algo
-                case 1
-                    input_sig_data(id_sig_ii).description=['Odor ' fr_per_names{grNo}];
-                case 2
-                    input_sig_data(id_sig_ii).description=['Odor ' handles.group_names{grNo}];
-            end
-        end
-
-        bar_offset=bar_offset+1;
-    end
-
-    switch handles.group_algo
-        case 1
-            %Ming
-
-            xticks([0 1 2])
-            labels='xticklabels({';
-            for ii_label=2:4
-                labels=[labels '''' per_names{ii_label} ''', '];
-            end
-            labels=[labels(1:end-2) '})'];
-            eval(labels)
-            xlim([-0.7 2.7])
-        case 2
-            %Fabio
-            xticks(2*groups-1)
-            labels='xticklabels({';
-            for ii_label=1:length(groups)
-                labels=[labels '''' handles.group_names{ii_label} ''', '];
-            end
-            labels=[labels(1:end-2) '})'];
-            eval(labels)
-    end
-
-    ylabel('% responsive')
-    title('Percent ROIs responding to S+ per mouse')
-
-    %Perform the glm
-    fprintf(1, ['\nglm for percent responsive to S+ per mouse\n'])
-
-
-    tbl = table(glm_sig.data',glm_sig.grNo',...
-        'VariableNames',{'percent_divergent','percent_correct'});
-    mdl = fitglm(tbl,'percent_divergent~percent_correct'...
-        ,'CategoricalVars',[2])
-
-
-    txt = evalc('mdl');
-    txt=regexp(txt,'<strong>','split');
-    txt=cell2mat(txt);
-    txt=regexp(txt,'</strong>','split');
-    txt=cell2mat(txt);
-
-
-
-    %Plot a bar graph showing percent responding to S-
-    glm_sig=[];
-    glm_sig_ii=0;
-    input_sig_data=[];
-    id_sig_ii=0;
-
-    figureNo = figureNo + 1;
-    try
-        close(figureNo)
-    catch
-    end
-    hFig=figure(figureNo);
-
-    ax=gca;ax.LineWidth=3;
-    set(hFig, 'units','normalized','position',[.2 .2 .3 .3])
-
-    hold on
-    bar_offset=0;
-    edges=[0:0.2:10];
-    rand_offset=0.8;
-
-    for grNo=groups
-        these_pre=[];
-        these_FV=[];
-        these_odor=[];
-
-        for mouseNo=unique(handles_out.mouseNo)
-            switch handles.group_algo
-                case 1
-                    %Ming
-                    switch grNo
-                        case 1
-                            files_included=(handles_out.perCorr>=45)&(handles_out.perCorr<=65)&(handles_out.mouseNo==mouseNo);
-                        case 2
-                            files_included=(handles_out.perCorr>65)&(handles_out.perCorr<80)&(handles_out.mouseNo==mouseNo);
-                        case 3
-                            files_included=(handles_out.perCorr>=80)&(handles_out.mouseNo==mouseNo);
-                    end
-                case 2
-                    %Fabio
-                    files_included=(handles.group==grNo)&(handles_out.mouseNo==mouseNo);
-            end
-
-            if sum(files_included)>0
-                n_all=zeros(1,sum(files_included));
-                n_all(1,:)=handles_out.output_data_N(files_included);
-                n_odor=zeros(1,sum(files_included));
-                n_odor(1,:)=handles_out.output_data_Sm(files_included);
-                this_odor=n_odor./n_all;
-                these_odor=[these_odor 100*mean(this_odor)];
-            end
-
-        end
-
-
-
-        bar_offset=bar_offset+1;
-        bar(bar_offset,mean(these_odor),'LineWidth', 3,'EdgeColor','none','FaceColor',[80/255 194/255 255/255])
-        if length(these_odor)>2
-            %Violin plot
-            [mean_out, CIout]=drgViolinPoint(these_odor...
-                ,edges,bar_offset,rand_offset,'k','k',5);
-        end
-
-        glm_sig.data(glm_sig_ii+1:glm_sig_ii+length(these_odor))=these_odor;
-        glm_sig.grNo(glm_sig_ii+1:glm_sig_ii+length(these_odor))=grNo*ones(1,length(these_odor));
-        glm_sig.epoch(glm_sig_ii+1:glm_sig_ii+length(these_odor))=1*ones(1,length(these_odor));
-        glm_sig_ii=glm_sig_ii+length(these_odor);
-
-        id_sig_ii=id_sig_ii+1;
-        input_sig_data(id_sig_ii).data=these_odor;
-        switch handles.group_algo
-            case 1
-                input_sig_data(id_sig_ii).description=['Odor ' fr_per_names{grNo}];
-            case 2
-                input_sig_data(id_sig_ii).description=['Odor ' handles.group_names{grNo}];
-        end
-
-        bar_offset=bar_offset+1;
-    end
-
-    switch handles.group_algo
-        case 1
-            %Ming
-
-            xticks([1 3 5])
-            labels='xticklabels({';
-            for ii_label=2:4
-                labels=[labels '''' per_names{ii_label} ''', '];
-            end
-            labels=[labels(1:end-2) '})'];
-            eval(labels)
-            xlim([-0.7 2.7])
-        case 2
-            %Fabio
-            xticks(2*groups-1)
-            labels='xticklabels({';
-            for ii_label=1:length(groups)
-                labels=[labels '''' handles.group_names{ii_label} ''', '];
-            end
-            labels=[labels(1:end-2) '})'];
-            eval(labels)
-    end
-
-    ylabel('% responsive')
-    title('Percent ROIs responding to S-')
-
-    %Perform the glm
-    fprintf(1, ['\nglm for percent responsive to S-\n'])
-
-
-    tbl = table(glm_sig.data',glm_sig.grNo',...
-        'VariableNames',{'percent_divergent','percent_correct'});
-    mdl = fitglm(tbl,'percent_divergent~percent_correct'...
-        ,'CategoricalVars',[2])
-
-
-    txt = evalc('mdl');
-    txt=regexp(txt,'<strong>','split');
-    txt=cell2mat(txt);
-    txt=regexp(txt,'</strong>','split');
-    txt=cell2mat(txt);
+    %     %Plot a bar graph showing percent signifcant divergence
+    %     glm_sig=[];
+    %     glm_sig_ii=0;
+    %     input_sig_data=[];
+    %     id_sig_ii=0;
+    %
+    %     figureNo=0;
+    %     figureNo = figureNo + 1;
+    %     try
+    %         close(figureNo)
+    %     catch
+    %     end
+    %     hFig=figure(figureNo);
+    %
+    %     ax=gca;ax.LineWidth=3;
+    %     set(hFig, 'units','normalized','position',[.2 .2 .3 .3])
+    %
+    %     hold on
+    %     bar_offset=0;
+    %     edges=[0:0.2:10];
+    %     rand_offset=0.8;
+    %
+    %     switch handles.group_algo
+    %         case 1
+    %             %Ming
+    %             groups=[1:3];
+    %         case 2
+    %             %Fabio
+    %             groups=unique(handles.group);
+    %     end
+    %
+    %     for grNo=groups
+    %         these_pre=[];
+    %         these_FV=[];
+    %         these_odor=[];
+    %
+    %         for mouseNo=unique(handles_out.mouseNo)
+    %
+    %             switch handles.group_algo
+    %                 case 1
+    %                     %Ming
+    %                     switch grNo
+    %                         case 1
+    %                             files_included=(handles_out.perCorr>=45)&(handles_out.perCorr<=65)&(handles_out.mouseNo==mouseNo);
+    %                         case 2
+    %                             files_included=(handles_out.perCorr>65)&(handles_out.perCorr<80)&(handles_out.mouseNo==mouseNo);
+    %                         case 3
+    %                             files_included=(handles_out.perCorr>=80)&(handles_out.mouseNo==mouseNo);
+    %                     end
+    %                 case 2
+    %                     %Fabio
+    %                     files_included=(handles.group==grNo)&(handles_out.mouseNo==mouseNo);
+    %             end
+    %
+    %             if sum(files_included)>0
+    %                 n_pre=zeros(1,sum(files_included));
+    %                 n_all=zeros(1,sum(files_included));
+    %                 n_pre(1,:)=handles_out.output_data_pre(files_included);
+    %                 n_all(1,:)=handles_out.output_data_N(files_included);
+    %                 this_pre=n_pre./n_all;
+    %                 these_pre=[these_pre 100*mean(this_pre)];
+    %
+    %                 n_FV=zeros(1,sum(files_included));
+    %                 n_FV(1,:)=handles_out.output_data_pre(files_included);
+    %                 this_FV=n_FV./n_all;
+    %                 these_FV=[these_FV 100*mean(this_FV)];
+    %
+    %                 n_odor=zeros(1,sum(files_included));
+    %                 n_odor(1,:)=handles_out.output_data_odor(files_included);
+    %                 this_odor=n_odor./n_all;
+    %                 these_odor=[these_odor 100*mean(this_odor)];
+    %             end
+    %
+    %         end
+    %
+    %         if ~isempty(these_odor)
+    % %             bar_offset=bar_offset+1;
+    %             bar(bar_offset,mean(these_odor),'LineWidth', 3,'EdgeColor','none','FaceColor',[80/255 194/255 255/255])
+    %             if length(these_odor)>2
+    %                 %Violin plot
+    %                 [mean_out, CIout]=drgViolinPoint(these_odor...
+    %                     ,edges,bar_offset,rand_offset,'k','k',5);
+    %             end
+    %
+    %             glm_sig.data(glm_sig_ii+1:glm_sig_ii+length(these_odor))=these_odor;
+    %             glm_sig.grNo(glm_sig_ii+1:glm_sig_ii+length(these_odor))=grNo*ones(1,length(these_odor));
+    %             glm_sig.epoch(glm_sig_ii+1:glm_sig_ii+length(these_odor))=1*ones(1,length(these_odor));
+    %             glm_sig_ii=glm_sig_ii+length(these_odor);
+    %
+    %             id_sig_ii=id_sig_ii+1;
+    %             input_sig_data(id_sig_ii).data=these_odor;
+    %             switch handles.group_algo
+    %                 case 1
+    %                     input_sig_data(id_sig_ii).description=['Odor ' fr_per_names{grNo}];
+    %                 case 2
+    %                     input_sig_data(id_sig_ii).description=['Odor ' handles.group_names{grNo}];
+    %             end
+    %         end
+    %
+    %         bar_offset=bar_offset+1;
+    %     end
+    %
+    %     switch handles.group_algo
+    %         case 1
+    %             %Ming
+    %
+    %             xticks([0 1 2])
+    %             labels='xticklabels({';
+    %             for ii_label=2:4
+    %                 labels=[labels '''' per_names{ii_label} ''', '];
+    %             end
+    %             labels=[labels(1:end-2) '})'];
+    %             eval(labels)
+    %             xlim([-0.7 2.7])
+    %         case 2
+    %             %Fabio
+    %             xticks(2*groups-1)
+    %             labels='xticklabels({';
+    %             for ii_label=1:length(groups)
+    %                 labels=[labels '''' handles.group_names{ii_label} ''', '];
+    %             end
+    %             labels=[labels(1:end-2) '})'];
+    %             eval(labels)
+    %     end
+    %
+    %
+    %     ylabel('% divergent')
+    %     title('Percent divergent ROIs per mouse')
+    %
+    %     %Perform the glm
+    %     fprintf(1, ['\nglm for percent divergent per mouse\n'])
+    %
+    %
+    %     tbl = table(glm_sig.data',glm_sig.grNo',...
+    %         'VariableNames',{'percent_divergent','percent_correct'});
+    %     mdl = fitglm(tbl,'percent_divergent~percent_correct'...
+    %         ,'CategoricalVars',[2])
+    %
+    %
+    %     txt = evalc('mdl');
+    %     txt=regexp(txt,'<strong>','split');
+    %     txt=cell2mat(txt);
+    %     txt=regexp(txt,'</strong>','split');
+    %     txt=cell2mat(txt);
+    %
+    %
+    %     %Plot a bar graph showing percent responding to S+
+    %     glm_sig=[];
+    %     glm_sig_ii=0;
+    %     input_sig_data=[];
+    %     id_sig_ii=0;
+    %
+    %     figureNo = figureNo + 1;
+    %     try
+    %         close(figureNo)
+    %     catch
+    %     end
+    %     hFig=figure(figureNo);
+    %
+    %     ax=gca;ax.LineWidth=3;
+    %     set(hFig, 'units','normalized','position',[.2 .2 .3 .3])
+    %
+    %     hold on
+    %     bar_offset=0;
+    %     edges=[0:0.2:10];
+    %     rand_offset=0.8;
+    %
+    %     for grNo=groups
+    %         these_pre=[];
+    %         these_FV=[];
+    %         these_odor=[];
+    %
+    %         for mouseNo=unique(handles_out.mouseNo)
+    %
+    %             switch handles.group_algo
+    %                 case 1
+    %                     %Ming
+    %                     switch grNo
+    %                         case 1
+    %                             files_included=(handles_out.perCorr>=45)&(handles_out.perCorr<=65)&(handles_out.mouseNo==mouseNo);
+    %                         case 2
+    %                             files_included=(handles_out.perCorr>65)&(handles_out.perCorr<80)&(handles_out.mouseNo==mouseNo);
+    %                         case 3
+    %                             files_included=(handles_out.perCorr>=80)&(handles_out.mouseNo==mouseNo);
+    %                     end
+    %                 case 2
+    %                     %Fabio
+    %                     files_included=(handles.group==grNo)&(handles_out.mouseNo==mouseNo);
+    %             end
+    %
+    %             if sum(files_included)>0
+    %                 n_all=zeros(1,sum(files_included));
+    %                 n_all(1,:)=handles_out.output_data_N(files_included);
+    %                 n_odor=zeros(1,sum(files_included));
+    %                 n_odor(1,:)=handles_out.output_data_Sp(files_included);
+    %                 this_odor=n_odor./n_all;
+    %                 these_odor=[these_odor 100*mean(this_odor)];
+    %             end
+    %
+    %         end
+    %
+    %         if ~isempty(these_odor)
+    % %             bar_offset=bar_offset+1;
+    %             bar(bar_offset,mean(these_odor),'LineWidth', 3,'EdgeColor','none','FaceColor',[80/255 194/255 255/255])
+    %             if length(these_odor)>2
+    %                 %Violin plot
+    %                 [mean_out, CIout]=drgViolinPoint(these_odor...
+    %                     ,edges,bar_offset,rand_offset,'k','k',5);
+    %             end
+    %
+    %             glm_sig.data(glm_sig_ii+1:glm_sig_ii+length(these_odor))=these_odor;
+    %             glm_sig.grNo(glm_sig_ii+1:glm_sig_ii+length(these_odor))=grNo*ones(1,length(these_odor));
+    %             glm_sig.epoch(glm_sig_ii+1:glm_sig_ii+length(these_odor))=1*ones(1,length(these_odor));
+    %             glm_sig_ii=glm_sig_ii+length(these_odor);
+    %
+    %             id_sig_ii=id_sig_ii+1;
+    %             input_sig_data(id_sig_ii).data=these_odor;
+    %
+    %             switch handles.group_algo
+    %                 case 1
+    %                     input_sig_data(id_sig_ii).description=['Odor ' fr_per_names{grNo}];
+    %                 case 2
+    %                     input_sig_data(id_sig_ii).description=['Odor ' handles.group_names{grNo}];
+    %             end
+    %         end
+    %
+    %         bar_offset=bar_offset+1;
+    %     end
+    %
+    %     switch handles.group_algo
+    %         case 1
+    %             %Ming
+    %
+    %             xticks([0 1 2])
+    %             labels='xticklabels({';
+    %             for ii_label=2:4
+    %                 labels=[labels '''' per_names{ii_label} ''', '];
+    %             end
+    %             labels=[labels(1:end-2) '})'];
+    %             eval(labels)
+    %             xlim([-0.7 2.7])
+    %         case 2
+    %             %Fabio
+    %             xticks(2*groups-1)
+    %             labels='xticklabels({';
+    %             for ii_label=1:length(groups)
+    %                 labels=[labels '''' handles.group_names{ii_label} ''', '];
+    %             end
+    %             labels=[labels(1:end-2) '})'];
+    %             eval(labels)
+    %     end
+    %
+    %     ylabel('% responsive')
+    %     title('Percent ROIs responding to S+ per mouse')
+    %
+    %     %Perform the glm
+    %     fprintf(1, ['\nglm for percent responsive to S+ per mouse\n'])
+    %
+    %
+    %     tbl = table(glm_sig.data',glm_sig.grNo',...
+    %         'VariableNames',{'percent_divergent','percent_correct'});
+    %     mdl = fitglm(tbl,'percent_divergent~percent_correct'...
+    %         ,'CategoricalVars',[2])
+    %
+    %
+    %     txt = evalc('mdl');
+    %     txt=regexp(txt,'<strong>','split');
+    %     txt=cell2mat(txt);
+    %     txt=regexp(txt,'</strong>','split');
+    %     txt=cell2mat(txt);
+    %
+    %
+    %
+    %     %Plot a bar graph showing percent responding to S-
+    %     glm_sig=[];
+    %     glm_sig_ii=0;
+    %     input_sig_data=[];
+    %     id_sig_ii=0;
+    %
+    %     figureNo = figureNo + 1;
+    %     try
+    %         close(figureNo)
+    %     catch
+    %     end
+    %     hFig=figure(figureNo);
+    %
+    %     ax=gca;ax.LineWidth=3;
+    %     set(hFig, 'units','normalized','position',[.2 .2 .3 .3])
+    %
+    %     hold on
+    %     bar_offset=0;
+    %     edges=[0:0.2:10];
+    %     rand_offset=0.8;
+    %
+    %     for grNo=groups
+    %         these_pre=[];
+    %         these_FV=[];
+    %         these_odor=[];
+    %
+    %         for mouseNo=unique(handles_out.mouseNo)
+    %             switch handles.group_algo
+    %                 case 1
+    %                     %Ming
+    %                     switch grNo
+    %                         case 1
+    %                             files_included=(handles_out.perCorr>=45)&(handles_out.perCorr<=65)&(handles_out.mouseNo==mouseNo);
+    %                         case 2
+    %                             files_included=(handles_out.perCorr>65)&(handles_out.perCorr<80)&(handles_out.mouseNo==mouseNo);
+    %                         case 3
+    %                             files_included=(handles_out.perCorr>=80)&(handles_out.mouseNo==mouseNo);
+    %                     end
+    %                 case 2
+    %                     %Fabio
+    %                     files_included=(handles.group==grNo)&(handles_out.mouseNo==mouseNo);
+    %             end
+    %
+    %             if sum(files_included)>0
+    %                 n_all=zeros(1,sum(files_included));
+    %                 n_all(1,:)=handles_out.output_data_N(files_included);
+    %                 n_odor=zeros(1,sum(files_included));
+    %                 n_odor(1,:)=handles_out.output_data_Sm(files_included);
+    %                 this_odor=n_odor./n_all;
+    %                 these_odor=[these_odor 100*mean(this_odor)];
+    %             end
+    %
+    %         end
+    %
+    %
+    %
+    %         bar_offset=bar_offset+1;
+    %         bar(bar_offset,mean(these_odor),'LineWidth', 3,'EdgeColor','none','FaceColor',[80/255 194/255 255/255])
+    %         if length(these_odor)>2
+    %             %Violin plot
+    %             [mean_out, CIout]=drgViolinPoint(these_odor...
+    %                 ,edges,bar_offset,rand_offset,'k','k',5);
+    %         end
+    %
+    %         glm_sig.data(glm_sig_ii+1:glm_sig_ii+length(these_odor))=these_odor;
+    %         glm_sig.grNo(glm_sig_ii+1:glm_sig_ii+length(these_odor))=grNo*ones(1,length(these_odor));
+    %         glm_sig.epoch(glm_sig_ii+1:glm_sig_ii+length(these_odor))=1*ones(1,length(these_odor));
+    %         glm_sig_ii=glm_sig_ii+length(these_odor);
+    %
+    %         id_sig_ii=id_sig_ii+1;
+    %         input_sig_data(id_sig_ii).data=these_odor;
+    %         switch handles.group_algo
+    %             case 1
+    %                 input_sig_data(id_sig_ii).description=['Odor ' fr_per_names{grNo}];
+    %             case 2
+    %                 input_sig_data(id_sig_ii).description=['Odor ' handles.group_names{grNo}];
+    %         end
+    %
+    %         bar_offset=bar_offset+1;
+    %     end
+    %
+    %     switch handles.group_algo
+    %         case 1
+    %             %Ming
+    %
+    %             xticks([1 3 5])
+    %             labels='xticklabels({';
+    %             for ii_label=2:4
+    %                 labels=[labels '''' per_names{ii_label} ''', '];
+    %             end
+    %             labels=[labels(1:end-2) '})'];
+    %             eval(labels)
+    %             xlim([-0.7 2.7])
+    %         case 2
+    %             %Fabio
+    %             xticks(2*groups-1)
+    %             labels='xticklabels({';
+    %             for ii_label=1:length(groups)
+    %                 labels=[labels '''' handles.group_names{ii_label} ''', '];
+    %             end
+    %             labels=[labels(1:end-2) '})'];
+    %             eval(labels)
+    %     end
+    %
+    %     ylabel('% responsive')
+    %     title('Percent ROIs responding to S-')
+    %
+    %     %Perform the glm
+    %     fprintf(1, ['\nglm for percent responsive to S-\n'])
+    %
+    %
+    %     tbl = table(glm_sig.data',glm_sig.grNo',...
+    %         'VariableNames',{'percent_divergent','percent_correct'});
+    %     mdl = fitglm(tbl,'percent_divergent~percent_correct'...
+    %         ,'CategoricalVars',[2])
+    %
+    %
+    %     txt = evalc('mdl');
+    %     txt=regexp(txt,'<strong>','split');
+    %     txt=cell2mat(txt);
+    %     txt=regexp(txt,'</strong>','split');
+    %     txt=cell2mat(txt);
 
     pffft=1;
 
@@ -1434,7 +1656,7 @@ if all_files_present==1
             croscorr_traces(ii,ii)=0;
         end
         Z = linkage(croscorr_traces,'complete','correlation');
-        no_clusters=4;
+        no_clusters=6;
         clusters = cluster(Z,'Maxclust',no_clusters);
         figureNo=figureNo+1;
         try
@@ -1974,10 +2196,10 @@ if all_files_present==1
         pcolor(time_span_mat,ROI_mat,pseudo_dFFspm)
 
 
-%         time_span_mat=repmat(time_span,sorted_handles_out.all_spmresp_ii_dFF,1);
-%         ROI_mat=repmat(1:sorted_handles_out.all_spmresp_ii_dFF,length(time_span),1)';
-% 
-%         pcolor(time_span_mat,ROI_mat,sorted_handles_out.all_sporsm_dFFspm)
+        %         time_span_mat=repmat(time_span,sorted_handles_out.all_spmresp_ii_dFF,1);
+        %         ROI_mat=repmat(1:sorted_handles_out.all_spmresp_ii_dFF,length(time_span),1)';
+        %
+        %         pcolor(time_span_mat,ROI_mat,sorted_handles_out.all_sporsm_dFFspm)
 
         colormap fire
         shading flat
@@ -1994,7 +2216,7 @@ if all_files_present==1
         xlabel('Time (sec)')
         ylabel('ROI number')
 
-       
+
 
         %Plot the average timecourses per cluster
         for clus=1:max(clusters)
@@ -2016,7 +2238,7 @@ if all_files_present==1
 
             try
 
-                
+
                 this_cluster_dFF=[];
                 ii_included=0;
                 for ii=1:length(sorted_handles_out.clusters)
@@ -2035,7 +2257,7 @@ if all_files_present==1
 
                 [hlpvl, hppvl] = boundedline(time_span,mean(this_cluster_dFF), CIpv','cmap',[0 0 0]);
 
-               
+
 
             catch
             end
@@ -2057,203 +2279,208 @@ if all_files_present==1
         end
 
 
-%         %Now plot the timecourses per group
-%         for grNo=1:3
-% 
-%             switch grNo
-%                 case 1
-%                     ROIs_included=(handles_out.all_div_dFFspm_pcorr>=45)&(handles_out.all_div_dFFspm_pcorr<=65);
-%                 case 2
-%                     ROIs_included=(handles_out.all_div_dFFspm_pcorr>65)&(handles_out.all_div_dFFspm_pcorr<80);
-%                 case 3
-%                     ROIs_included=(handles_out.all_div_dFFspm_pcorr>=80);
-%             end
-% 
-%             if sum(ROIs_included)>0
-% 
-%                 %S+
-%                 figureNo=figureNo+1;
-%                 try
-%                     close(figureNo)
-%                 catch
-%                 end
-% 
-%                 hFig = figure(figureNo);
-% 
-%                 set(hFig, 'units','normalized','position',[.05 .1 .3 .8])
-%                 hold on
-% 
-% 
-% 
-%                 sorted_handles_out.all_div_dFFsplus=[];
-%                 ii_included=0;
-%                 for ii=1:handles_out.all_div_ii_dFF
-%                     if ROIs_included(ii)
-%                         ii_included=ii_included+1;
-%                         sorted_handles_out.all_div_dFFsplus(ii_included,:)=handles_out.all_div_dFFsplus(outperm(ii),:);
-%                     end
-%                 end
-% 
-%                 time_span_mat=repmat(time_span,ii_included,1);
-%                 ROI_mat=repmat(1:ii_included,length(time_span),1)';
-% 
-%                 pcolor(time_span_mat,ROI_mat,sorted_handles_out.all_div_dFFsplus)
-%                 colormap fire
-%                 shading flat
-% 
-%                 caxis([prctile(handles_out.all_div_dFFspm(:),1) prctile(handles_out.all_div_dFFspm(:),99)])
-% 
-%                 for ii_te=1:length(timeEvents)
-%                     plot([timeEvents(ii_te) timeEvents(ii_te)],[0 handles_out.all_div_ii_dFF],'-r')
-%                 end
-% 
-%                 xlim([-7 15])
-%                 ylim([1 ii_included])
-%                 title(['S+ ' per_names{grNo+1}])
-%                 xlabel('Time (sec)')
-%                 ylabel('ROI number')
-% 
-%                 %S-
-%                 figureNo=figureNo+1;
-%                 try
-%                     close(figureNo)
-%                 catch
-%                 end
-% 
-%                 hFig = figure(figureNo);
-% 
-%                 set(hFig, 'units','normalized','position',[.05 .1 .3 .8])
-%                 hold on
-% 
-% 
-% 
-%                 sorted_handles_out.all_div_dFFsminus=[];
-%                 ii_included=0;
-%                 for ii=1:handles_out.all_div_ii_dFF
-%                     if ROIs_included(ii)
-%                         ii_included=ii_included+1;
-%                         sorted_handles_out.all_div_dFFsminus(ii_included,:)=handles_out.all_div_dFFsminus(outperm(ii),:);
-%                     end
-%                 end
-% 
-%                 time_span_mat=repmat(time_span,ii_included,1);
-%                 ROI_mat=repmat(1:ii_included,length(time_span),1)';
-% 
-%                 pcolor(time_span_mat,ROI_mat,sorted_handles_out.all_div_dFFsminus)
-%                 colormap fire
-%                 shading flat
-% 
-%                 caxis([prctile(handles_out.all_div_dFFspm(:),1) prctile(handles_out.all_div_dFFspm(:),99)])
-% 
-%                 for ii_te=1:length(timeEvents)
-%                     plot([timeEvents(ii_te) timeEvents(ii_te)],[0 handles_out.all_div_ii_dFF],'-r')
-%                 end
-% 
-%                 xlim([-7 15])
-%                 ylim([1 ii_included])
-%                 title(['S- ' per_names{grNo+1}])
-%                 xlabel('Time (sec)')
-%                 ylabel('ROI number')
-%             end
-%         end
-% 
-%         %Plot rainbow
-%         figureNo=figureNo+1;
-%         try
-%             close(figureNo)
-%         catch
-%         end
-% 
-%         hFig = figure(figureNo);
-% 
-%         set(hFig, 'units','normalized','position',[.49 .1 .05 .3])
-% 
-% 
-%         prain=[prctile(handles_out.all_div_dFFspm(:),1):(prctile(handles_out.all_div_dFFspm(:),99)-prctile(handles_out.all_div_dFFspm(:),1))/99:prctile(handles_out.all_div_dFFspm(:),99)];
-%         pcolor(repmat([1:10],100,1)',repmat(prain,10,1),repmat(prain,10,1))
-%         %             colormap jet
-%         colormap fire
-%         shading interp
-%         ax=gca;
-%         set(ax,'XTickLabel','')
-% 
-%         %Generate a histogram for the magnitude of the responses
-% 
-%         %     handles_out.all_div_t=[];
-%         %     handles_out.all_div_delta_dFFsplus=[];
-%         %     handles_out.all_div_delta_dFFsminus=[];
-% 
-%         figureNo=figureNo+1;
-%         try
-%             close(figureNo)
-%         catch
-%         end
-% 
-%         hFig = figure(figureNo);
-% 
-%         set(hFig, 'units','normalized','position',[.2 .2 .4 .3])
-% 
-%         edges=-0.5:0.5:4;
-%         histogram(handles_out.all_div_delta_dFFsplus,edges,'FaceColor',[0 114/255 178/255])
-%         hold on
-%         histogram(handles_out.all_div_delta_dFFsminus,edges,'FaceColor',[158/255 31/255 99/255])
-% 
-%         ylabel('No of ROIs')
-%         xlabel('Delta zdFF')
-%         title('Histogram for Delta zdFF')
-% 
-%         this_ylim=ylim;
-% 
-%         text(2.5,this_ylim(1)+0.85*(this_ylim(2)-this_ylim(1)),'S+','Color',[0 114/255 178/255],'FontSize',16)
-%         text(2.5,this_ylim(1)+0.75*(this_ylim(2)-this_ylim(1)),'S-','Color',[158/255 31/255 99/255],'FontSize',16)
-% 
-%         figureNo=figureNo+1;
-%         try
-%             close(figureNo)
-%         catch
-%         end
-% 
-%         hFig = figure(figureNo);
-% 
-%         set(hFig, 'units','normalized','position',[.2 .2 .3 .3])
-% 
-%         plot(handles_out.all_div_delta_dFFsminus,handles_out.all_div_delta_dFFsplus,'ok')
-% 
-%         ylabel('S+')
-%         xlabel('S-')
-%         title('Delta zdFF')
-% 
-%         %Divergence time
-%         figureNo=figureNo+1;
-%         try
-%             close(figureNo)
-%         catch
-%         end
-% 
-%         hFig = figure(figureNo);
-% 
-%         set(hFig, 'units','normalized','position',[.2 .2 .4 .3])
-% 
-%         edges=[-1.75:0.5:5.25];
-%         histogram(handles_out.all_div_t(~isnan(handles_out.all_div_t)),edges)
-% 
-%         ylabel('No of ROIs')
-%         xlabel('Divegence time')
-%         title('Histogram for divergence time')
+        %         %Now plot the timecourses per group
+        %         for grNo=1:3
+        %
+        %             switch grNo
+        %                 case 1
+        %                     ROIs_included=(handles_out.all_div_dFFspm_pcorr>=45)&(handles_out.all_div_dFFspm_pcorr<=65);
+        %                 case 2
+        %                     ROIs_included=(handles_out.all_div_dFFspm_pcorr>65)&(handles_out.all_div_dFFspm_pcorr<80);
+        %                 case 3
+        %                     ROIs_included=(handles_out.all_div_dFFspm_pcorr>=80);
+        %             end
+        %
+        %             if sum(ROIs_included)>0
+        %
+        %                 %S+
+        %                 figureNo=figureNo+1;
+        %                 try
+        %                     close(figureNo)
+        %                 catch
+        %                 end
+        %
+        %                 hFig = figure(figureNo);
+        %
+        %                 set(hFig, 'units','normalized','position',[.05 .1 .3 .8])
+        %                 hold on
+        %
+        %
+        %
+        %                 sorted_handles_out.all_div_dFFsplus=[];
+        %                 ii_included=0;
+        %                 for ii=1:handles_out.all_div_ii_dFF
+        %                     if ROIs_included(ii)
+        %                         ii_included=ii_included+1;
+        %                         sorted_handles_out.all_div_dFFsplus(ii_included,:)=handles_out.all_div_dFFsplus(outperm(ii),:);
+        %                     end
+        %                 end
+        %
+        %                 time_span_mat=repmat(time_span,ii_included,1);
+        %                 ROI_mat=repmat(1:ii_included,length(time_span),1)';
+        %
+        %                 pcolor(time_span_mat,ROI_mat,sorted_handles_out.all_div_dFFsplus)
+        %                 colormap fire
+        %                 shading flat
+        %
+        %                 caxis([prctile(handles_out.all_div_dFFspm(:),1) prctile(handles_out.all_div_dFFspm(:),99)])
+        %
+        %                 for ii_te=1:length(timeEvents)
+        %                     plot([timeEvents(ii_te) timeEvents(ii_te)],[0 handles_out.all_div_ii_dFF],'-r')
+        %                 end
+        %
+        %                 xlim([-7 15])
+        %                 ylim([1 ii_included])
+        %                 title(['S+ ' per_names{grNo+1}])
+        %                 xlabel('Time (sec)')
+        %                 ylabel('ROI number')
+        %
+        %                 %S-
+        %                 figureNo=figureNo+1;
+        %                 try
+        %                     close(figureNo)
+        %                 catch
+        %                 end
+        %
+        %                 hFig = figure(figureNo);
+        %
+        %                 set(hFig, 'units','normalized','position',[.05 .1 .3 .8])
+        %                 hold on
+        %
+        %
+        %
+        %                 sorted_handles_out.all_div_dFFsminus=[];
+        %                 ii_included=0;
+        %                 for ii=1:handles_out.all_div_ii_dFF
+        %                     if ROIs_included(ii)
+        %                         ii_included=ii_included+1;
+        %                         sorted_handles_out.all_div_dFFsminus(ii_included,:)=handles_out.all_div_dFFsminus(outperm(ii),:);
+        %                     end
+        %                 end
+        %
+        %                 time_span_mat=repmat(time_span,ii_included,1);
+        %                 ROI_mat=repmat(1:ii_included,length(time_span),1)';
+        %
+        %                 pcolor(time_span_mat,ROI_mat,sorted_handles_out.all_div_dFFsminus)
+        %                 colormap fire
+        %                 shading flat
+        %
+        %                 caxis([prctile(handles_out.all_div_dFFspm(:),1) prctile(handles_out.all_div_dFFspm(:),99)])
+        %
+        %                 for ii_te=1:length(timeEvents)
+        %                     plot([timeEvents(ii_te) timeEvents(ii_te)],[0 handles_out.all_div_ii_dFF],'-r')
+        %                 end
+        %
+        %                 xlim([-7 15])
+        %                 ylim([1 ii_included])
+        %                 title(['S- ' per_names{grNo+1}])
+        %                 xlabel('Time (sec)')
+        %                 ylabel('ROI number')
+        %             end
+        %         end
+        %
+        %         %Plot rainbow
+        %         figureNo=figureNo+1;
+        %         try
+        %             close(figureNo)
+        %         catch
+        %         end
+        %
+        %         hFig = figure(figureNo);
+        %
+        %         set(hFig, 'units','normalized','position',[.49 .1 .05 .3])
+        %
+        %
+        %         prain=[prctile(handles_out.all_div_dFFspm(:),1):(prctile(handles_out.all_div_dFFspm(:),99)-prctile(handles_out.all_div_dFFspm(:),1))/99:prctile(handles_out.all_div_dFFspm(:),99)];
+        %         pcolor(repmat([1:10],100,1)',repmat(prain,10,1),repmat(prain,10,1))
+        %         %             colormap jet
+        %         colormap fire
+        %         shading interp
+        %         ax=gca;
+        %         set(ax,'XTickLabel','')
+        %
+        %         %Generate a histogram for the magnitude of the responses
+        %
+        %         %     handles_out.all_div_t=[];
+        %         %     handles_out.all_div_delta_dFFsplus=[];
+        %         %     handles_out.all_div_delta_dFFsminus=[];
+        %
+        %         figureNo=figureNo+1;
+        %         try
+        %             close(figureNo)
+        %         catch
+        %         end
+        %
+        %         hFig = figure(figureNo);
+        %
+        %         set(hFig, 'units','normalized','position',[.2 .2 .4 .3])
+        %
+        %         edges=-0.5:0.5:4;
+        %         histogram(handles_out.all_div_delta_dFFsplus,edges,'FaceColor',[0 114/255 178/255])
+        %         hold on
+        %         histogram(handles_out.all_div_delta_dFFsminus,edges,'FaceColor',[158/255 31/255 99/255])
+        %
+        %         ylabel('No of ROIs')
+        %         xlabel('Delta zdFF')
+        %         title('Histogram for Delta zdFF')
+        %
+        %         this_ylim=ylim;
+        %
+        %         text(2.5,this_ylim(1)+0.85*(this_ylim(2)-this_ylim(1)),'S+','Color',[0 114/255 178/255],'FontSize',16)
+        %         text(2.5,this_ylim(1)+0.75*(this_ylim(2)-this_ylim(1)),'S-','Color',[158/255 31/255 99/255],'FontSize',16)
+        %
+        %         figureNo=figureNo+1;
+        %         try
+        %             close(figureNo)
+        %         catch
+        %         end
+        %
+        %         hFig = figure(figureNo);
+        %
+        %         set(hFig, 'units','normalized','position',[.2 .2 .3 .3])
+        %
+        %         plot(handles_out.all_div_delta_dFFsminus,handles_out.all_div_delta_dFFsplus,'ok')
+        %
+        %         ylabel('S+')
+        %         xlabel('S-')
+        %         title('Delta zdFF')
+        %
+        %         %Divergence time
+        %         figureNo=figureNo+1;
+        %         try
+        %             close(figureNo)
+        %         catch
+        %         end
+        %
+        %         hFig = figure(figureNo);
+        %
+        %         set(hFig, 'units','normalized','position',[.2 .2 .4 .3])
+        %
+        %         edges=[-1.75:0.5:5.25];
+        %         histogram(handles_out.all_div_t(~isnan(handles_out.all_div_t)),edges)
+        %
+        %         ylabel('No of ROIs')
+        %         xlabel('Divegence time')
+        %         title('Histogram for divergence time')
 
 
     end
     %Uncomment this if you want to browse through the figures
-%     tic
-%     for figNo=1:figureNo
-%         figure(figNo)
-%         this_toc=toc;
-%         while toc-this_toc<4
-%         end
-%     end
+    %     tic
+    %     for figNo=1:figureNo
+    %         figure(figNo)
+    %         this_toc=toc;
+    %         while toc-this_toc<4
+    %         end
+    %     end
     pffft=1;
 
-    save([choiceBatchPathName choiceFileName(1:end-4) '.mat'],'handles','handles_out','handles_choices','-v7.3')
+    switch use_pFDR
+        case {0, 1}
+            save([choiceBatchPathName choiceFileName(1:end-4) '.mat'],'handles','handles_out','handles_choices','handles_in','-v7.3')
+        case 4
+            save([choiceBatchPathName choiceFileName(1:end-4) 'glm.mat'],'handles','handles_out','handles_choices','handles_in','-v7.3')
+    end
 end
 
 pffft=1;

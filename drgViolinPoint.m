@@ -14,11 +14,11 @@ random_offsets=rand(1,length(points))-0.5;
 
 %Plot violin points
 for ii=1:length(points)
-    [min_hist ii_histo]=min(abs(edges-points(ii)));
-    if ii_histo>length(normval)
-        ii_histo=length(normval);
-    end
-    violin_x_val(ii)=random_offsets(ii)*rand_offset*normval(ii_histo)+x_val;
+%     [min_hist ii_histo]=min(abs(edges-points(ii)));
+%     if ii_histo>length(normval)
+%         ii_histo=length(normval);
+%     end
+    violin_x_val(ii)=random_offsets(ii)*rand_offset+x_val;
 end 
 plot(violin_x_val,points,'o','MarkerSize',point_size,'MarkerFaceColor',which_color_mean,'MarkerEdgeColor',which_color_point)
  

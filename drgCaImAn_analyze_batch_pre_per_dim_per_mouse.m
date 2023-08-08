@@ -1,4 +1,4 @@
-%drgCaImAn_analyze_batch_pre_per_dim_per_mousemouse
+%drgCaImAn_analyze_batch_pre_per_dim_per_mouse
 close all force
 clear all
 
@@ -488,7 +488,7 @@ for grNo=[2 3 4 6 7 8]
         plot([delta_odor_on_reinf_on delta_odor_on_reinf_on],this_ylim,'-r')
         reinfhl=plot([delta_odor_on_reinf_on delta_odor_on_reinf_on+delta_reinf],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-r','LineWidth',5);
         plot([delta_odor_on_reinf_on+delta_reinf delta_odor_on_reinf_on+delta_reinf],this_ylim,'-r')
-
+ 
 
         xlim([-10 20])
 

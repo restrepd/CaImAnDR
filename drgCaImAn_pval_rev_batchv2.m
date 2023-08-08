@@ -11,7 +11,7 @@ function handles_out=drgCaImAn_pval_rev_batchv2(handles_choices)
 % the input a pval handles_choices file with the pre_per file location and all
 % other choices
 %
-
+ 
 close all
 clear all
 
@@ -42,6 +42,9 @@ odor_t=[-1 7.5]; %0 5.5 yields a large number of positive traces
 use_pFDR=4; %0=use t-test or ranksum with p<p_value_sig, 1=use pFDR, 2=use bootstrapping, 3= glm, 4= glm with pFDR
 
 pre_t_dprime=[-1.5 6.5];
+
+handles_in.min_tr_div=12;
+handles_in.min_tr_resp=6;
 
 switch use_pFDR
     case {0, 1}
@@ -633,12 +636,12 @@ if all_files_present==1
 
             if sig_p==1
 
-
-                %get the dF/F
-                dFFsplus=zeros(length(time_span),trialNum(min_ii,1));
-                dFFsplus(:,:)=firingRates(min_ii,1,:,1:trialNum(min_ii,1));
-                dFFsminus=zeros(length(time_span),trialNum(min_ii,2));
-                dFFsminus(:,:)=firingRates(min_ii,2,:,1:trialNum(min_ii,2));
+% 
+%                 %get the dF/F
+%                 dFFsplus=zeros(length(time_span),trialNum(min_ii,1));
+%                 dFFsplus(:,:)=firingRates(min_ii,1,:,1:trialNum(min_ii,1));
+%                 dFFsminus=zeros(length(time_span),trialNum(min_ii,2));
+%                 dFFsminus(:,:)=firingRates(min_ii,2,:,1:trialNum(min_ii,2));
 
 
                 if show_figures==1

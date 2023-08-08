@@ -590,7 +590,7 @@ if length(hit_per_trial)>window
     handles_out.p_correct_per_trial(1:(window/2)-1)=handles_out.p_correct_per_trial(window/2);
     handles_out.p_correct_per_trial(length(hit_per_trial)-window/2+1:end)=handles_out.p_correct_per_trial(length(hit_per_trial)-window/2);
 
-    handles_out.encoding_trials=logical(handles_out.p_correct_per_trial<=65);
+    handles_out.encoding_trials=logical((handles_out.p_correct_per_trial<=65)&(handles_out.p_correct_per_trial>=45));
     handles_out.retreival_trials=logical(handles_out.p_correct_per_trial>=80);
     handles_out.trials=1:length(hit_per_trial);
 
