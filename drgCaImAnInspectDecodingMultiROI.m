@@ -9,7 +9,7 @@ if exist('handles_choices')==0
     close all
 
     %Which ii_out and ROIs do you want to inspect
-    ii_out=1;
+    ii_out=1; %all_no_ROIs=[1 2 5 15 2000]
 
     %time window for accuracy
     time_windows=[3.1 4.1];
@@ -622,7 +622,7 @@ latency_per_ROI=[];
 cropped_time_span_ii=find((time_span>=time_window_lat(1))&(time_span<=time_window_lat(2)));
 cropped_time_span=time_span(cropped_time_span_ii);
 
-%Calculate teh mean absolute deviation (as opposed to the STD)
+%Calculate the mean absolute deviation (as opposed to the STD)
 all_pre_accuracy_values=[];
 for iiROI=1:no_ROI_draws
     all_pre_accuracy_values=[all_pre_accuracy_values mean(handles_out2.ROI(iiROI).MLalgo(MLalgo).this_correct_predict(:,(time_span>=pre_time_window(1))&(time_span<=pre_time_window(2))),1)];
@@ -903,6 +903,14 @@ if show_figures==1
     ylabel('d prime')
 
 end
+
+%Save the accuracy timecourse
+
+for iiROI=1:no_ROI_draws
+    this_correct_predict=handles_out2.ROI(iiROI).MLalgo(MLalgo).this_correct_predict;
+    handles_outd.ROI(iiROI).mean_accuracy=mean(this_correct_predict);
+end
+handles_outd.time_span=handles_out2.time_span;
 pfft=1;
 
 

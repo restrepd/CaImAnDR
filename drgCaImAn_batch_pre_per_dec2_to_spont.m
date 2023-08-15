@@ -30,7 +30,7 @@ end
 %     suffix_out='_dec.mat';
 % end
 
-suffix_out='_spont.mat';
+suffix_out='_spont2.mat';
 
 if isfield(handles,'first_file')
     first_file=handles.first_file;
@@ -101,7 +101,7 @@ if all_files_present==1
             handles_choices.ii_cost=handles.ii_cost;
             handles_choices.PathName_Out=handles.PathName_out{fileNo};
 
-            ii_thr=4;
+            ii_thr=1;
 
             handles_choices.p_threshold=handles.p_threshold(ii_thr);
 

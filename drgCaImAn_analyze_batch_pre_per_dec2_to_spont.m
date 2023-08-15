@@ -1,9 +1,14 @@
 function drgCaImAn_analyze_batch_pre_per_dec2_to_spont(choiceBatchPathName,choiceFileName)
 %Note: fitcnet will not work in Matlab versions earlier than 2021a
 
+close all
+
 delta_odor=4.127634e+00;
 delta_odor_on_reinf_on=4.415787e+00;
 delta_reinf=4.078266e-01;
+
+baseline_t=[-2.5 -1.5];
+odor_t=[2 4.1];
 
 if nargin==0
     [choiceFileName,choiceBatchPathName] = uigetfile({'drgCaImAn_LDAfsdz_choices*.m'},'Select the .m file with all the choices for analysis');
@@ -35,7 +40,7 @@ end
 %     suffix_out='_dec.mat';
 % end
 
-suffix_out='_spont.mat';
+suffix_out='_spont2.mat';
 
 if isfield(handles,'first_file')
     first_file=handles.first_file;
@@ -112,6 +117,11 @@ if all_files_present==1
 
     %Retrieve the data saved by drgCaImAn_analyze_SVZ_entire_session_between(handles_choices)
     %Process each file separately
+    no_spont=[];
+    no_nc=[];
+    no_trials=[];
+    ii_files_included=0;
+
     moving_mean_per_session_sm_timecourse=[];
     moving_mean_per_session_sp_timecourse=[];
     these_mice=[];
@@ -181,13 +191,15 @@ if all_files_present==1
 
             handles_out=[];
             ii_out=0;
-
+ 
             pre_per_PathName=handles.PathName_pre_per{fileNo};
             pre_per_FileName=handles.FileName_pre_per{fileNo};
 
             load([pre_per_PathName pre_per_FileName(1:end-4) suffix_out])
 
             if (handles_out.handles_out3.percent_correct>=80)&(handles_out.handles_out3.odor_acc>=min_acc)
+
+                ii_files_included=ii_files_included+1;
 
                 %Prediction within trials
                 this_time_span=handles_out.handles_out3.moving_time_span;
@@ -203,8 +215,15 @@ if all_files_present==1
                 ii_mouse=ii_mouse+1;
                 these_mice(ii_mouse)=mouseNo_per_file(fileNo);
 
+                no_trials=[no_trials size(handles_out.handles_out3.moving_mean_per_trial_sp_timecourse,1)+size(handles_out.handles_out3.moving_mean_per_trial_sm_timecourse,1) ];
+
+
                 %Spontaneous change in prediction between trials
                 this_time_span=handles_out.handles_out3.this_time_span_spon;
+
+                no_spont=[no_spont size(handles_out.handles_out3.spontaneous_delta_prediction,1)];
+                no_nc=[no_nc size(handles_out.handles_out3.no_increase_delta_prediction,1)];
+
 
                 if ~isempty(this_time_span)
 
@@ -596,7 +615,11 @@ if all_files_present==1
 
 
 
-    %Plot the correlation for no change S+ prediction vs. S+ and S-
+
+    %Bar graph plot for correlation between spontaneous dFF and S= or S- dFF
+     edges=[0:0.05:1];
+    rand_offset=0.4;
+
     figNo=figNo+1;
     try
         close(figNo)
@@ -609,54 +632,152 @@ if all_files_present==1
 
     hold on
 
-    CIsm = bootci(1000, @mean, corr_spont_prediction_sm_nc');
-    meansm=mean(corr_spont_prediction_sm_nc',1);
-    CIsm(1,:)=meansm-CIsm(1,:);
-    CIsm(2,:)=CIsm(2,:)-meansm;
+    edges=[0:0.05:1];
+    rand_offset=0.4;
 
-    [hlsm, hpsm] = boundedline(resample_time_span',mean(corr_spont_prediction_sm_nc,2), CIsm', 'cmap',[158/255 31/255 99/255]);
+    bar_offset=0;
 
-    CIsp = bootci(1000, @mean, corr_spont_prediction_sp_nc');
-    meansp=mean(corr_spont_prediction_sp_nc',1);
-    CIsp(1,:)=meansp-CIsp(1,:);
-    CIsp(2,:)=CIsp(2,:)-meansp;
+    id_ii=0;
+    input_data=[];
 
+    glm_corr=[];
+    glm_ii=0;
 
-    [hlsp, hpsp] = boundedline(resample_time_span',mean(corr_spont_prediction_sp_nc,2), CIsp', 'cmap',[0 114/255 178/255]);
+    %Corr S- before
+    bar_offset=bar_offset+1;
 
-    plot(resample_time_span',mean(corr_spont_prediction_sm_nc,2)','-','Color',[158/255 31/255 99/255],'DisplayName','S-')
-    plot(resample_time_span',mean(corr_spont_prediction_sp_nc,2)', '-','Color',[0 114/255 178/255],'DisplayName','S+');
+    bar(bar_offset,mean(mean(corr_spont_prediction_sm((resample_time_span>=baseline_t(1))&(resample_time_span<=baseline_t(2)),:))),'LineWidth', 3,'EdgeColor','none','FaceColor',[158/255 31/255 99/255])
 
+    if length(mean(corr_spont_prediction_sm((resample_time_span>=baseline_t(1))&(resample_time_span<=baseline_t(2)),:)))>2
+        %Violin plot
+        [mean_out, CIout]=drgViolinPoint(mean(corr_spont_prediction_sm((resample_time_span>=baseline_t(1))&(resample_time_span<=baseline_t(2)),:))...
+            ,edges,bar_offset,rand_offset,'k','k',3);
+    end
 
-    ylim([-0.04 0.1])
-    this_ylim=ylim;
+    id_ii=id_ii+1;
+    input_data(id_ii).data=mean(corr_spont_prediction_sm((resample_time_span>=baseline_t(1))&(resample_time_span<=baseline_t(2)),:));
+    input_data(id_ii).description=['S- baseline'];
 
-    text(12,0.85*this_ylim(2) ,'S-','Color',[158/255 31/255 99/255])
-    text(12,0.8*this_ylim(2),'S+','Color',[0 114/255 178/255])
+    %Corr S+ before
+    bar_offset=bar_offset+1;
 
-    %FV
-    rectangle(Position=[-1.5,this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)),1.5,0.03*(this_ylim(2)-this_ylim(1))], FaceColor=[0.9 0.9 0.9], EdgeColor=[0.9 0.9 0.9])
-    plot([-1.5 -1.5],[this_ylim],'-','Color',[0.5 0.5 0.5])
+    bar(bar_offset,mean(mean(corr_spont_prediction_sp((resample_time_span>=baseline_t(1))&(resample_time_span<=baseline_t(2)),:))),'LineWidth', 3,'EdgeColor','none','FaceColor',[0 114/255 178/255])
 
-    %Odor
-    rectangle(Position=[0,this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)),mean(delta_odor),0.03*(this_ylim(2)-this_ylim(1))], FaceColor=[0 0 0], EdgeColor=[0 0 0])
-    plot([0 0],[this_ylim],'-k')
-    plot([mean(delta_odor) mean(delta_odor)],[this_ylim],'-k')
+    if length(mean(corr_spont_prediction_sp((resample_time_span>=baseline_t(1))&(resample_time_span<=baseline_t(2)),:)))>2
+        %Violin plot
+        [mean_out, CIout]=drgViolinPoint(mean(corr_spont_prediction_sp((resample_time_span>=baseline_t(1))&(resample_time_span<=baseline_t(2)),:))...
+            ,edges,bar_offset,rand_offset,'k','k',3);
+    end
 
-    %Reinforcement
-    rectangle(Position=[mean(delta_odor_on_reinf_on),this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)),mean(delta_reinf),0.03*(this_ylim(2)-this_ylim(1))], FaceColor=[1 0 0], EdgeColor=[1 0 0])
-    plot([mean(delta_odor_on_reinf_on)+mean(delta_reinf) mean(delta_odor_on_reinf_on)+mean(delta_reinf)],[this_ylim],'-r')
-    plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on)],[this_ylim],'-r')
+    id_ii=id_ii+1;
+    input_data(id_ii).data=mean(corr_spont_prediction_sp((resample_time_span>=baseline_t(1))&(resample_time_span<=baseline_t(2)),:));
+    input_data(id_ii).description=['S+ baseline'];
 
+    %Per mouse
+    for mouseNo=1:max(these_mice_sp_before)
+        these_corr_spont_prediction_sp=mean(corr_spont_prediction_sp((resample_time_span>=baseline_t(1))&(resample_time_span<=baseline_t(2)),these_mice_csm==mouseNo));
+        these_corr_spont_prediction_sm=mean(corr_spont_prediction_sm((resample_time_span>=baseline_t(1))&(resample_time_span<=baseline_t(2)),these_mice_csm==mouseNo));
+       
+        plot([bar_offset-1 bar_offset],[mean(these_corr_spont_prediction_sm) mean(these_corr_spont_prediction_sp)],'LineWidth',3,'Color',[150/255 150/255 150/255])
 
+        glm_corr.data(glm_ii+1:glm_ii+length(these_corr_spont_prediction_sm))=these_corr_spont_prediction_sm;
+        glm_corr.time_window(glm_ii+1:glm_ii+length(these_corr_spont_prediction_sm))=zeros(1,length(these_corr_spont_prediction_sm));
+        glm_corr.spm(glm_ii+1:glm_ii+length(these_corr_spont_prediction_sm))=zeros(1,length(these_corr_spont_prediction_sm));
+        glm_corr.mice(glm_ii+1:glm_ii+length(these_corr_spont_prediction_sm))=mouseNo*ones(1,length(these_corr_spont_prediction_sm));
+        glm_ii=glm_ii+length(these_corr_spont_prediction_sm);
 
-    %     ylim([0 1.1])
-    xlim([-7 15])
-    title(['Correlation for no change between vs. actual within dFF'])
-    xlabel('Time(sec)')
+        glm_corr.data(glm_ii+1:glm_ii+length(these_corr_spont_prediction_sm))=these_corr_spont_prediction_sp;
+        glm_corr.time_window(glm_ii+1:glm_ii+length(these_corr_spont_prediction_sm))=zeros(1,length(these_corr_spont_prediction_sm));
+        glm_corr.spm(glm_ii+1:glm_ii+length(these_corr_spont_prediction_sm))=ones(1,length(these_corr_spont_prediction_sm));
+        glm_corr.mice(glm_ii+1:glm_ii+length(these_corr_spont_prediction_sm))=mouseNo*ones(1,length(these_corr_spont_prediction_sm));
+        glm_ii=glm_ii+length(these_corr_spont_prediction_sm);
+    end
+
+    bar_offset=bar_offset+1;
+
+    %Corr S- odor
+    bar_offset=bar_offset+1;
+
+    bar(bar_offset,mean(mean(corr_spont_prediction_sm((resample_time_span>=odor_t(1))&(resample_time_span<=odor_t(2)),:))),'LineWidth', 3,'EdgeColor','none','FaceColor',[158/255 31/255 99/255])
+
+    if length(mean(corr_spont_prediction_sm((resample_time_span>=odor_t(1))&(resample_time_span<=odor_t(2)),:)))>2
+        %Violin plot
+        [mean_out, CIout]=drgViolinPoint(mean(corr_spont_prediction_sm((resample_time_span>=odor_t(1))&(resample_time_span<=odor_t(2)),:))...
+            ,edges,bar_offset,rand_offset,'k','k',3);
+    end
+
+    id_ii=id_ii+1;
+    input_data(id_ii).data=mean(corr_spont_prediction_sm((resample_time_span>=odor_t(1))&(resample_time_span<=odor_t(2)),:));
+    input_data(id_ii).description=['S- odor'];
+
+    %Corr S+ before
+    bar_offset=bar_offset+1;
+
+    bar(bar_offset,mean(mean(corr_spont_prediction_sp((resample_time_span>=odor_t(1))&(resample_time_span<=odor_t(2)),:))),'LineWidth', 3,'EdgeColor','none','FaceColor',[0 114/255 178/255])
+
+    if length(mean(corr_spont_prediction_sp((resample_time_span>=odor_t(1))&(resample_time_span<=odor_t(2)),:)))>2
+        %Violin plot
+        [mean_out, CIout]=drgViolinPoint(mean(corr_spont_prediction_sp((resample_time_span>=odor_t(1))&(resample_time_span<=odor_t(2)),:))...
+            ,edges,bar_offset,rand_offset,'k','k',3);
+    end
+
+    id_ii=id_ii+1;
+    input_data(id_ii).data=mean(corr_spont_prediction_sp((resample_time_span>=odor_t(1))&(resample_time_span<=odor_t(2)),:));
+    input_data(id_ii).description=['S+ odor'];
+
+    %Per mouse
+    for mouseNo=1:max(these_mice_sp_before)
+        these_corr_spont_prediction_sp=mean(corr_spont_prediction_sp((resample_time_span>=odor_t(1))&(resample_time_span<=odor_t(2)),these_mice_csm==mouseNo));
+        these_corr_spont_prediction_sm=mean(corr_spont_prediction_sm((resample_time_span>=odor_t(1))&(resample_time_span<=odor_t(2)),these_mice_csm==mouseNo));
+       
+        plot([bar_offset-1 bar_offset],[mean(these_corr_spont_prediction_sm) mean(these_corr_spont_prediction_sp)],'LineWidth',3,'Color',[150/255 150/255 150/255])
+
+        glm_corr.data(glm_ii+1:glm_ii+length(these_corr_spont_prediction_sm))=these_corr_spont_prediction_sm;
+        glm_corr.time_window(glm_ii+1:glm_ii+length(these_corr_spont_prediction_sm))=ones(1,length(these_corr_spont_prediction_sm));
+        glm_corr.spm(glm_ii+1:glm_ii+length(these_corr_spont_prediction_sm))=zeros(1,length(these_corr_spont_prediction_sm));
+        glm_corr.mice(glm_ii+1:glm_ii+length(these_corr_spont_prediction_sm))=mouseNo*ones(1,length(these_corr_spont_prediction_sm));
+        glm_ii=glm_ii+length(these_corr_spont_prediction_sm);
+
+        glm_corr.data(glm_ii+1:glm_ii+length(these_corr_spont_prediction_sm))=these_corr_spont_prediction_sp;
+        glm_corr.time_window(glm_ii+1:glm_ii+length(these_corr_spont_prediction_sm))=ones(1,length(these_corr_spont_prediction_sm));
+        glm_corr.spm(glm_ii+1:glm_ii+length(these_corr_spont_prediction_sm))=ones(1,length(these_corr_spont_prediction_sm));
+        glm_corr.mice(glm_ii+1:glm_ii+length(these_corr_spont_prediction_sm))=mouseNo*ones(1,length(these_corr_spont_prediction_sm));
+        glm_ii=glm_ii+length(these_corr_spont_prediction_sm);
+    end
+
+    xticks([1 2 4 5])
+    xticklabels({'Base S-', 'Base S+', 'Odor S-', 'Odor S+'})
+
     ylabel('Rho')
 
+    title(['Correlation between zdFF for spontaneous and S+ or S- trials'])
 
+
+
+    %Perform the glm
+    fprintf(1, ['\nglm for correlation\n'])
+    fprintf(fileID, ['\nglm for correlation\n']);
+
+    tbl = table(glm_corr.data',glm_corr.time_window',glm_corr.spm',glm_corr.mice',...
+        'VariableNames',{'rho','time_window','sp_vs_sm','mice'});
+    mdl = fitglm(tbl,'rho~time_window+sp_vs_sm+mice+sp_vs_sm*time_window'...
+        ,'CategoricalVars',[2,3,4])
+
+
+    txt = evalc('mdl');
+    txt=regexp(txt,'<strong>','split');
+    txt=cell2mat(txt);
+    txt=regexp(txt,'</strong>','split');
+    txt=cell2mat(txt);
+
+    fprintf(fileID,'%s\n', txt);
+
+    %Do the ranksum/t-test
+    fprintf(1, ['\n\nRanksum or t-test p values for correlation\n'])
+    fprintf(fileID, ['\n\nRanksum or t-test p values for correlation\n']);
+
+
+    [output_data] = drgMutiRanksumorTtest(input_data, fileID,0);
 
     %Bar graph plot for sp before and after
 
@@ -674,7 +795,7 @@ if all_files_present==1
     hold on
 
     edges=[0:0.05:1];
-    rand_offset=0.8;
+    rand_offset=0.4;
 
     bar_offset=0;
 
@@ -689,7 +810,7 @@ if all_files_present==1
     %Fraction of S- before
     bar_offset=bar_offset+1;
 
-    bar(bar_offset,mean(1-frac_sp_before),'LineWidth', 3,'EdgeColor','none','FaceColor',[238/255 111/255 179/255])
+    bar(bar_offset,mean(1-frac_sp_before),'LineWidth', 3,'EdgeColor','none','FaceColor',[158/255 31/255 99/255])
 
     if length(frac_sp_before)>2
         %Violin plot
@@ -704,7 +825,7 @@ if all_files_present==1
     %Fraction of S+ before
     bar_offset=bar_offset+1;
 
-    bar(bar_offset,mean(frac_sp_before),'LineWidth', 3,'EdgeColor','none','FaceColor',[80/255 194/255 255/255])
+    bar(bar_offset,mean(frac_sp_before),'LineWidth', 3,'EdgeColor','none','FaceColor',[0 114/255 178/255])
 
     if length(frac_sp_before)>2
         %Violin plot
@@ -748,7 +869,7 @@ if all_files_present==1
 
     tbl = table(glm_frac.data',glm_frac.spm',glm_frac.mice',...
         'VariableNames',{'fraction_before','sp_vs_sm','mice'});
-    mdl = fitglm(tbl,'fraction_before~sp_vs_sm+mice+sp_vs_sm*mice'...
+    mdl = fitglm(tbl,'fraction_before~sp_vs_sm+mice'...
         ,'CategoricalVars',[2,3])
 
 
@@ -778,7 +899,7 @@ if all_files_present==1
     glm_ii=0;
 
     edges=[0:0.05:1];
-    rand_offset=0.8;
+    rand_offset=0.4;
 
     figNo=figNo+1;
     try
@@ -882,12 +1003,12 @@ if all_files_present==1
 
 
     %Perform the glm
-    fprintf(1, ['\nglm for prediction for S+ and S- trials\n'])
-    fprintf(fileID, ['\nglm prediction for S+ and S- trials\n']);
+    fprintf(1, ['\nglm for prediction for S+ and S- trials, Fig. 6C\n'])
+    fprintf(fileID, ['\nglm prediction for S+ and S- trials, Fig. 6C\n']);
 
     tbl = table(glm_spm.data',glm_spm.spm',glm_spm.epoch',glm_spm.mice',...
         'VariableNames',{'prediction','sp_vs_sm','time_interval','mice'});
-    mdl = fitglm(tbl,'prediction~sp_vs_sm+mice+time_interval+sp_vs_sm*mice*time_interval'...
+    mdl = fitglm(tbl,'prediction~sp_vs_sm+mice+time_interval+sp_vs_sm*time_interval'...
         ,'CategoricalVars',[2,3,4])
 
 
@@ -903,6 +1024,8 @@ if all_files_present==1
     fprintf(1, ['\n\nRanksum or t-test p values for prediction for S+ and S- trialse\n'])
     fprintf(fileID, ['\n\nRanksum or t-test p values for prediction for S+ and S- trials\n']);
 
+     [output_data] = drgMutiRanksumorTtest(input_data, fileID,0);
+
     %Now plot a bar graph  comparing prediction between trials
     id_ii=0;
     input_data=[];
@@ -911,7 +1034,7 @@ if all_files_present==1
     glm_ii=0;
 
     edges=[0:0.05:1];
-    rand_offset=0.8;
+    rand_offset=0.4;
 
     figNo=figNo+1;
     try
@@ -1015,12 +1138,12 @@ if all_files_present==1
 
 
     %Perform the glm
-    fprintf(1, ['\nglm for prediction for between trials\n'])
-    fprintf(fileID, ['\nglm prediction for between trials\n']);
+    fprintf(1, ['\nglm for prediction between trials\n'])
+    fprintf(fileID, ['\nglm prediction between trials\n']);
 
     tbl = table(glm_spm.data',glm_spm.spm',glm_spm.epoch',glm_spm.mice',...
-        'VariableNames',{'prediction','sp_vs_sm','time_interval','mice'});
-    mdl = fitglm(tbl,'prediction~sp_vs_sm+mice+time_interval+sp_vs_sm*mice*time_interval'...
+        'VariableNames',{'prediction','spont_vs_no_change','time_interval','mice'});
+    mdl = fitglm(tbl,'prediction~spont_vs_no_change+mice+time_interval+spont_vs_no_change*time_interval'...
         ,'CategoricalVars',[2,3,4])
 
 
@@ -1036,6 +1159,8 @@ if all_files_present==1
     fprintf(1, ['\n\nRanksum or t-test p values for prediction for between trials\n'])
     fprintf(fileID, ['\n\nRanksum or t-test p values for prediction for between trials\n']);
 
+    [output_data] = drgMutiRanksumorTtest(input_data, fileID,0);
+
     %Now plot a bar graph comparing entire between interval with shuffled
     id_ii=0;
     input_data=[];
@@ -1044,7 +1169,7 @@ if all_files_present==1
     glm_ii=0;
 
     edges=[0:0.05:1];
-    rand_offset=0.8;
+    rand_offset=0.4;
 
     figNo=figNo+1;
     try
@@ -1113,7 +1238,7 @@ if all_files_present==1
 
     tbl = table(glm_spm.data',glm_spm.shuffled',glm_spm.mice',...
         'VariableNames',{'prediction','shuffled','mice'});
-    mdl = fitglm(tbl,'prediction~shuffled+mice+shuffled*mice'...
+    mdl = fitglm(tbl,'prediction~shuffled+mice'...
         ,'CategoricalVars',[2,3])
 
 
@@ -1125,14 +1250,38 @@ if all_files_present==1
 
     fprintf(fileID,'%s\n', txt);
 
-    %Do the ranksum/t-test
-    fprintf(1, ['\n\nRanksum or t-test p values for prediction for all of between\n'])
-    fprintf(fileID, ['\n\nRanksum or t-test p values for prediction all of between\n']);
+%     %Do the ranksum/t-test
+    fprintf(1, ['\n\nRanksum or t-test p values for prediction between vs. shuffled\n'])
+    fprintf(fileID, ['\n\nRanksum or t-test p values for prediction between vs. shuffled\n']);
+
+    [output_data] = drgMutiRanksumorTtest(input_data, fileID,0);
 
     pffft=1;
+
+    %Do accounting for the number of spontaneous and nc traces
+    fprintf(1, ['\nNumber of sessions %d\n'],ii_files_included)
+    fprintf(fileID, ['\nNumber of sessions %d\n'],ii_files_included);
+
+    fprintf(1, ['Number of sessions with replays %d\n'],sum(no_spont>0))
+    fprintf(fileID,  ['Number of sessions with replays %d\n'],sum(no_spont>0));
+
+    fprintf(1, ['Number of replays %d\n'],sum(no_spont))
+    fprintf(fileID,  ['Number of replays %d\n'],sum(no_spont));
+
+    fprintf(1, ['Number of sessions with between trial steady %d\n'],sum(no_nc>0))
+    fprintf(fileID,  ['Number of sessions with between trial steady %d\n'],sum(no_nc>0));
+
+    fprintf(1, ['Number of between trial steady %d\n'],sum(no_nc))
+    fprintf(fileID,  ['Number of between trial steady %d\n'],sum(no_nc));
+
+    fprintf(1, ['Number of trials %d\n'],sum(no_trials))
+    fprintf(fileID,  ['Number of trials %d\n'],sum(no_trials));
+
 end
 
 fclose(fileID)
+
+pfft=1;
 
 
 

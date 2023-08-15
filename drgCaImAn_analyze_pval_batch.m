@@ -522,6 +522,7 @@ for grNo=groups
 
     id_sig_ii=id_sig_ii+1;
     input_sig_data(id_sig_ii).data=these_odor;
+    
     switch handles.group_algo
         case 1
             input_sig_data(id_sig_ii).description=['Odor ' fr_per_names{grNo}];
@@ -1458,6 +1459,8 @@ if handles_out.all_div_ii_dFF>5
     ax=gca;
     set(ax,'XTickLabel','')
 
+    pffft=1;
+
     %Generate a histogram for the magnitude of the responses
 
     %     handles_out.all_div_t=[];
@@ -1586,7 +1589,7 @@ if handles_out.all_spresp_ii_dFF+handles_out.all_smresp_ii_dFF>5
     xlim([1 handles_out.all_spresp_ii_dFF+handles_out.all_smresp_ii_dFF])
     ylim([1 handles_out.all_spresp_ii_dFF+handles_out.all_smresp_ii_dFF])
 
-    %Plot rainbow
+    %Plot rainbow for cross correlation
     figureNo=figureNo+1;
     try
         close(figureNo)
@@ -1598,7 +1601,7 @@ if handles_out.all_spresp_ii_dFF+handles_out.all_smresp_ii_dFF>5
     set(hFig, 'units','normalized','position',[.49 .1 .05 .3])
 
 
-    prain=[0:0.6/99:0.6];
+    prain=[-1:2/99:1];
     pcolor(repmat([1:10],100,1)',repmat(prain,10,1),repmat(prain,10,1))
     %             colormap jet
     colormap fire
