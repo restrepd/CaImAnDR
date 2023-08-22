@@ -2611,7 +2611,7 @@ if all_files_present==1
 
         xlim([-7 15])
         ylim([1 ii])
-        title(['Odor 1 forward, forward or reversed proficient divergent'])
+        title(['IA S+ forward']) %forward or reversed proficient divergent
         xlabel('Time (sec)')
         ylabel('ROI number')
 
@@ -2660,7 +2660,7 @@ if all_files_present==1
 
         xlim([-7 15])
         ylim([1 ii])
-        title(['Odor 1 at reveresal, forward or reversed proficient divergent'])
+        title(['IA S- at reversal'])
         xlabel('Time (sec)')
         ylabel('ROI number')
 
@@ -2709,7 +2709,7 @@ if all_files_present==1
 
         xlim([-7 15])
         ylim([1 ii])
-        title(['Odor 1 reversed, forward or reversed proficient divergent'])
+        title(['IA, S- reversed'])
         xlabel('Time (sec)')
         ylabel('ROI number')
 
@@ -2757,7 +2757,7 @@ if all_files_present==1
 
         xlim([-7 15])
         ylim([1 ii])
-        title(['Odor 2 forward, forward or reversed proficient divergent'])
+        title(['MO forward, forward or reversed proficient divergent'])
         xlabel('Time (sec)')
         ylabel('ROI number')
 
@@ -2807,7 +2807,7 @@ if all_files_present==1
 
         xlim([-7 15])
         ylim([1 ii])
-        title(['Odor 2 at reveresal, forward or reversed proficient divergent'])
+        title(['MO at reveresal, forward or reversed proficient divergent'])
         xlabel('Time (sec)')
         ylabel('ROI number')
 
@@ -2855,9 +2855,30 @@ if all_files_present==1
 
         xlim([-7 15])
         ylim([1 ii])
-        title(['Odor 2 reversed, forward or reversed proficient divergent'])
+        title(['MO reversed, forward or reversed proficient divergent'])
         xlabel('Time (sec)')
         ylabel('ROI number')
+
+         %Plot rainbow
+        figureNo=figureNo+1;
+        try
+            close(figureNo)
+        catch
+        end
+
+        hFig = figure(figureNo);
+
+        set(hFig, 'units','normalized','position',[.49 .1 .05 .3])
+
+        pr_from=prctile(handles_out.all_div_frp_dFFOdor12_forward(:),1)-0.05;
+        pr_to=prctile(handles_out.all_div_frp_dFFOdor12_forward(:),99.9);
+        prain=[pr_from:(pr_to-pr_from)/99:pr_to];
+        pcolor(repmat([1:10],100,1)',repmat(prain,10,1),repmat(prain,10,1))
+        %             colormap jet
+        colormap fire
+        shading interp
+        ax=gca;
+        set(ax,'XTickLabel','')
 
         %Plot the average timecourses per cluster
         %Odor 1 and 2 forward
@@ -2931,8 +2952,8 @@ if all_files_present==1
                 plot([timeEvents(ii_te) timeEvents(ii_te)],this_ylim,'-k')
             end
 
-            text(-5,this_ylim(1)+0.85*(this_ylim(2)-this_ylim(1)),'Odor 1','Color',[0 114/255 178/255],'FontSize',16)
-            text(-5,this_ylim(1)+0.75*(this_ylim(2)-this_ylim(1)),'Odor 2','Color',[158/255 31/255 99/255],'FontSize',16)
+            text(-5,this_ylim(1)+0.85*(this_ylim(2)-this_ylim(1)),'IA','Color',[0 114/255 178/255],'FontSize',16)
+            text(-5,this_ylim(1)+0.75*(this_ylim(2)-this_ylim(1)),'MO','Color',[158/255 31/255 99/255],'FontSize',16)
 
             xlim([-7 15])
 
@@ -3017,8 +3038,8 @@ if all_files_present==1
                 plot([timeEvents(ii_te) timeEvents(ii_te)],this_ylim,'-k')
             end
 
-            text(-5,this_ylim(1)+0.85*(this_ylim(2)-this_ylim(1)),'Odor 1','Color',[0 114/255 178/255],'FontSize',16)
-            text(-5,this_ylim(1)+0.75*(this_ylim(2)-this_ylim(1)),'Odor 2','Color',[158/255 31/255 99/255],'FontSize',16)
+            text(-5,this_ylim(1)+0.85*(this_ylim(2)-this_ylim(1)),'IA','Color',[0 114/255 178/255],'FontSize',16)
+            text(-5,this_ylim(1)+0.75*(this_ylim(2)-this_ylim(1)),'MO','Color',[158/255 31/255 99/255],'FontSize',16)
 
             xlim([-7 15])
 
@@ -3154,7 +3175,7 @@ if all_files_present==1
 
         xlim([-7 15])
         ylim([1 ii])
-        title(['d prime forward, forward or reversed proficient divergent'])
+        title(['d prime forward'])
         xlabel('Time (sec)')
         ylabel('ROI number')
 
@@ -3205,142 +3226,163 @@ if all_files_present==1
 
         xlim([-7 15])
         ylim([1 ii])
-        title(['d prime reversed, forward or reversed proficient divergent'])
+        title(['d prime reversed'])
         xlabel('Time (sec)')
         ylabel('ROI number')
 
-        %Plot the average timecourses per cluster
-        %Odor 1 and 2 forward
-        for clus=1:max(clusters)
-            figureNo = figureNo + 1;
-            try
-                close(figureNo)
-            catch
-            end
-            hFig=figure(figureNo);
-
-            ax=gca;ax.LineWidth=3;
-            set(hFig, 'units','normalized','position',[.3 .2 .3 .3])
-
-
-            hold on
-
-            %get the dF/F
-
-
-            try
-
-                %Forward
-                this_cluster_dprime=[];
-                ii_included=0;
-                for ii=1:length(clusters)
-                    if clusters(ii)==clus
-                        ii_included=ii_included+1;
-                        this_cluster_dprime(ii_included,:)=handles_out.all_div_frp_d_prime12_forward(ii,:);
-                    end
-                end
-
-
-                CIpv = bootci(1000, @mean, this_cluster_dprime);
-                meanpv=mean(this_cluster_dprime,1);
-                CIpv(1,:)=meanpv-CIpv(1,:);
-                CIpv(2,:)=CIpv(2,:)-meanpv;
-
-
-                [hlpvl, hppvl] = boundedline(time_span,mean(this_cluster_dprime), CIpv','k');
-
-                
-
-
-
-            catch
-            end
-
-            this_ylim=ylim;
-            for ii_te=1:length(timeEvents)
-                plot([timeEvents(ii_te) timeEvents(ii_te)],this_ylim,'-k')
-            end
-
-           
-
-            xlim([-7 15])
-
-
-            xlabel('Time(sec)')
-            ylabel('d prime')
-
-
-            title(['d prime forward proficient for cluster no ' num2str(clus)])
-
+        %Plot rainbow
+        figureNo=figureNo+1;
+        try
+            close(figureNo)
+        catch
         end
 
-        %Plot the average timecourses per cluster
-        %Odor 1 and 2 reversed
-        for clus=1:max(clusters)
-            figureNo = figureNo + 1;
-            try
-                close(figureNo)
-            catch
-            end
-            hFig=figure(figureNo);
+        hFig = figure(figureNo);
 
-            ax=gca;ax.LineWidth=3;
-            set(hFig, 'units','normalized','position',[.3 .2 .3 .3])
+        set(hFig, 'units','normalized','position',[.49 .1 .05 .3])
 
+        pr_from=min(handles_out.all_div_frp_d_prime12_forward(:))-0.1;
+        pr_to=max(handles_out.all_div_frp_d_prime12_forward(:))-0.6;
+        prain=[pr_from:(pr_to-pr_from)/99:pr_to];
+        pcolor(repmat([1:10],100,1)',repmat(prain,10,1),repmat(prain,10,1))
+        %             colormap jet
+        colormap fire
+        shading interp
+        ax=gca;
+        set(ax,'XTickLabel','')
 
-            hold on
-
-            %get the dF/F
-
-
-            try
-
-                %Odor 2
-                this_cluster_dprime=[];
-                ii_included=0;
-                for ii=1:length(clusters)
-                    if clusters(ii)==clus
-                        ii_included=ii_included+1;
-                        this_cluster_dprime(ii_included,:)=handles_out.all_div_frp_d_prime12_reversed(ii,:);
-                    end
-                end
-
-
-                CIpv = bootci(1000, @mean, this_cluster_dprime);
-                meanpv=mean(this_cluster_dprime,1);
-                CIpv(1,:)=meanpv-CIpv(1,:);
-                CIpv(2,:)=CIpv(2,:)-meanpv;
-
-
-                [hlpvl, hppvl] = boundedline(time_span,mean(this_cluster_dprime), CIpv','-k');
-
-                
-
-
-              
-
-
-
-            catch
-            end
-
-            this_ylim=ylim;
-            for ii_te=1:length(timeEvents)
-                plot([timeEvents(ii_te) timeEvents(ii_te)],this_ylim,'-k')
-            end
-
-            
-
-            xlim([-7 15])
-
-
-            xlabel('Time(sec)')
-            ylabel('dF prime')
-
-
-            title(['d prime reversed proficient for cluster no ' num2str(clus)])
-
-        end
+%         %Plot the average timecourses per cluster
+%         %Odor 1 and 2 forward
+%         for clus=1:max(clusters)
+%             figureNo = figureNo + 1;
+%             try
+%                 close(figureNo)
+%             catch
+%             end
+%             hFig=figure(figureNo);
+% 
+%             ax=gca;ax.LineWidth=3;
+%             set(hFig, 'units','normalized','position',[.3 .2 .3 .3])
+% 
+% 
+%             hold on
+% 
+%             %get the dF/F
+% 
+% 
+%             try
+% 
+%                 %Forward
+%                 this_cluster_dprime=[];
+%                 ii_included=0;
+%                 for ii=1:length(clusters)
+%                     if clusters(ii)==clus
+%                         ii_included=ii_included+1;
+%                         this_cluster_dprime(ii_included,:)=handles_out.all_div_frp_d_prime12_forward(ii,:);
+%                     end
+%                 end
+% 
+% 
+%                 CIpv = bootci(1000, @mean, this_cluster_dprime);
+%                 meanpv=mean(this_cluster_dprime,1);
+%                 CIpv(1,:)=meanpv-CIpv(1,:);
+%                 CIpv(2,:)=CIpv(2,:)-meanpv;
+% 
+% 
+%                 [hlpvl, hppvl] = boundedline(time_span,mean(this_cluster_dprime), CIpv','k');
+% 
+%                 
+% 
+% 
+% 
+%             catch
+%             end
+% 
+%             this_ylim=ylim;
+%             for ii_te=1:length(timeEvents)
+%                 plot([timeEvents(ii_te) timeEvents(ii_te)],this_ylim,'-k')
+%             end
+% 
+%            
+% 
+%             xlim([-7 15])
+% 
+% 
+%             xlabel('Time(sec)')
+%             ylabel('d prime')
+% 
+% 
+%             title(['d prime forward proficient for cluster no ' num2str(clus)])
+% 
+%         end
+% 
+%         %Plot the average timecourses per cluster
+%         %Odor 1 and 2 reversed
+%         for clus=1:max(clusters)
+%             figureNo = figureNo + 1;
+%             try
+%                 close(figureNo)
+%             catch
+%             end
+%             hFig=figure(figureNo);
+% 
+%             ax=gca;ax.LineWidth=3;
+%             set(hFig, 'units','normalized','position',[.3 .2 .3 .3])
+% 
+% 
+%             hold on
+% 
+%             %get the dF/F
+% 
+% 
+%             try
+% 
+%                 %Odor 2
+%                 this_cluster_dprime=[];
+%                 ii_included=0;
+%                 for ii=1:length(clusters)
+%                     if clusters(ii)==clus
+%                         ii_included=ii_included+1;
+%                         this_cluster_dprime(ii_included,:)=handles_out.all_div_frp_d_prime12_reversed(ii,:);
+%                     end
+%                 end
+% 
+% 
+%                 CIpv = bootci(1000, @mean, this_cluster_dprime);
+%                 meanpv=mean(this_cluster_dprime,1);
+%                 CIpv(1,:)=meanpv-CIpv(1,:);
+%                 CIpv(2,:)=CIpv(2,:)-meanpv;
+% 
+% 
+%                 [hlpvl, hppvl] = boundedline(time_span,mean(this_cluster_dprime), CIpv','-k');
+% 
+%                 
+% 
+% 
+%               
+% 
+% 
+% 
+%             catch
+%             end
+% 
+%             this_ylim=ylim;
+%             for ii_te=1:length(timeEvents)
+%                 plot([timeEvents(ii_te) timeEvents(ii_te)],this_ylim,'-k')
+%             end
+% 
+%             
+% 
+%             xlim([-7 15])
+% 
+% 
+%             xlabel('Time(sec)')
+%             ylabel('dF prime')
+% 
+% 
+%             title(['d prime reversed proficient for cluster no ' num2str(clus)])
+% 
+%         end
 
         %Plot forward vs reversed d prime
 
@@ -3580,7 +3622,7 @@ if all_files_present==1
 % 
 %         xlim([-7 15])
 %         ylim([1 ii])
-%         title(['Odor 1 forward, forward proficient divergent'])
+%         title(['IA forward, forward proficient divergent'])
 %         xlabel('Time (sec)')
 %         ylabel('ROI number')
 % 
@@ -3629,7 +3671,7 @@ if all_files_present==1
 % 
 %         xlim([-7 15])
 %         ylim([1 ii])
-%         title(['Odor 1 at reveresal, forward proficient divergent'])
+%         title(['IA at reveresal, forward proficient divergent'])
 %         xlabel('Time (sec)')
 %         ylabel('ROI number')
 % 
@@ -3678,7 +3720,7 @@ if all_files_present==1
 % 
 %         xlim([-7 15])
 %         ylim([1 ii])
-%         title(['Odor 1 reversed, forward proficient divergent'])
+%         title(['IA reversed, forward proficient divergent'])
 %         xlabel('Time (sec)')
 %         ylabel('ROI number')
 % 
@@ -3726,7 +3768,7 @@ if all_files_present==1
 % 
 %         xlim([-7 15])
 %         ylim([1 ii])
-%         title(['Odor 2 forward, forward proficient divergent'])
+%         title(['MO forward, forward proficient divergent'])
 %         xlabel('Time (sec)')
 %         ylabel('ROI number')
 % 
@@ -3776,7 +3818,7 @@ if all_files_present==1
 % 
 %         xlim([-7 15])
 %         ylim([1 ii])
-%         title(['Odor 2 at reveresal, forward proficient divergent'])
+%         title(['MO at reveresal, forward proficient divergent'])
 %         xlabel('Time (sec)')
 %         ylabel('ROI number')
 % 
@@ -3824,7 +3866,7 @@ if all_files_present==1
 % 
 %         xlim([-7 15])
 %         ylim([1 ii])
-%         title(['Odor 2 reversed, forward proficient divergent'])
+%         title(['MO reversed, forward proficient divergent'])
 %         xlabel('Time (sec)')
 %         ylabel('ROI number')
 % 
@@ -4074,7 +4116,7 @@ if all_files_present==1
 % 
 %         xlim([-7 15])
 %         ylim([1 ii])
-%         title(['Odor 1 forward, reversed proficient divergent'])
+%         title(['IA forward, reversed proficient divergent'])
 %         xlabel('Time (sec)')
 %         ylabel('ROI number')
 % 
@@ -4118,7 +4160,7 @@ if all_files_present==1
 % 
 %         xlim([-7 15])
 %         ylim([1 ii])
-%         title(['Odor 1 at reveresal, reversed proficient divergent'])
+%         title(['IA at reveresal, reversed proficient divergent'])
 %         xlabel('Time (sec)')
 %         ylabel('ROI number')
 % 
@@ -4162,7 +4204,7 @@ if all_files_present==1
 % 
 %         xlim([-7 15])
 %         ylim([1 ii])
-%         title(['Odor 1 reversed, reversed proficient divergent'])
+%         title(['IA reversed, reversed proficient divergent'])
 %         xlabel('Time (sec)')
 %         ylabel('ROI number')
 % 
@@ -4205,7 +4247,7 @@ if all_files_present==1
 % 
 %         xlim([-7 15])
 %         ylim([1 ii])
-%         title(['Odor 2 forward, reversed proficient divergent'])
+%         title(['MO forward, reversed proficient divergent'])
 %         xlabel('Time (sec)')
 %         ylabel('ROI number')
 % 
@@ -4250,7 +4292,7 @@ if all_files_present==1
 % 
 %         xlim([-7 15])
 %         ylim([1 ii])
-%         title(['Odor 2 at reveresal, reversed proficient divergent'])
+%         title(['MO at reveresal, reversed proficient divergent'])
 %         xlabel('Time (sec)')
 %         ylabel('ROI number')
 % 
@@ -4293,7 +4335,7 @@ if all_files_present==1
 % 
 %         xlim([-7 15])
 %         ylim([1 ii])
-%         title(['Odor 2 reversed, reversed proficient divergent'])
+%         title(['MO reversed, reversed proficient divergent'])
 %         xlabel('Time (sec)')
 %         ylabel('ROI number')
 % 

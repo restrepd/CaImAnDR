@@ -22,12 +22,13 @@ all_no_ROIs=[1 2 5 15 2000];
 all_no_ROI_draws=[2000 40 40  40 1];
 
 %separate the clusters according to diversion times
-cluster_times=[-1.5 0; 0 1; 1 2; 2 3; 3 200];
-cluster_labels{1}='-1.5 to 0 sec';
-cluster_labels{2}='0 to 1 sec';
-cluster_labels{3}='1-2 sec';
-cluster_labels{4}='2-3 sec';
-cluster_labels{5}='>3sec';
+cluster_times=[-1.5 -1;-1 0; 0 1; 1 2; 2 3; 3 200];
+cluster_labels{1}='-1.5 to -1 sec';
+cluster_labels{2}='-1 to 0 sec';
+cluster_labels{3}='0 to 1 sec';
+cluster_labels{4}='1-2 sec';
+cluster_labels{5}='2-3 sec';
+cluster_labels{6}='>3sec';
 
 epoch_labels{1}='Pre';
 epoch_labels{2}='Odor';
