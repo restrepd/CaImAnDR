@@ -572,6 +572,10 @@ for grNo=[2 4]
     end
 
 
+     for ii_mouse=1:length(dim_per_group.group(grNo).window(2).dims_per_mouse)
+                plot([bar_offset-1 bar_offset],[dim_per_group.group(grNo).window(1).dims_per_mouse(ii_mouse) dim_per_group.group(grNo).window(2).dims_per_mouse(ii_mouse)],'-','Color',[150/255 150/255 150/255],'LineWidth',3 )
+     end
+
     bar_offset=bar_offset+1;
 end
 

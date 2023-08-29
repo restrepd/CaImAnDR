@@ -429,10 +429,10 @@ if all_files_present==1
 
             if ii_pc_group==1
                 hp=bar(bar_offset,mean(all_delta_zdist_euclid_within),'LineWidth', 3,'EdgeColor','none','FaceColor',[80/255 194/255 255/255]);
-                hatchfill2(hp,'single','HatchAngle',45,'hatchcolor',[244/255 165/255 30/255]);
+                hatchfill2(hp,'single','HatchAngle',45,'hatchcolor',[244/255 165/255 30/255],'HatchLineWidth',2);
             else
                 hp=bar(bar_offset,mean(all_delta_zdist_euclid_within),'LineWidth', 3,'EdgeColor','none','FaceColor',[0 114/255 178/255]);
-                hatchfill2(hp,'single','HatchAngle',45,'hatchcolor',[244/255 165/255 30/255]);
+                hatchfill2(hp,'single','HatchAngle',45,'hatchcolor',[244/255 165/255 30/255],'HatchLineWidth',2);
             end
 
             if length(all_delta_zdist_euclid_within)>2
@@ -446,10 +446,10 @@ if all_files_present==1
             bar_offset=bar_offset+1;
             if ii_pc_group==1
                 hp=bar(bar_offset,mean(all_delta_zdist_euclid),'LineWidth', 3,'EdgeColor','none','FaceColor',[80/255 194/255 255/255]);
-                hatchfill2(hp,'single','HatchAngle',45,'hatchcolor','k');
+                hatchfill2(hp,'single','HatchAngle',45,'hatchcolor','k','HatchLineWidth',2);
             else
                 hp=bar(bar_offset,mean(all_delta_zdist_euclid),'LineWidth', 3,'EdgeColor','none','FaceColor',[0 114/255 178/255]);
-                hatchfill2(hp,'single','HatchAngle',45,'hatchcolor','k');
+                hatchfill2(hp,'single','HatchAngle',45,'hatchcolor','k','HatchLineWidth',2);
             end
 
             if length(all_delta_zdist_euclid)>2

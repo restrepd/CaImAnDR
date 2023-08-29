@@ -124,6 +124,22 @@ for grNo=groups
     these_pre=[];
     these_FV=[];
     these_odor=[];
+
+     switch handles.group_algo
+            case 1
+                %Ming
+                switch grNo
+                    case 1
+                        files_included_gr=(handles_out.perCorr>=80)&files_included_glm&(file_grNo==1);
+                        fprintf(1, ['\nSessions for forward proficient ' num2str(sum(files_included_gr)) '\n'])
+                    case 3
+                        files_included_gr=(handles_out.perCorr>=80)&files_included_glm&(file_grNo==2);
+                        fprintf(1, ['\nSessions for reversed proficient ' num2str(sum(files_included_gr)) '\n'])
+                end
+            case 2
+                %Fabio
+                files_included_gr=(handles.group==grNo)&(handles_out.mouseNo==mouseNo)&files_included_glm;
+        end
     
     for mouseNo=unique(handles_out.mouseNo)
 

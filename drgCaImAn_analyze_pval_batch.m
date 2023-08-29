@@ -119,6 +119,24 @@ for grNo=groups
     these_pre=[];
     these_FV=[];
     these_odor=[];
+
+    switch handles.group_algo
+        case 1
+            %Ming
+            switch grNo
+                case 1
+                    files_included_gr=(handles_out.perCorr>=45)&(handles_out.perCorr<=65)&files_included_glm;
+                    fprintf(1, ['\nSessions for learning ' num2str(sum(files_included_gr)) '\n'])
+                case 2
+                    files_included_gr=(handles_out.perCorr>65)&(handles_out.perCorr<80)&files_included_glm;
+                case 3
+                    files_included_gr=(handles_out.perCorr>=80)&files_included_glm;
+                    fprintf(1, ['\nSessions for proficient ' num2str(sum(files_included_gr)) '\n'])
+            end
+        case 2
+            %Fabio
+            files_included_gr=(handles.group==grNo)&(handles_out.mouseNo==mouseNo)&files_included_glm;
+    end
     
     for mouseNo=unique(handles_out.mouseNo)
 
@@ -254,10 +272,10 @@ title('Percent divergent ROIs per mouse')
 % txt=cell2mat(txt);
 
 
-    %Do the ranksum/t-test
-    fprintf(1, ['\n\nRanksum or t-test p values for percent divergent per mouse\n']);
+%Do the ranksum/t-test
+fprintf(1, ['\n\nRanksum or t-test p values for percent divergent per mouse\n']);
 
-    [output_data] = drgMutiRanksumorTtest(input_sig_data);
+[output_data] = drgMutiRanksumorTtest(input_sig_data);
 
 %Plot a bar graph showing percent responding to S+
 glm_sig=[];
@@ -399,21 +417,26 @@ end
 ylabel('% responsive')
 title('Percent ROIs responding to S+ per mouse')
 
-%Perform the glm
-fprintf(1, ['\nglm for percent responsive to S+ per mouse\n'])
+% %Perform the glm
+% fprintf(1, ['\nglm for percent responsive to S+ per mouse\n'])
+% 
+% 
+% tbl = table(glm_sig.data',glm_sig.grNo',...
+%     'VariableNames',{'percent_divergent','percent_correct'});
+% mdl = fitglm(tbl,'percent_divergent~percent_correct'...
+%     ,'CategoricalVars',[2])
+% 
+% 
+% txt = evalc('mdl');
+% txt=regexp(txt,'<strong>','split');
+% txt=cell2mat(txt);
+% txt=regexp(txt,'</strong>','split');
+% txt=cell2mat(txt);
 
+%Do the ranksum/t-test
+fprintf(1, ['\n\nRanksum or t-test p values for percent responding to S+ per mouse\n']);
 
-tbl = table(glm_sig.data',glm_sig.grNo',...
-    'VariableNames',{'percent_divergent','percent_correct'});
-mdl = fitglm(tbl,'percent_divergent~percent_correct'...
-    ,'CategoricalVars',[2])
-
-
-txt = evalc('mdl');
-txt=regexp(txt,'<strong>','split');
-txt=cell2mat(txt);
-txt=regexp(txt,'</strong>','split');
-txt=cell2mat(txt);
+[output_data] = drgMutiRanksumorTtest(input_sig_data);
 
 
 
@@ -522,6 +545,8 @@ for grNo=groups
 
     id_sig_ii=id_sig_ii+1;
     input_sig_data(id_sig_ii).data=these_odor;
+
+
     
     switch handles.group_algo
         case 1
@@ -560,24 +585,29 @@ end
 ylabel('% responsive')
 title('Percent ROIs responding to S-')
 
-%Perform the glm
-fprintf(1, ['\nglm for percent responsive to S-\n'])
+% %Perform the glm
+% fprintf(1, ['\nglm for percent responsive to S-\n'])
+% 
+% 
+% tbl = table(glm_sig.data',glm_sig.grNo',...
+%     'VariableNames',{'percent_divergent','percent_correct'});
+% mdl = fitglm(tbl,'percent_divergent~percent_correct'...
+%     ,'CategoricalVars',[2])
+% 
+% 
+% txt = evalc('mdl');
+% txt=regexp(txt,'<strong>','split');
+% txt=cell2mat(txt);
+% txt=regexp(txt,'</strong>','split');
+% txt=cell2mat(txt);
 
-
-tbl = table(glm_sig.data',glm_sig.grNo',...
-    'VariableNames',{'percent_divergent','percent_correct'});
-mdl = fitglm(tbl,'percent_divergent~percent_correct'...
-    ,'CategoricalVars',[2])
-
-
-txt = evalc('mdl');
-txt=regexp(txt,'<strong>','split');
-txt=cell2mat(txt);
-txt=regexp(txt,'</strong>','split');
-txt=cell2mat(txt);
+%Do the ranksum/t-test
+fprintf(1, ['\n\nRanksum or t-test p values for percent responding to S- per mouse\n']);
+ 
+[output_data] = drgMutiRanksumorTtest(input_sig_data);
 
 pffft=1;
-
+ 
 
 
 %Now generate the summary figures for the divergent responses
