@@ -372,7 +372,6 @@ if all_files_present==1
     end
     hFig=figure(figureNo);
 
-
     set(hFig, 'units','normalized','position',[.3 .1 .25 .7])
 
     edges=[-2:0.5:10];

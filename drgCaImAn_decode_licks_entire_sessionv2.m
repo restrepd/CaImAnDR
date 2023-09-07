@@ -1,4 +1,4 @@
-function handles_out=drgCaImAn_decode_licks_entire_session(handles_choices)
+function handles_out=drgCaImAn_decode_licks_entire_sessionv2(handles_choices)
 %This program trains several decoding algorithms with the post odorant and then determines what happens throughout the entire timecouse
 %The user enters the choices entered under exist('handles_choices')==0
 %
@@ -82,7 +82,7 @@ no_shuffles=10; %Number of shuffles for per trial shuffling
 window_no=2;
 time_windows=[-1 0;
     2 4.1];
-   
+    
 load([pre_perPathName pre_perFileName])
 if show_figures==1
     fprintf(1, ['\ndrgCaImAn_SVZ_entire_session run for ' pre_perFileName '\n\n']);
@@ -347,19 +347,23 @@ trial_no=0;
 
 dt_post_which_model=floor(20/dt); %Points that model will be used beyond the training period
 ii_span=ceil(dt_span/dt);
+ii_post_shift=ceil(post_shift/dt);
+ii_post_time=ceil(post_time/dt);
 dFF_per_trial_sp=[];
 dFF_per_trial_sm=[];
 dFFs_sp_per_trial_per_ROI=[];
 dFFs_sm_per_trial_per_ROI=[];
 hit_per_trial=[];
 cr_per_trial=[]; 
+miss_per_trial=[];
+fa_per_trial=[];
 
 
 [hit_per_trial,cr_per_trial,dFFs_sp_per_trial_per_ROI,...
     dFFs_sm_per_trial_per_ROI,dFF_per_trial_sm,dFF_per_trial_sp,training_decisions_post,...
     which_model_for_traces_loo,decisions_per_trial,...
     ii_pointer_to_td,epochs_sp_post,measurements_post,...
-    ii_post,trial_no,epochs_sm_post] = ...
+    ii_post,trial_no,epochs_sm_post,miss_per_trial,fa_per_trial] = ...
     drgCaImAn_parse_out_trials_and_licks(dt, dt_span,epochs,...
     no_points_post_shift,no_points_post,traces...
     ,ii_p_threshold,no_odor_trials,time,trimmed_licks);
@@ -1334,7 +1338,7 @@ for MLalgo=MLalgo_to_use
                         this_time_point=zeros(1,size(traces,1));
                         this_time_point(1,:)=measurements_post(ii,:);
                         [label,score] = predict(handles_not_out.MLalgo(MLalgo).models(which_model(ii)).Mdl,this_time_point);
-%                         scores_post(ii,:)=score;
+                        scores_post(ii,:)=score;
                         if label>0.5
                             label_post(ii)=1;
                         else
@@ -1366,9 +1370,9 @@ for MLalgo=MLalgo_to_use
                         this_time_point(1,:)=measurements_post(ii,:);
                         try
                             [label_post(ii),score] = predict(handles_not_out.MLalgo(MLalgo).models(which_model(ii)).Mdl,this_time_point);
-%                             scores_post(ii,:)=score;
+                            scores_post(ii,:)=score;
                         catch
-%                             scores_post(ii,:)=rand(1,2);
+                            scores_post(ii,:)=rand(1,2);
                             if rand(1)>0.5
                                 label_post(ii)=1;
                             else
@@ -2098,69 +2102,69 @@ for MLalgo=MLalgo_to_use
             edges=[0:0.033:1.2];
             rand_offset=0.8;
             
-            
-            figNo=figNo+1;
-            try
-                close(figNo)
-            catch
-            end
-            
-            hFig = figure(figNo);
-            
-            set(hFig, 'units','normalized','position',[.05 .1 .3 .3])
-            
-            hold on
-            
-            bar_offset=1;
-            
-            %                 %S- pre
-            %                 bar_offset=1;
-            %
-            %                 bar(bar_offset,mean(mean_pre_label_sm),'LineWidth', 3,'EdgeColor','none','FaceColor',[238/255 111/255 179/255])
-            %
-            %                 %Violin plot
-            %                 [mean_out, CIout]=drgViolinPoint(mean_pre_label_sm...
-            %                     ,edges,bar_offset,rand_offset,'k','k',3);
-            %
-            %                 bar_offset=bar_offset+1;
-            %
-            %                 %S+ pre
-            %                 bar(bar_offset,mean(mean_pre_label_sp),'LineWidth', 3,'EdgeColor','none','FaceColor',[80/255 194/255 255/255])
-            %
-            %                 %Violin plot
-            %                 [mean_out, CIout]=drgViolinPoint(mean_pre_label_sp...
-            %                     ,edges,bar_offset,rand_offset,'k','k',3);
-            %
-            %                 bar_offset=bar_offset+2;
-            
-            %S- post
-            bar(bar_offset,mean(mean_post_label_sm),'LineWidth', 3,'EdgeColor','none','FaceColor',[158/255 31/255 99/255])
-            
-            %Violin plot
-            [mean_out, CIout]=drgViolinPoint(mean_post_label_sm...
-                ,edges,bar_offset,rand_offset,'k','k',3);
-            bar_offset=bar_offset+1;
-            
-            %S+ post
-            bar(bar_offset,mean(mean_post_label_sp),'LineWidth', 3,'EdgeColor','none','FaceColor',[0 114/255 178/255])
-            
-            %Violin plot
-            [mean_out, CIout]=drgViolinPoint(mean_post_label_sp...
-                ,edges,bar_offset,rand_offset,'k','k',3);
-            
-            bar_offset=bar_offset+2;
-            bar(bar_offset,mean(mean_all_label),'LineWidth', 3,'EdgeColor','none','FaceColor','m')
-            
-            %Violin plot
-            [mean_out, CIout]=drgViolinPoint(mean_all_label...
-                ,edges,bar_offset,rand_offset,'k','k',3);
-            
-            xticks([1 2 4 5 7])
-            xticklabels({'S- post', 'S+ post','Entire session'})
-            title(['Label prediction for ' classifier_names{MLalgo} ' and p value threshold ' num2str(p_threshold)])
-            
+%             
+%             figNo=figNo+1;
+%             try
+%                 close(figNo)
+%             catch
+%             end
+%             
+%             hFig = figure(figNo);
+%             
+%             set(hFig, 'units','normalized','position',[.05 .1 .3 .3])
+%             
+%             hold on
+%             
+%             bar_offset=1;
+%             
+%             %                 %S- pre
+%             %                 bar_offset=1;
+%             %
+%             %                 bar(bar_offset,mean(mean_pre_label_sm),'LineWidth', 3,'EdgeColor','none','FaceColor',[238/255 111/255 179/255])
+%             %
+%             %                 %Violin plot
+%             %                 [mean_out, CIout]=drgViolinPoint(mean_pre_label_sm...
+%             %                     ,edges,bar_offset,rand_offset,'k','k',3);
+%             %
+%             %                 bar_offset=bar_offset+1;
+%             %
+%             %                 %S+ pre
+%             %                 bar(bar_offset,mean(mean_pre_label_sp),'LineWidth', 3,'EdgeColor','none','FaceColor',[80/255 194/255 255/255])
+%             %
+%             %                 %Violin plot
+%             %                 [mean_out, CIout]=drgViolinPoint(mean_pre_label_sp...
+%             %                     ,edges,bar_offset,rand_offset,'k','k',3);
+%             %
+%             %                 bar_offset=bar_offset+2;
+% 
+%             %S- post
+%             bar(bar_offset,mean(mean_post_label_sm),'LineWidth', 3,'EdgeColor','none','FaceColor',[158/255 31/255 99/255])
+% 
+%             %Violin plot
+%             [mean_out, CIout]=drgViolinPoint(mean_post_label_sm...
+%                 ,edges,bar_offset,rand_offset,'k','k',3);
+%             bar_offset=bar_offset+1;
+% 
+%             %S+ post
+%             bar(bar_offset,mean(mean_post_label_sp),'LineWidth', 3,'EdgeColor','none','FaceColor',[0 114/255 178/255])
+% 
+%             %Violin plot
+%             [mean_out, CIout]=drgViolinPoint(mean_post_label_sp...
+%                 ,edges,bar_offset,rand_offset,'k','k',3);
+% 
+%             bar_offset=bar_offset+2;
+%             bar(bar_offset,mean(mean_all_label),'LineWidth', 3,'EdgeColor','none','FaceColor','m')
+% 
+%             %Violin plot
+%             [mean_out, CIout]=drgViolinPoint(mean_all_label...
+%                 ,edges,bar_offset,rand_offset,'k','k',3);
+% 
+%             xticks([1 2 4 5 7])
+%             xticklabels({'S- post', 'S+ post','Entire session'})
+%             title(['Label prediction for ' classifier_names{MLalgo} ' and p value threshold ' num2str(p_threshold)])
+
         end
-        
+
         %Now show average labels for S+, S-, etc for 30 sec
         handles_not_out.MLalgo(MLalgo).mean_all_label=mean_all_label;
         handles_not_out.MLalgo(MLalgo).mean_pre_label_sm=mean_pre_label_sm;
@@ -2168,7 +2172,7 @@ for MLalgo=MLalgo_to_use
         handles_not_out.MLalgo(MLalgo).mean_post_label_sm=mean_post_label_sm;
         handles_not_out.MLalgo(MLalgo).mean_post_label_sp=mean_post_label_sp;
         handles_not_out.MLalgo(MLalgo).mean_all_label=mean_all_label;
-        
+
         %Now do the per trial plots
         %First extract per trial prediction and per trial licks
         at_end=0;
@@ -2181,12 +2185,41 @@ for MLalgo=MLalgo_to_use
         per_trial_sm_timecourse=[];
         per_trial_sm_licks=[];
         epoch_before_sm=[];
+
+        %For post period only
+        per_trial_sp_timecourse_post=[];
+        per_trial_sp_licks_post=[];
+
+        per_trial_sm_timecourse_post=[];
+        per_trial_sm_licks_post=[];
+
+        tr_ii=0;
+        hit_ii=0;
+        miss_ii=0;
+        cr_ii=0;
+        fa_ii=0;
+        these_hits=[];
+        these_miss=[];
+        these_sp_hits=[];
+        these_sp_miss=[];
+        these_crs=[];
+        these_fas=[];
+        these_sm_crs=[];
+        these_sm_fas=[];
+        these_sps=[];
+        theese_sms=[];
+
+        per_trial_hit_timecourse_post=[];
+        per_trial_miss_timecourse_post=[];
+        per_trial_cr_timecourse_post=[];
+        per_trial_fa_timecourse_post=[];
+
         % per_trial_scores_sp=[];
         % per_trial_scores_sm=[];
-        
+
         last_sp_sm=-1;
-        
-        
+
+
         while at_end==0
             next_ii=[];
             next_ii_sp=find(epochs_sp_post(ii:end)==1,1,'first');
@@ -2209,25 +2242,81 @@ for MLalgo=MLalgo_to_use
                     this_sp_sm=0;
                 end
             end
-            
+
             if ~isempty(next_ii)
                 if ((ii+next_ii-ii_span)>0)&((ii+next_ii+ii_span<length(label_traces)))
                     if this_sp_sm==1
+
+                        tr_ii=tr_ii+1;
+                        these_crs(tr_ii)=0;
+                        these_fas(tr_ii)=0;
+                        these_sps(tr_ii)=1;
+                        these_sms(tr_ii)=0;
+
                         sp_ii=sp_ii+1;
                         per_trial_sp_timecourse(sp_ii,:)=label_traces(ii+next_ii-ii_span:ii+next_ii+ii_span);
                         per_trial_sp_licks(sp_ii,:)=trimmed_licks(ii+next_ii-ii_span:ii+next_ii+ii_span);
+                        per_trial_sp_timecourse_post(sp_ii,:)=label_traces(ii+next_ii+ii_post_shift:ii+next_ii+ii_post_shift+ii_post_time);
+                        per_trial_sp_licks_post(sp_ii,:)=trimmed_licks(ii+next_ii+ii_post_shift:ii+next_ii+ii_post_shift+ii_post_time);
                         % per_trial_scores_sp(sp_ii,1:size(scores,2),:)=scores(ii+next_ii-ii_span:ii+next_ii+ii_span,:)';
                         epoch_before_sp(sp_ii)=last_sp_sm;
                         last_sp_sm=1;
+
+                        if epochs(ii+next_ii)==6
+                            hit_ii=hit_ii+1;
+                            per_trial_hit_timecourse_post(hit_ii,:)=label_traces(ii+next_ii+ii_post_shift:ii+next_ii+ii_post_shift+ii_post_time);
+                            these_hits(tr_ii)=1;
+                            these_miss(tr_ii)=0;
+                            these_sp_hits(sp_ii)=1;
+                            these_sp_miss(sp_ii)=0;
+                        end
+                        if epochs(ii+next_ii)==7
+                            miss_ii=miss_ii+1;
+                            per_trial_miss_timecourse_post(miss_ii,:)=label_traces(ii+next_ii+ii_post_shift:ii+next_ii+ii_post_shift+ii_post_time);
+                            these_hits(tr_ii)=0;
+                            these_miss(tr_ii)=1;
+                            these_sp_hits(sp_ii)=0;
+                            these_sp_miss(sp_ii)=1;
+                        end
+
                         ii_next_post=find(epochs_sp_post(ii+next_ii:end)==0,1,'first');
                         ii=ii+next_ii+ii_next_post;
                     else
+
+
+
                         sm_ii=sm_ii+1;
                         per_trial_sm_timecourse(sm_ii,:)=label_traces(ii+next_ii-ii_span:ii+next_ii+ii_span);
                         per_trial_sm_licks(sm_ii,:)=trimmed_licks(ii+next_ii-ii_span:ii+next_ii+ii_span);
+                        per_trial_sm_timecourse_post(sm_ii,:)=label_traces(ii+next_ii+ii_post_shift:ii+next_ii+ii_post_shift+ii_post_time);
+                        per_trial_sm_licks_post(sm_ii,:)=trimmed_licks(ii+next_ii+ii_post_shift:ii+next_ii+ii_post_shift+ii_post_time);
                         % per_trial_scores_sm(sm_ii,1:size(scores,2),:)=scores(ii+next_ii-ii_span:ii+next_ii+ii_span,:)';
                         epoch_before_sm(sm_ii)=last_sp_sm;
                         last_sp_sm=0;
+
+                        tr_ii=tr_ii+1;
+                        these_hits(tr_ii)=0;
+                        these_miss(tr_ii)=0;
+                        these_sps(tr_ii)=0;
+                        theese_sms(tr_ii)=1;
+                        if epochs(ii+next_ii)==9
+                            cr_ii=cr_ii+1;
+                            per_trial_cr_timecourse_post(cr_ii,:)=label_traces(ii+next_ii+ii_post_shift:ii+next_ii+ii_post_shift+ii_post_time);
+                            these_crs(tr_ii)=1;
+                            these_fas(tr_ii)=0;
+                            these_sm_crs(sm_ii)=1;
+                            these_sm_fas(sm_ii)=0;
+                        end
+                        if epochs(ii+next_ii)==8
+                            fa_ii=fa_ii+1;
+                            per_trial_fa_timecourse_post(fa_ii,:)=label_traces(ii+next_ii+ii_post_shift:ii+next_ii+ii_post_shift+ii_post_time);
+                            these_crs(tr_ii)=0;
+                            these_fas(tr_ii)=1;
+                            these_sm_crs(sm_ii)=0;
+                            these_sm_fas(sm_ii)=1;
+                        end
+
+
                         ii_next_post=find(epochs_sm_post(ii+next_ii:end)==0,1,'first');
                         ii=ii+next_ii+ii_next_post;
                     end
@@ -2241,16 +2330,36 @@ for MLalgo=MLalgo_to_use
             else
                 at_end=1;
             end
-            
+
         end
-        
+
+        handles_out.MLalgo(MLalgo).these_sm_crs=these_sm_crs;
+        handles_out.MLalgo(MLalgo).these_sm_fas=these_sm_fas;
+        handles_out.MLalgo(MLalgo).these_sp_hits=these_sp_hits;
+        handles_out.MLalgo(MLalgo).these_sp_miss=these_sp_miss;
+        handles_out.MLalgo(MLalgo).these_hits=these_hits;
+        handles_out.MLalgo(MLalgo).these_miss=these_miss;
+        handles_out.MLalgo(MLalgo).these_fas=these_fas;
+        handles_out.MLalgo(MLalgo).these_crs=these_crs;
+
         handles_out.MLalgo(MLalgo).per_trial_sp_timecourse=per_trial_sp_timecourse;
         handles_not_out.MLalgo(MLalgo).epoch_before_sp=epoch_before_sp;
         handles_out.MLalgo(MLalgo).per_trial_sm_timecourse=per_trial_sm_timecourse;
         handles_not_out.MLalgo(MLalgo).epoch_before_sm=epoch_before_sm;
+        handles_out.MLalgo(MLalgo).per_trial_sp_timecourse_post=per_trial_sp_timecourse_post;
+        handles_out.MLalgo(MLalgo).per_trial_sm_timecourse_post=per_trial_sm_timecourse_post;
+
+        handles_out.MLalgo(MLalgo).per_trial_hit_timecourse_post=per_trial_hit_timecourse_post;
+        handles_out.MLalgo(MLalgo).per_trial_miss_timecourse_post=per_trial_miss_timecourse_post;
+        handles_out.MLalgo(MLalgo).per_trial_cr_timecourse_post=per_trial_cr_timecourse_post;
+        handles_out.MLalgo(MLalgo).per_trial_fa_timecourse_post=per_trial_fa_timecourse_post;
+
 
         handles_out.MLalgo(MLalgo).per_trial_sp_licks=per_trial_sp_licks;
         handles_out.MLalgo(MLalgo).per_trial_sm_licks=per_trial_sm_licks;
+        handles_out.MLalgo(MLalgo).per_trial_sp_licks_post=per_trial_sp_licks_post;
+        handles_out.MLalgo(MLalgo).per_trial_sm_licks_post=per_trial_sm_licks_post;
+
         
         % handles_out.MLalgo(MLalgo).per_trial_scores_sp=per_trial_scores_sp;
         % handles_out.MLalgo(MLalgo).per_trial_scores_sm=per_trial_scores_sm;
@@ -2285,6 +2394,27 @@ for MLalgo=MLalgo_to_use
                 end
             end
         end
+
+        %Calculate correct predict post
+        for ii_tr=1:size(per_trial_sp_timecourse_post,1)
+            for ii_time=1:size(per_trial_sp_timecourse_post,2)
+                if per_trial_sp_timecourse_post(ii_tr,ii_time)==1
+                    this_correct_predict_post(ii_tr,ii_time)=1;
+                else
+                    this_correct_predict_post(ii_tr,ii_time)=0;
+                end
+            end
+        end
+        
+        for ii_tr=1:size(per_trial_sm_timecourse_post,1)
+            for ii_time=1:size(per_trial_sm_timecourse_post,2)
+                if per_trial_sm_timecourse_post(ii_tr,ii_time)==0
+                    this_correct_predict_post(ii_tr+sp_ii,ii_time)=1;
+                else
+                    this_correct_predict_post(ii_tr+sp_ii,ii_time)=0;
+                end
+            end
+        end
         
         
         %Calculate correct predict shuffled
@@ -2315,9 +2445,40 @@ for MLalgo=MLalgo_to_use
             end
             ii_plus=ii_plus+sm_ii;
         end
+
+        %Calculate correct predict post shuffled
+        ii_plus=0;
+        for ww=1:10
+            for ii_tr=1:size(per_trial_sp_timecourse_post,1)
+                rand_stim=randi([0,1],1,size(per_trial_sp_timecourse_post,2));
+                for ii_time=1:size(per_trial_sp_timecourse_post,2)
+                    if per_trial_sp_timecourse_post(ii_tr,ii_time)==rand_stim(ii_time)
+                        this_correct_predict_sh_post(ii_tr+ii_plus,ii_time)=1;
+                    else
+                        this_correct_predict_sh_post(ii_tr+ii_plus,ii_time)=0;
+                    end
+                end
+            end
+            
+            ii_plus=ii_plus+sp_ii;
+            
+            for ii_tr=1:size(per_trial_sm_timecourse_post,1)
+                rand_stim=randi([0,1],1,size(per_trial_sm_timecourse_post,2));
+                for ii_time=1:size(per_trial_sm_timecourse_post,2)
+                    if per_trial_sm_timecourse_post(ii_tr,ii_time)==rand_stim(ii_time)
+                        this_correct_predict_sh_post(ii_tr+ii_plus,ii_time)=1;
+                    else
+                        this_correct_predict_sh_post(ii_tr+ii_plus,ii_time)=0;
+                    end
+                end
+            end
+            ii_plus=ii_plus+sm_ii;
+        end
         
         handles_out.MLalgo(MLalgo).this_correct_predict=this_correct_predict;
         handles_out.MLalgo(MLalgo).this_correct_predict_sh=this_correct_predict_sh;
+        handles_out.MLalgo(MLalgo).this_correct_predict_post=this_correct_predict_post;
+        handles_out.MLalgo(MLalgo).this_correct_predict_sh_post=this_correct_predict_sh_post;
         
         if show_figures==1
             
@@ -2594,9 +2755,9 @@ for MLalgo=MLalgo_to_use
         end
     end
     
-    if show_figures==1
-        fprintf(1,['Accuracy for ' classifier_names{MLalgo} ' = %d\n\n'],mean(mean(handles_out.MLalgo(MLalgo).this_correct_predict(:,(time_span>=time_windows(window_no,1))&(time_span<=time_windows(window_no,2))),1)))
-    end
+%     if show_figures==1
+%         fprintf(1,['Accuracy for ' classifier_names{MLalgo} ' = %d\n\n'],mean(mean(handles_out.MLalgo(MLalgo).this_correct_predict(:,(time_span>=time_windows(window_no,1))&(time_span<=time_windows(window_no,2))),1)))
+%     end
 
 end
 
