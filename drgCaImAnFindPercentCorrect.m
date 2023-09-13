@@ -1,4 +1,4 @@
-function [percent_correct] = drgCaImAnFindPercentCorrect(pre_per_PathName,pre_per_FileName)
+function [percent_correct,no_trials] = drgCaImAnFindPercentCorrect(pre_per_PathName,pre_per_FileName)
 %UNTITLED Summary of this function goes here
 %   Detailed explanation goes here
 load([pre_per_PathName pre_per_FileName])
@@ -112,6 +112,7 @@ end
 
 %Calculate percent correct
 percent_correct=100*(sum(hit_per_trial)+sum(cr_per_trial))/length(hit_per_trial);
+no_trials=length(hit_per_trial);
 
 end
 

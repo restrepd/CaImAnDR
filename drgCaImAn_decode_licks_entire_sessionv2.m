@@ -17,13 +17,13 @@ if exist('handles_choices')==0
     
     processing_algorithm=3; %Use 3
     k_fold=5; %Only used for processing_algorithm=2,
-    post_time=0.5; %The decoding model will be trained with all points in post_time sec interval starting post_shift secs after odor on
-    post_shift=3; %The decoding model will be trained with all points in post_time sec interval starting post_shift secs after odor on
+    post_time=1; %0.5, The decoding model will be trained with all points in post_time sec interval starting post_shift secs after odor on
+    post_shift=-5; %3, The decoding model will be trained with all points in post_time sec interval starting post_shift secs after odor on
     pre_time=5; %Used to calculate the decoding accuracy pre_time sec before post_shift
     MLalgo_to_use=[4]; %Vector with the decoding algorithms you want to use
     ii_cost=3;
     p_threshold=1.1; %This limits the ROIs used in the decoding model to those whose p value in a ttest for the two odors in <=p_threshold
-    dt_p_threshold=20; %Time to be used after the odor on for the p_threshold t_test
+    dt_p_threshold=15; %20, Time to be used after the odor on for the p_threshold t_test
     show_figures=1; %Show the figures
     perm_before=0; %Permute the labels before running the decoder
     
@@ -66,15 +66,13 @@ if do_parfor==1
     gcp;
 end
 
-tic
-
 warning('off')
 
 %Restart random seeds
 rng('shuffle');
 
 convert_z=0; %Convert dFF traces to z
-dt_span=7; %Seconds for per trial traces centered on odor on, this used to be 30
+dt_span=15; %Seconds for per trial traces centered on odor on, this used to be 30
             %For some reason making this smaller than ~30 makes the baseline (original) above 0.5
 
 moving_mean_n=5; %Points used to calculate moving mean for the prediction label figure
@@ -383,7 +381,7 @@ time_span=[0:dt:dt*size(dFF_per_trial_sp,3)]-dt_span+dt;
 time_span=time_span(1:end-1);
 
 %Now let's limit the ROIs to those below p_threshold
-
+ 
 p_values=ones(1,size(dFFs_sm_per_trial_per_ROI,2));
 for iiROI=1:size(dFFs_sm_per_trial_per_ROI,2)
     dFF_sm=zeros(size(dFFs_sm_per_trial_per_ROI,1),size(dFFs_sm_per_trial_per_ROI,3));
@@ -1364,7 +1362,7 @@ for MLalgo=MLalgo_to_use
                         
                     end
 
-
+ 
                     for ii=1:size(measurements_post,1)
                         this_time_point=zeros(1,size(traces,1));
                         this_time_point(1,:)=measurements_post(ii,:);
@@ -1372,7 +1370,7 @@ for MLalgo=MLalgo_to_use
                             [label_post(ii),score] = predict(handles_not_out.MLalgo(MLalgo).models(which_model(ii)).Mdl,this_time_point);
                             scores_post(ii,:)=score;
                         catch
-                            scores_post(ii,:)=rand(1,2);
+%                             scores_post(ii,:)=rand(1,2);
                             if rand(1)>0.5
                                 label_post(ii)=1;
                             else
@@ -2341,6 +2339,11 @@ for MLalgo=MLalgo_to_use
         handles_out.MLalgo(MLalgo).these_miss=these_miss;
         handles_out.MLalgo(MLalgo).these_fas=these_fas;
         handles_out.MLalgo(MLalgo).these_crs=these_crs;
+        
+        handles_out.MLalgo(MLalgo).hit_per_trial=hit_per_trial;
+        handles_out.MLalgo(MLalgo).cr_per_trial=cr_per_trial;
+        handles_out.MLalgo(MLalgo).miss_per_trial=miss_per_trial;
+        handles_out.MLalgo(MLalgo).fa_per_trial=fa_per_trial;
 
         handles_out.MLalgo(MLalgo).per_trial_sp_timecourse=per_trial_sp_timecourse;
         handles_not_out.MLalgo(MLalgo).epoch_before_sp=epoch_before_sp;

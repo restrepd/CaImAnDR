@@ -37,7 +37,7 @@ per_names{2}='40-65%';
 per_names{3}='65-80%';
 per_names{4}='>=80%';
 
-naive_pro{1}='Naive';
+naive_pro{1}='Learning';
 naive_pro{3}='Proficient';
 
 cluster_color{1}='m';
@@ -1320,7 +1320,7 @@ if handles_out.all_div_ii_dFF>5
 
             id_clus_ii=id_clus_ii+1;
             input_clus_data(id_clus_ii).data=these_dFF_plus;
-            input_clus_data(id_clus_ii).description=[naive_pro{grNo} ' S-'];
+            input_clus_data(id_clus_ii).description=[naive_pro{grNo} ' S+'];
         end
 
         xticks([1 2 4 5])

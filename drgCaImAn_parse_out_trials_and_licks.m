@@ -82,7 +82,7 @@ while (at_end==0)
             next_ii=next_ii_sp;
             if (no_points_post_shift+this_ii+next_ii+no_points_post<length(epochs))&(no_points_post_shift+this_ii+next_ii>0)...
                     &(no_points_post_shift+this_ii+next_ii+ii_span<=length(epochs))&(no_points_post_shift+this_ii+next_ii-ii_span>0)&...
-                    (this_ii+next_ii+ii_span<length(time))&(this_ii+next_ii-ii_span>=1)
+                    (this_ii+next_ii+ii_span<length(time))&(this_ii+next_ii-ii_span>=1)&(no_points_post_shift+this_ii+next_ii+ii_p_threshold<=size(traces,2))
                 if epochs(this_ii+1+next_ii_sp)==6
                     hit_per_trial=[hit_per_trial 1];
                     miss_per_trial=[miss_per_trial 0];
@@ -111,7 +111,7 @@ while (at_end==0)
                 %                 ii_pre=ii_pre+no_points_pre;
             else
                 if (no_points_post_shift+this_ii+next_ii+no_points_post>length(epochs))||((no_points_post_shift+this_ii+next_ii-ii_span>0)...
-                        &(no_points_post_shift+this_ii+next_ii+ii_span>length(epochs)))
+                        &(no_points_post_shift+this_ii+next_ii+ii_span>length(epochs)))||(no_points_post_shift+this_ii+next_ii+ii_p_threshold>size(traces,2))
                     at_end=1;
                 else
                     this_ii=this_ii+next_ii+delta_ii_sp-1;
@@ -126,7 +126,7 @@ while (at_end==0)
             next_ii=next_ii_sm;
             if (no_points_post_shift+this_ii+next_ii+no_points_post<length(epochs))&(no_points_post_shift+this_ii+next_ii>0)...
                     &(no_points_post_shift+this_ii+next_ii+ii_span<=length(epochs))&(no_points_post_shift+this_ii+next_ii-ii_span>0)&...
-                    (this_ii+next_ii+ii_span<length(time))&(this_ii+next_ii-ii_span>=1)
+                    (this_ii+next_ii+ii_span<length(time))&(this_ii+next_ii-ii_span>=1)&(no_points_post_shift+this_ii+next_ii+ii_p_threshold<=size(traces,2))
                 if epochs(this_ii+1+next_ii_sm)==9
                     cr_per_trial=[cr_per_trial 1];
                     fa_per_trial=[fa_per_trial 0];
@@ -156,7 +156,7 @@ while (at_end==0)
                 %                 ii_pre=ii_pre+no_points_pre;
             else
                 if (no_points_post_shift+this_ii+next_ii+no_points_post>length(epochs))||((no_points_post_shift+this_ii+next_ii-ii_span>0)...
-                        &(no_points_post_shift+this_ii+next_ii+ii_span>length(epochs)))
+                        &(no_points_post_shift+this_ii+next_ii+ii_span>length(epochs)))||(no_points_post_shift+this_ii+next_ii+ii_p_threshold>size(traces,2))
                     at_end=1;
                 else
                     this_ii=this_ii+next_ii+delta_ii_sm-1;
@@ -173,7 +173,7 @@ while (at_end==0)
 
                 if (no_points_post_shift+this_ii+next_ii+no_points_post<length(epochs))&(no_points_post_shift+this_ii+next_ii>0)...
                         &(no_points_post_shift+this_ii+next_ii+ii_span<=length(epochs))&(no_points_post_shift+this_ii+next_ii-ii_span>0)&...
-                        (this_ii+next_ii-ii_span>=1)&(this_ii+next_ii+ii_span<length(time))
+                        (this_ii+next_ii-ii_span>=1)&(this_ii+next_ii+ii_span<length(time))&(no_points_post_shift+this_ii+next_ii+ii_p_threshold<=size(traces,2))
                     if epochs(this_ii+1+next_ii_sm)==9
                         cr_per_trial=[cr_per_trial 1];
                         fa_per_trial=[fa_per_trial 0];
@@ -201,7 +201,8 @@ while (at_end==0)
                     ii_post=ii_post+no_points_post;
                     %                     ii_pre=ii_pre+no_points_pre;
                 else
-                    if (no_points_post_shift+this_ii+next_ii+no_points_post>length(epochs))||((no_points_post_shift+this_ii+next_ii-ii_span>0)&(no_points_post_shift+this_ii+next_ii+ii_span>length(epochs)))
+                    if (no_points_post_shift+this_ii+next_ii+no_points_post>length(epochs))||((no_points_post_shift+this_ii+next_ii-ii_span>0)...
+                            &(no_points_post_shift+this_ii+next_ii+ii_span>length(epochs)))||(no_points_post_shift+this_ii+next_ii+ii_p_threshold>size(traces,2))
                         at_end=1;
                     else
                         this_ii=this_ii+next_ii+delta_ii_sm-1;
@@ -215,7 +216,7 @@ while (at_end==0)
 
                 if (no_points_post_shift+this_ii+next_ii+no_points_post<length(epochs))&(no_points_post_shift+this_ii+next_ii>0)...
                         &(no_points_post_shift+this_ii+next_ii+ii_span<=length(epochs))&(no_points_post_shift+this_ii+next_ii-ii_span>0)&...
-                        (this_ii+next_ii-ii_span>=1)&(this_ii+next_ii+ii_span<length(time))
+                        (this_ii+next_ii-ii_span>=1)&(this_ii+next_ii+ii_span<length(time))&(no_points_post_shift+this_ii+next_ii+ii_p_threshold<=size(traces,2))
                     if epochs(this_ii+1+next_ii_sp)==6
                         hit_per_trial=[hit_per_trial 1];
                         miss_per_trial=[miss_per_trial 0];
@@ -244,7 +245,7 @@ while (at_end==0)
                     %                     ii_pre=ii_pre+no_points_pre;
                 else
                     if (no_points_post_shift+this_ii+next_ii+no_points_post>length(epochs))||((no_points_post_shift+this_ii+next_ii-ii_span>0)...
-                            &(no_points_post_shift+this_ii+next_ii+ii_span>length(epochs)))
+                            &(no_points_post_shift+this_ii+next_ii+ii_span>length(epochs)))||(no_points_post_shift+this_ii+next_ii+ii_p_threshold>size(traces,2))
                         at_end=1;
                     else
                         this_ii=this_ii+next_ii+delta_ii_sp-1;

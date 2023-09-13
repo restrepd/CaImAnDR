@@ -12,6 +12,8 @@ if exist('handles_choices')==0
     clear all
     close all
     
+    tic
+    
     %Load file
     [pre_perFileName,pre_perPathName] = uigetfile({'*pre_per.mat'},'Select the .m file with all the choices for analysis');
     
@@ -66,7 +68,7 @@ if do_parfor==1
     gcp;
 end
 
-tic
+
 
 warning('off')
 
@@ -2160,7 +2162,7 @@ for MLalgo=MLalgo_to_use
             title(['Label prediction for ' classifier_names{MLalgo} ' and p value threshold ' num2str(p_threshold)])
             
         end
-        
+         
         %Now show average labels for S+, S-, etc for 30 sec
         handles_not_out.MLalgo(MLalgo).mean_all_label=mean_all_label;
         handles_not_out.MLalgo(MLalgo).mean_pre_label_sm=mean_pre_label_sm;

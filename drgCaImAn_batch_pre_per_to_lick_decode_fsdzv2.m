@@ -1,7 +1,7 @@
 function drgCaImAn_batch_pre_per_to_lick_decode_fsdzv2(choiceBatchPathName,choiceFileName)
 %Note: fitcnet will not work in Matlab versions earlier than 2021a
 
-    
+       
 
 if nargin==0
     [choiceFileName,choiceBatchPathName] = uigetfile({'drgCaImAn_lickdec_choices*.m'},'Select the .m file with all the choices for analysis');
@@ -43,6 +43,8 @@ end
 
 training_time_from=handles.training_time_from;
 training_delta_time=handles.training_delta_time;
+
+min_trials=16;
 
 
 %Parallel batch processing for each file
@@ -92,9 +94,9 @@ if all_files_present==1
         pre_per_PathName=handles.PathName_pre_per{fileNo};
         pre_per_FileName=handles.FileName_pre_per{fileNo};
         
-        [percent_correct] = drgCaImAnFindPercentCorrect(pre_per_PathName, pre_per_FileName);
+        [percent_correct,no_trials] = drgCaImAnFindPercentCorrect(pre_per_PathName, pre_per_FileName);
         
-        if percent_correct>=80
+        if (percent_correct>=80)&(no_trials>=min_trials)
             
             drgCaImAn_add_trimmed_licks_to_pre_per(pre_per_FileName,pre_per_PathName);
             
@@ -129,20 +131,21 @@ if all_files_present==1
                 
 %                 fprintf(1, ['Started processing file number %d, condition number %d\n'],fileNo,ii_training);
                 
-                handles_out.ii_out(ii_out).handles_out=drgCaImAn_repeat_decode_licks_entire_session(handles_choices);
+                handles_out.ii_out(ii_out).handles_out=drgCaImAn_repeat_decode_licks_entire_sessionv2(handles_choices);
                 
                 fprintf(1, ['Data processed for file number %d, condition number %d\n'],fileNo,ii_training);
                 
 %                 fprintf(1,'Processing time for drgCaImAn_pre_per_to_LDA_fsdz_new %d hours\n',(toc-start_toc)/(60*60));
             end
             
-            fprintf(1,'\nProcessing time for file No %d is %d minutes\n\n',fileNo,(toc-first_toc)/60);
+            fprintf(1,['\nProcessing time for file No %d is ' num2str((toc-first_toc)/60) ' minutes\n\n'],fileNo);
             
             %Save output file
             handles_out.last_file_processed=fileNo;
             handles_out.last_ii_out=ii_out;
             handles_out.handles=handles;
             save([handles.PathName_out pre_per_FileName(1:end-4) suffix_out],'handles_out','handles_choices','-v7.3')
+            pffft=1; 
         else
             fprintf(1,'\n\nFile %d not procressed because percent correct behavior <80\n',fileNo);
         end
