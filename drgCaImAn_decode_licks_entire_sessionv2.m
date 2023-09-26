@@ -40,7 +40,7 @@ if exist('handles_choices')==0
     handles_choices.show_figures=show_figures;
     handles_choices.ii_cost=ii_cost;
     handles_choices.perm_before=perm_before;
-     
+    
 else
     pre_perPathName=handles_choices.pre_per_PathName;
     pre_perFileName=handles_choices.pre_per_FileName;
@@ -73,14 +73,14 @@ rng('shuffle');
 
 convert_z=0; %Convert dFF traces to z
 dt_span=15; %Seconds for per trial traces centered on odor on, this used to be 30
-            %For some reason making this smaller than ~30 makes the baseline (original) above 0.5
+%For some reason making this smaller than ~30 makes the baseline (original) above 0.5
 
 moving_mean_n=5; %Points used to calculate moving mean for the prediction label figure
 no_shuffles=10; %Number of shuffles for per trial shuffling
 window_no=2;
 time_windows=[-1 0;
     2 4.1];
-    
+
 load([pre_perPathName pre_perFileName])
 if show_figures==1
     fprintf(1, ['\ndrgCaImAn_SVZ_entire_session run for ' pre_perFileName '\n\n']);
@@ -123,19 +123,19 @@ if show_figures==1
         close(figNo)
     catch
     end
-
+    
     hFig = figure(figNo);
-
+    
     set(hFig, 'units','normalized','position',[.05 .1 .85 .8])
-
-
+    
+    
     hold on
-
+    
     % Determine the y spacing of the traces
     y_shift=1.2*(prctile(traces(:),95)-prctile(traces(:),5));
 end
 
-% 
+%
 % %Plot the event lines
 odor_on_times=[];
 ootii=0;
@@ -159,14 +159,14 @@ for epoch=1:handles.dropcData.epochIndex
             odor_on_times(ootii)=handles.dropcData.epochTime(epoch);
         end
     end
-
-
+    
+    
 end
-% 
-% 
-% 
+%
+%
+%
 % %Align the rhd times with the olfactometer
-% 
+%
 % %Find the FV, odor on and odor off events in digital_in recorded by INTAN
 % ii=1;
 % at_end=0;
@@ -186,25 +186,25 @@ end
 %         ii=ii+ii_FV-1;
 %         iiFV=iiFV+1;
 %         FV_times_rhd(iiFV)=ii/acq_rate;
-% 
+%
 %         %Odor on
 %         ii_odor_on=find(digital_in(ii:end)==18,1,'first');
 %         %Odor off
 %         ii_odor_off=find(digital_in(ii:end)<18,1,'first');
-% 
+%
 %         if (~isempty(ii_odor_on))&(~isempty(ii_odor_off))
-% 
+%
 %             %Odor on
 %             ii=ii+ii_odor_on-1;
 %             iioon=iioon+1;
 %             odor_on_times_rhd(iioon)=ii/acq_rate;
-% 
+%
 %             %Odor off
-% 
+%
 %             ii=ii+ii_odor_off-1;
 %             iiooff=iiooff+1;
 %             odor_off_times_rhd(iiooff)=ii/acq_rate;
-% 
+%
 %             ii=ii+1;
 %             if ii>=length(digital_in)
 %                 at_end=1;
@@ -214,7 +214,7 @@ end
 %         end
 %     end
 % end
-% 
+%
 % %Find the alignment of the rhd vs the olfactometer times
 % if length(odor_on_times)<length(odor_on_times_rhd)
 %     sum_delta=[];
@@ -224,7 +224,7 @@ end
 %     [min_del min_jj]=min(sum_delta);
 %     odor_on_times_rhd=odor_on_times_rhd(min_jj:min_jj+length(odor_on_times)-1);
 % end
-% 
+%
 % if length(odor_on_times)>length(odor_on_times_rhd)
 %     sum_delta=[];
 %     for ii=0:length(odor_on_times)-length(odor_on_times_rhd)
@@ -233,7 +233,7 @@ end
 %     [min_del min_jj]=min(sum_delta);
 %     odor_on_times=odor_on_times(min_jj:min_jj+length(odor_on_times_rhd)-1);
 % end
-% 
+%
 % delta_t_rhd=mean(odor_on_times-odor_on_times_rhd);
 % time_rhd=([1:length(adc_in)]/acq_rate)+delta_t_rhd;
 % adc_in_trimmed=adc_in(time_rhd>0);
@@ -241,23 +241,23 @@ end
 
 if show_figures==1
     %Plot the licks recorded by the INTAN (adc_in)
- 
+    
     pct998=prctile(adc_in,99.8);
     pct1=prctile(adc_in,1);
     norm_fact=3*y_shift/(pct998-pct1);
-
+    
     plot(time,trimmed_licks*norm_fact)
-
+    
     %Plot the traces
     time=[1:no_images]*dt;
     for trNo=1:no_traces
         % for trNo=1:20
         plot(time,traces(trNo,:)+y_shift*trNo,'-k','LineWidth',1)
     end
-
+    
     ylim([-y_shift*0.2 (no_traces+2)*y_shift])
-
-
+    
+    
     xlabel('time (s)')
     ylabel('deltaF/F')
     title(['All dFF timecourses ' num2str(size(traces,1)) ' ROIs'])
@@ -272,15 +272,15 @@ pffft=1;
 %         close(figNo)
 %     catch
 %     end
-%     
+%
 %     hFig = figure(figNo);
-%     
+%
 %     set(hFig, 'units','normalized','position',[.05 .1 .85 .8])
 %     hold on
-%     
+%
 %     % Determine the y spacing of the traces
 %     y_shift=1.2*(prctile(traces(:),95)-prctile(traces(:),5));
-%     
+%
 %     %Plot the traces and do z normalization
 %     %For S+ and S- plot odor on and reinforcement
 %     for epoch=1:handles.dropcData.epochIndex
@@ -296,18 +296,18 @@ pffft=1;
 %             end
 %         end
 %     end
-%     
+%
 %     for trNo=1:no_traces
 %         % for trNo=1:20
 %         plot(time,traces(trNo,:)+y_shift*trNo,'-k','LineWidth',1)
 %     end
-%     
+%
 %     ylim([-y_shift*0.2 (no_traces+2)*y_shift])
 %     xlabel('time(sec)')
 %     title(['All dFF timecourses ' num2str(size(traces,1)) ' ROIs'])
-% 
-% 
-% 
+%
+%
+%
 % end
 
 %epochs is a vector of the length of time that gives information on
@@ -320,7 +320,7 @@ pffft=1;
 
 %For example Hit||Miss shows S+ odor application times (red)
 %and FA||CR gives S- (blue)
-          
+
 %Post points
 Nall=size(traces,1);
 dt=median(time(2:end)-time(1:end-1));
@@ -352,11 +352,13 @@ dFF_per_trial_sm=[];
 dFFs_sp_per_trial_per_ROI=[];
 dFFs_sm_per_trial_per_ROI=[];
 hit_per_trial=[];
-cr_per_trial=[]; 
+cr_per_trial=[];
 miss_per_trial=[];
 fa_per_trial=[];
 
-
+if handles_choices.MLalgo_to_use==3
+    traces=traces+0.1*randn(size(traces,1),size(traces,2));
+end
 [hit_per_trial,cr_per_trial,dFFs_sp_per_trial_per_ROI,...
     dFFs_sm_per_trial_per_ROI,dFF_per_trial_sm,dFF_per_trial_sp,training_decisions_post,...
     which_model_for_traces_loo,decisions_per_trial,...
@@ -365,7 +367,7 @@ fa_per_trial=[];
     drgCaImAn_parse_out_trials_and_licks(dt, dt_span,epochs,...
     no_points_post_shift,no_points_post,traces...
     ,ii_p_threshold,no_odor_trials,time,trimmed_licks);
- 
+
 
 
 %Calculate percent correct
@@ -381,7 +383,7 @@ time_span=[0:dt:dt*size(dFF_per_trial_sp,3)]-dt_span+dt;
 time_span=time_span(1:end-1);
 
 %Now let's limit the ROIs to those below p_threshold
- 
+
 p_values=ones(1,size(dFFs_sm_per_trial_per_ROI,2));
 for iiROI=1:size(dFFs_sm_per_trial_per_ROI,2)
     dFF_sm=zeros(size(dFFs_sm_per_trial_per_ROI,1),size(dFFs_sm_per_trial_per_ROI,3));
@@ -417,19 +419,19 @@ for epoch=1:handles.dropcData.epochIndex
         if handles.dropcData.epochTypeOfOdor(epoch)==handles.dropcProg.splusOdor
             handles_out.sp_times_ii=handles_out.sp_times_ii+1;
             handles_out.sp_times(handles_out.sp_times_ii)=handles.dropcData.epochTime(epoch);
-%             plot([handles.dropcData.epochTime(epoch) handles.dropcData.epochTime(epoch)], [0 (no_traces+2)*y_shift],...
-%                 '-r','LineWidth',1)
+            %             plot([handles.dropcData.epochTime(epoch) handles.dropcData.epochTime(epoch)], [0 (no_traces+2)*y_shift],...
+            %                 '-r','LineWidth',1)
         else
             handles_out.sm_times_ii=handles_out.sm_times_ii+1;
             handles_out.sm_times(handles_out.sm_times_ii)=handles.dropcData.epochTime(epoch);
-%             plot([handles.dropcData.epochTime(epoch) handles.dropcData.epochTime(epoch)], [0 (no_traces+2)*y_shift],...
-%                 '-b','LineWidth',1)
+            %             plot([handles.dropcData.epochTime(epoch) handles.dropcData.epochTime(epoch)], [0 (no_traces+2)*y_shift],...
+            %                 '-b','LineWidth',1)
         end
     end
 end
 
 pffft=1;
-% 
+%
 % %Plot the trimmed traces
 % %time has the time for the dF/F traces(ROI,time)
 % if show_figures==1
@@ -438,15 +440,15 @@ pffft=1;
 %         close(figNo)
 %     catch
 %     end
-%     
+%
 %     hFig = figure(figNo);
-%     
+%
 %     set(hFig, 'units','normalized','position',[.05 .1 .85 .8])
 %     hold on
-%     
+%
 %     % Determine the y spacing of the traces
 %     y_shift=1.2*(prctile(traces(:),95)-prctile(traces(:),5));
-%     
+%
 %     %Plot the traces and do z normalization
 %     %For S+ and S- plot odor on and reinforcement
 %     for epoch=1:handles.dropcData.epochIndex
@@ -462,12 +464,12 @@ pffft=1;
 %             end
 %         end
 %     end
-%     
+%
 %     for trNo=1:no_traces
 %         % for trNo=1:20
 %         plot(time,traces(trNo,:)+y_shift*trNo,'-k','LineWidth',1)
 %     end
-%     
+%
 %     ylim([-y_shift*0.2 (no_traces+2)*y_shift])
 %     xlabel('time(sec)')
 %     title(['dFF timecourses after p value trimming ' num2str(size(measurements_post,2)) ' ROIs'])
@@ -492,33 +494,33 @@ pffft=1;
 %     end
 %     dist_euclid(ii_t)=mean(d);
 % end
-% 
+%
 % handles_out.dist_euclid=dist_euclid;
 % time_span=[0:dt:dt*size(dFF_per_trial_sp,3)]-dt_span+dt;
 % time_span=time_span(1:end-1)+post_shift;
 % handles_out.time_span=time_span;
 % handles_out.dist_euclid_zero=mean(dist_euclid((time_span>-20)&(time_span<=0)));
-% 
+%
 % %Kullback-Leibler divergence
 % KLdivergence=zeros(1,size(dFF_per_trial_sp,3));
 % for ii_t=1:size(dFF_per_trial_sp,3)
-%     
+%
 %     z_sp_mean=zeros(1,size(dFF_per_trial_sp,2));
 %     these_z_sp=zeros(size(dFF_per_trial_sp,1),size(dFF_per_trial_sp,2));
 %     these_z_sp(:,:)=dFF_per_trial_sp(:,:,ii_t);
 %     z_sp_mean(1,:)=mean(these_z_sp,1);
-%     
+%
 %     z_sm_mean=zeros(1,size(dFF_per_trial_sm,2));
 %     these_z_sm=zeros(size(dFF_per_trial_sm,1),size(dFF_per_trial_sm,2));
 %     these_z_sm(:,:)=dFF_per_trial_sm(:,:,ii_t);
 %     z_sm_mean(1,:)=mean(these_z_sm,1);
-%     
+%
 %     %Use pdist to find all distances for odor 1
 %     ii_sp=0;
 %     ii_sm=0;
 %     distances_sp=zeros(1,size(dFF_per_trial_sp,1));
 %     distances_sm=zeros(1,size(dFF_per_trial_sm,1));
-%     
+%
 %     for ii_sp=1:size(dFF_per_trial_sp,1)
 %         odor_queary=zeros(1,size(dFF_per_trial_sp,2));
 %         odor_queary(1,:)=these_z_sp(ii_sp,:);
@@ -529,7 +531,7 @@ pffft=1;
 %         dq2=all_distances(3);
 %         distances_sp(1,ii_sp)=(d12^2 + dq1^2 -dq2^2)/(2*d12);
 %     end
-%     
+%
 %     for ii_sm=1:size(dFF_per_trial_sm,1)
 %         odor_queary=zeros(1,size(dFF_per_trial_sm,2));
 %         odor_queary(1,:)=these_z_sm(ii_sm,:);
@@ -540,41 +542,41 @@ pffft=1;
 %         dq2=all_distances(3);
 %         distances_sm(1,ii_sm)=(d12^2 + dq1^2 -dq2^2)/(2*d12);
 %     end
-%     
-%     
+%
+%
 %     %KL divergence
 %     num_bins=50;
 %     max_d=max([max(distances_sp) max(distances_sm)]);
 %     min_d=min([min(distances_sp) min(distances_sm)]);
 %     X=[min_d:(max_d-min_d)/(num_bins-1):max_d];
-%     
+%
 %     p1=zeros(1,length(X));
 %     p2=zeros(1,length(X));
-%     
+%
 %     for ii=1:length(distances_sp)
 %         [min_d min_ii]=min(abs(distances_sp(ii)-X));
 %         p1(min_ii)=p1(min_ii)+1;
 %     end
 %     p1=p1/sum(p1);
-%     p1(p1==0)=eps; 
-%     
+%     p1(p1==0)=eps;
+%
 %     for ii=1:length(distances_sm)
 %         [min_d min_ii]=min(abs(distances_sm(ii)-X));
 %         p2(min_ii)=p2(min_ii)+1;
 %     end
 %     p2=p2/sum(p2);
 %     p2(p2==0)=eps;
-%     
+%
 %     KLdivergence(ii_t) = kldiv(X,p1,p2);
 % end
 % handles_out.KLdivergence=KLdivergence;
-% 
+%
 % meandFF_per_trial_sp=zeros(size(dFF_per_trial_sp,1),size(dFF_per_trial_sp,3));
 % meandFF_per_trial_sp(:,:)=mean(dFF_per_trial_sp,2);
-% 
+%
 % meandFF_per_trial_sm=zeros(size(dFF_per_trial_sm,1),size(dFF_per_trial_sm,3));
 % meandFF_per_trial_sm(:,:)=mean(dFF_per_trial_sm,2);
-% 
+%
 % %Plot the mean timecourse for S+ and S-
 % if show_figures==1
 %     figNo=figNo+1;
@@ -582,83 +584,83 @@ pffft=1;
 %         close(figNo)
 %     catch
 %     end
-%     
+%
 %     hFig = figure(figNo);
-%     
+%
 %     set(hFig, 'units','normalized','position',[.05 .1 .3 .6])
-%     
+%
 %     subplot(3,1,1)
 %     hold on
-%     
-%     
+%
+%
 %     %S+ trials
 %     try
 %         CIsp = bootci(1000, @mean, meandFF_per_trial_sp);
 %         meansp=mean(dFF_per_trial_sp,1);
 %         CIsp(1,:)=meansp-CIsp(1,:);
 %         CIsp(2,:)=CIsp(2,:)-meansp;
-%         
+%
 %         [hlsp, hpsp] = boundedline(time_span',mean(meandFF_per_trial_sp,1)', CIsp', 'cmap',[80/255 194/255 255/255]);
 %     catch
 %     end
-%     
-%     
-%     
-%     
+%
+%
+%
+%
 %     %S-
 %     try
 %         CIsp = bootci(1000, @mean, meandFF_per_trial_sm);
 %         meansp=mean(dFF_per_trial_sm,1);
 %         CIsp(1,:)=meansp-CIsp(1,:);
 %         CIsp(2,:)=CIsp(2,:)-meansp;
-%         
+%
 %         [hlsp, hpsp] = boundedline(time_span',mean(meandFF_per_trial_sm,1)', CIsp', 'cmap',[238/255 111/255 179/255]);
 %     catch
 %     end
-%     
-%     
-%     
-%     
+%
+%
+%
+%
 %     plot(time_span',mean(meandFF_per_trial_sp,1)', 'Color',[80/255 194/255 255/255]);
 %     plot(time_span',mean(meandFF_per_trial_sm,1)', 'Color',[238/255 111/255 179/255]);
-%     
+%
 %     text(30,0.75,'S-','Color',[80/255 194/255 255/255])
 %     text(30,0.65,'S+','Color',[0 114/255 178/255])
-%     
+%
 %     ylim([0 1])
-%     
+%
 %     title(['Mean dFF'])
 %     xlabel('Time(sec)')
 %     ylabel('dFF')
-%     
+%
 %     subplot(3,1,2)
 %     hold on
-%     
+%
 % %     %Euclidean distance
 % %     plot(time_span',(dist_euclid-mean(dist_euclid((time_span>-20)&(time_span<=0))))', 'Color',[238/255 111/255 179/255]);
-% %     
-% %     
-% %     
+% %
+% %
+% %
 % %     title(['Euclidean distance'])
 % %     xlabel('Time(sec)')
 % %     ylabel('Euclidean d')
-% %     
+% %
 % %     subplot(3,1,3)
 % %     hold on
-% %     
+% %
 % %     %KL divergence
 % %     plot(time_span',KLdivergence', 'Color',[238/255 111/255 179/255]);
-% %     
-% %     
-% %    
+% %
+% %
+% %
 % %     title(['KL divergence'])
 % %     xlabel('Time(sec)')
 % %     ylabel('KL divergence')
-%     
-%     
+%
+%
 % end
 
-% 
+%
 % handles_out.meandFFsp=mean(meandFF_per_trial_sp,1);
 % handles_out.meandFFsm=mean(meandFF_per_trial_sm,1);
 
@@ -693,7 +695,12 @@ end
 
 for MLalgo=MLalgo_to_use
     
-    this_cost=[0 ii_cost;ii_cost 0];
+    switch MLalgo
+        case 2
+            this_cost=ii_cost;
+        otherwise
+            this_cost=[0 ii_cost;ii_cost 0];
+    end
     labels=[];
     timepoint_processed=[];
     correct_predict=[];
@@ -717,15 +724,15 @@ for MLalgo=MLalgo_to_use
             
             switch MLalgo
                 case 1
-                    Mdl = fitcdiscr(tblTrn,Y,'Cost',this_cost);
+                    Mdl = fitcdiscr(tblTrn,Y);
                 case 2
-                    Mdl = fitcsvm(tblTrn,Y,'Cost',this_cost);
+                    Mdl = fitcsvm(tblTrn,Y);
                 case 3
-                    Mdl = fitcnb(tblTrn,Y,'Cost',this_cost);
+                    Mdl = fitcnb(tblTrn,Y);
                 case 4
                     Mdl = fitcnet(tblTrn,Y);
                 case 5
-                    Mdl = fitctree(tblTrn,Y,'Cost',this_cost);
+                    Mdl = fitctree(tblTrn,Y);
             end
             
             %Predict labels for the test set. You trained Mdl using a table of data, but you can predict labels using a matrix.
@@ -754,7 +761,7 @@ for MLalgo=MLalgo_to_use
         case 2
             %k-fold cross validation evaluating performance with left-out data
             %Store the training data in a table.
-             
+            
             handles_not_out.MLalgo(MLalgo).models=[];
             handles_not_out.MLalgo(MLalgo).processed_succesfully=1;
             points_masked=floor(no_points_post/k_fold);
@@ -806,24 +813,24 @@ for MLalgo=MLalgo_to_use
                 
                 switch MLalgo
                     case 1
-                        handles_not_out.MLalgo(MLalgo).models(kk).Mdl = fitcdiscr(tblTrn,Y,'Cost',this_cost);
+                        handles_not_out.MLalgo(MLalgo).models(kk).Mdl = fitcdiscr(tblTrn,Y);
                     case 2
-                        handles_not_out.MLalgo(MLalgo).models(kk).Mdl = fitcsvm(tblTrn,Y,'Cost',this_cost);
+                        handles_not_out.MLalgo(MLalgo).models(kk).Mdl = fitcsvm(tblTrn,Y);
                     case 3
                         %The try catch was entered here because of this
                         %error
                         % Error using ClassificationNaiveBayes/findNoDataCombos (line 347)
                         % A normal distribution cannot be fit for the combination of class 1 and predictor
                         % these_training_measurements107. The data has zero variance.
-                        try
-                            handles_not_out.MLalgo(MLalgo).models(kk).Mdl = fitcnb(tblTrn,Y,'Cost',this_cost);
-                        catch
-                            handles_not_out.MLalgo(MLalgo).processed_succesfully=0;
-                        end
+                        %                         try
+                        handles_not_out.MLalgo(MLalgo).models(kk).Mdl = fitcnb(tblTrn,Y);
+                        %                         catch
+                        %                             handles_not_out.MLalgo(MLalgo).processed_succesfully=0;
+                        %                         end
                     case 4
                         handles_not_out.MLalgo(MLalgo).models(kk).Mdl = fitcnet(tblTrn,Y);
                     case 5
-                        handles_not_out.MLalgo(MLalgo).models(kk).Mdl = fitctree(tblTrn,Y,'Cost',this_cost);
+                        handles_not_out.MLalgo(MLalgo).models(kk).Mdl = fitctree(tblTrn,Y);
                     case 6
                         handles_not_out.MLalgo(MLalgo).models(kk).Mdl = fitglm(these_training_measurements,Y','Distribution','binomial');
                 end
@@ -938,20 +945,20 @@ for MLalgo=MLalgo_to_use
                     
                     switch MLalgo
                         case 1
-                            handles_not_out.MLalgo(MLalgo).sh_models(kk).Mdl = fitcdiscr(tblTrn,Y,'Cost',this_cost);
+                            handles_not_out.MLalgo(MLalgo).sh_models(kk).Mdl = fitcdiscr(tblTrn,Y);
                         case 2
-                            handles_not_out.MLalgo(MLalgo).sh_models(kk).Mdl = fitcsvm(tblTrn,Y,'Cost',this_cost);
+                            handles_not_out.MLalgo(MLalgo).sh_models(kk).Mdl = fitcsvm(tblTrn,Y);
                         case 3
                             %The try catch was entered here because of this
                             %error
                             % Error using ClassificationNaiveBayes/findNoDataCombos (line 347)
                             % A normal distribution cannot be fit for the combination of class 1 and predictor
                             % these_training_measurements107. The data has zero variance.
-                            try
-                                handles_not_out.MLalgo(MLalgo).sh_models(kk).Mdl = fitcnb(tblTrn,Y,'Cost',this_cost);
-                            catch
-                                handles_not_out.MLalgo(MLalgo).sh_models(kk).processed_succesfully=0;
-                            end
+                            %                             try
+                            handles_not_out.MLalgo(MLalgo).sh_models(kk).Mdl = fitcnb(tblTrn,Y);
+                            %                             catch
+                            %                                 handles_not_out.MLalgo(MLalgo).sh_models(kk).processed_succesfully=0;
+                            %                             end
                         case 4
                             handles_not_out.MLalgo(MLalgo).sh_models(kk).Mdl = fitcnet(tblTrn,Y);
                         case 5
@@ -1078,30 +1085,30 @@ for MLalgo=MLalgo_to_use
                         switch MLalgo
                             case 1
                                 try
-                                    handles_not_out.MLalgo(MLalgo).sh2(ii_sh).sh_models(kk).Mdl = fitcdiscr(tblTrn,Y,'Cost',this_cost);
+                                    handles_not_out.MLalgo(MLalgo).sh2(ii_sh).sh_models(kk).Mdl = fitcdiscr(tblTrn,Y);
                                 catch
                                     % Error using ClassificationDiscriminant (line 380)
                                     % Predictor these_training_measurements3 has zero within-class variance. Either exclude this predictor
                                     % or set 'discrimType' to 'pseudoLinear' or 'diagLinear'.
-                                    handles_not_out.MLalgo(MLalgo).sh2(ii_sh).sh_models(kk).Mdl = fitcdiscr(tblTrn,Y,'Cost',this_cost,'discrimType','pseudoLinear');
+                                    handles_not_out.MLalgo(MLalgo).sh2(ii_sh).sh_models(kk).Mdl = fitcdiscr(tblTrn,Y,'discrimType','pseudoLinear');
                                 end
                             case 2
-                                handles_not_out.MLalgo(MLalgo).sh2(ii_sh).sh_models(kk).Mdl = fitcsvm(tblTrn,Y,'Cost',this_cost);
+                                handles_not_out.MLalgo(MLalgo).sh2(ii_sh).sh_models(kk).Mdl = fitcsvm(tblTrn,Y);
                             case 3
                                 %The try catch was entered here because of this
                                 %error
                                 % Error using ClassificationNaiveBayes/findNoDataCombos (line 347)
                                 % A normal distribution cannot be fit for the combination of class 1 and predictor
                                 % these_training_measurements107. The data has zero variance.
-                                try
-                                    handles_not_out.MLalgo(MLalgo).sh2(ii_sh).sh_models(kk).Mdl = fitcnb(tblTrn,Y,'Cost',this_cost);
-                                catch
-                                    handles_not_out.MLalgo(MLalgo).sh2(ii_sh).sh_models(kk).processed_succesfully=0;
-                                end
+                                %                                 try
+                                handles_not_out.MLalgo(MLalgo).sh2(ii_sh).sh_models(kk).Mdl = fitcnb(tblTrn,Y);
+                                %                                 catch
+                                %                                     handles_not_out.MLalgo(MLalgo).sh2(ii_sh).sh_models(kk).processed_succesfully=0;
+                                %                                 end
                             case 4
                                 handles_not_out.MLalgo(MLalgo).sh2(ii_sh).sh_models(kk).Mdl = fitcnet(tblTrn,Y);
                             case 5
-                                handles_not_out.MLalgo(MLalgo).sh2(ii_sh).sh_models(kk).Mdl = fitctree(tblTrn,Y,'Cost',this_cost);
+                                handles_not_out.MLalgo(MLalgo).sh2(ii_sh).sh_models(kk).Mdl = fitctree(tblTrn,Y);
                             case 6
                                 handles_not_out.MLalgo(MLalgo).sh2(ii_sh).sh_models(kk).Mdl = fitglm(these_training_measurements,Y','Distribution','binomial');
                         end
@@ -1153,43 +1160,43 @@ for MLalgo=MLalgo_to_use
             %leave one trial out
             %Store the training data in a table.
             
-
+            
             %If perm_before==1 permutate the labels
             if perm_before==1
                 these_perm=randperm(length(training_decisions_post));
                 handles_out.these_perm=these_perm;
                 training_decisions_post=training_decisions_post(these_perm);
             end
-
+            
             handles_not_out.MLalgo(MLalgo).models=[];
             handles_not_out.MLalgo(MLalgo).processed_succesfully=1;
             points_masked=floor(no_points_post/k_fold);
             which_model=ones(1,size(measurements_post,1));
             no_trials=ii_post/no_points_post;
             parmodels=[];
-
-           
+            
+            
             if do_parfor==1
                 %parfor loop
-
+                
                 for kk=1:no_trials
                     parmodels(kk).Mdl=[];
                     which_model((kk-1)*no_points_post+1:(kk-1)*no_points_post+no_points_post)=kk;
                     parmodels(kk).processed_succesfully=1;
                 end
-
-
+                
+                
                 parfor kk=1:no_trials
-
-
+                    
+                    
                     training_mask=ones(size(measurements_post,1),1);
                     training_mask((kk-1)*no_points_post+1:(kk-1)*no_points_post+no_points_post)=0;
-
-
-
+                    
+                    
+                    
                     these_training_measurements=zeros(sum(training_mask),size(measurements_post,2));
                     these_training_decisions=zeros(1,sum(training_mask));
-
+                    
                     jj=0;
                     for ii=1:size(measurements_post,1)
                         if training_mask(ii)==1
@@ -1198,67 +1205,68 @@ for MLalgo=MLalgo_to_use
                             these_training_decisions(jj)=training_decisions_post(ii);
                         end
                     end
-
-
+                    
+                    
                     tblTrn=[];
                     tblTrn = array2table(these_training_measurements);
-
+                    
                     %Store the decisions in Y
                     Y=these_training_decisions;
-
+                    
                     switch MLalgo
                         case 1
                             try
-                                parmodels(kk).Mdl = fitcdiscr(tblTrn,Y,'Cost',this_cost);
+                                parmodels(kk).Mdl = fitcdiscr(tblTrn,Y);
                             catch
                                 % Error using ClassificationDiscriminant (line 380)
                                 % Predictor these_training_measurements3 has zero within-class variance. Either exclude this predictor
                                 % or set 'discrimType' to 'pseudoLinear' or 'diagLinear'.
-                                parmodels(kk).Mdl = fitcdiscr(tblTrn,Y,'Cost',this_cost,'discrimType','pseudoLinear');
+                                parmodels(kk).Mdl = fitcdiscr(tblTrn,Y,'discrimType','pseudoLinear');
                             end
                         case 2
-                            parmodels(kk).Mdl = fitcsvm(tblTrn,Y,'Cost',this_cost);
+                            parmodels(kk).Mdl = fitcsvm(tblTrn,Y);
                         case 3
                             %The try catch was entered here because of this
                             %error
                             % Error using ClassificationNaiveBayes/findNoDataCombos (line 347)
                             % A normal distribution cannot be fit for the combination of class 1 and predictor
                             % these_training_measurements107. The data has zero variance.
-                            try
-                                parmodels(kk).Mdl = fitcnb(tblTrn,Y,'Cost',this_cost);
-                            catch
-                                parmodels(kk).processed_succesfully=0;
-                            end
+                            %                             try
+%                             parmodels(kk).Mdl = fitcnb(tblTrn,Y,'Cost',this_cost);
+                            parmodels(kk).Mdl = fitcnb(tblTrn,Y);
+                            %                             catch
+                            %                                 parmodels(kk).processed_succesfully=0;
+                            %                             end
                         case 4
                             parmodels(kk).Mdl = fitcnet(tblTrn,Y);
                             %                         handles_not_out.MLalgo(MLalgo).models(kk).Mdl = fitcnet(tblTrn,Y,'OptimizeHyperparameters','auto');
                         case 5
-                            parmodels(kk).Mdl = fitctree(tblTrn,Y,'Cost',this_cost);
+                            parmodels(kk).Mdl = fitctree(tblTrn,Y);
                         case 6
                             parmodels(kk).Mdl = fitglm(these_training_measurements,Y','Distribution','binomial');
                     end
                 end
-
+                
                 for kk=1:no_trials
                     handles_not_out.MLalgo(MLalgo).models(kk).Mdl=parmodels(kk).Mdl;
                     handles_not_out.MLalgo(MLalgo).processed_succesfully=parmodels(kk).processed_succesfully;
                 end
-
-
+                
+                
             else
                 %Regular for loop
-
+                
                 for kk=1:no_trials
-
-
+                    
+                    
                     training_mask=ones(size(measurements_post,1),1);
                     training_mask((kk-1)*no_points_post+1:(kk-1)*no_points_post+no_points_post)=0;
                     which_model((kk-1)*no_points_post+1:(kk-1)*no_points_post+no_points_post)=kk;
-
-
+                    
+                    
                     these_training_measurements=zeros(sum(training_mask),size(measurements_post,2));
                     these_training_decisions=zeros(1,sum(training_mask));
-
+                    
                     jj=0;
                     for ii=1:size(measurements_post,1)
                         if training_mask(ii)==1
@@ -1267,50 +1275,50 @@ for MLalgo=MLalgo_to_use
                             these_training_decisions(jj)=training_decisions_post(ii);
                         end
                     end
-
-
+                    
+                    
                     tblTrn=[];
                     tblTrn = array2table(these_training_measurements);
-
+                    
                     %Store the decisions in Y
                     Y=these_training_decisions;
-
+                    
                     switch MLalgo
                         case 1
                             try
-                                handles_not_out.MLalgo(MLalgo).models(kk).Mdl = fitcdiscr(tblTrn,Y,'Cost',this_cost);
+                                handles_not_out.MLalgo(MLalgo).models(kk).Mdl = fitcdiscr(tblTrn,Y);
                             catch
                                 % Error using ClassificationDiscriminant (line 380)
                                 % Predictor these_training_measurements3 has zero within-class variance. Either exclude this predictor
                                 % or set 'discrimType' to 'pseudoLinear' or 'diagLinear'.
-                                handles_not_out.MLalgo(MLalgo).models(kk).Mdl = fitcdiscr(tblTrn,Y,'Cost',this_cost,'discrimType','pseudoLinear');
+                                handles_not_out.MLalgo(MLalgo).models(kk).Mdl = fitcdiscr(tblTrn,Y,'discrimType','pseudoLinear');
                             end
                         case 2
-                            handles_not_out.MLalgo(MLalgo).models(kk).Mdl = fitcsvm(tblTrn,Y,'Cost',this_cost);
+                            handles_not_out.MLalgo(MLalgo).models(kk).Mdl = fitcsvm(tblTrn,Y);
                         case 3
                             %The try catch was entered here because of this
                             %error
                             % Error using ClassificationNaiveBayes/findNoDataCombos (line 347)
                             % A normal distribution cannot be fit for the combination of class 1 and predictor
                             % these_training_measurements107. The data has zero variance.
-                            try
-                                handles_not_out.MLalgo(MLalgo).models(kk).Mdl = fitcnb(tblTrn,Y,'Cost',this_cost);
-                            catch
-                                handles_not_out.MLalgo(MLalgo).processed_succesfully=0;
-                            end
+                            %                             try
+                            handles_not_out.MLalgo(MLalgo).models(kk).Mdl = fitcnb(tblTrn,Y);
+                            %                             catch
+                            %                                 handles_not_out.MLalgo(MLalgo).processed_succesfully=0;
+                            %                             end
                         case 4
                             handles_not_out.MLalgo(MLalgo).models(kk).Mdl = fitcnet(tblTrn,Y);
                             %                         handles_not_out.MLalgo(MLalgo).models(kk).Mdl = fitcnet(tblTrn,Y,'OptimizeHyperparameters','auto');
                         case 5
-                            handles_not_out.MLalgo(MLalgo).models(kk).Mdl = fitctree(tblTrn,Y,'Cost',this_cost);
+                            handles_not_out.MLalgo(MLalgo).models(kk).Mdl = fitctree(tblTrn,Y);
                         case 6
                             handles_not_out.MLalgo(MLalgo).models(kk).Mdl = fitglm(these_training_measurements,Y','Distribution','binomial');
                     end
                 end
-
-
+                
+                
             end
-
+            
             if handles_not_out.MLalgo(MLalgo).processed_succesfully==1
                 %Predict labels for the test set. You trained Mdl using a table of data, but you can predict labels using a matrix.
                 %Note: for some reason this did not work for net when I did this:
@@ -1361,8 +1369,8 @@ for MLalgo=MLalgo_to_use
                         end
                         
                     end
-
- 
+                    
+                    
                     for ii=1:size(measurements_post,1)
                         this_time_point=zeros(1,size(traces,1));
                         this_time_point(1,:)=measurements_post(ii,:);
@@ -1370,33 +1378,33 @@ for MLalgo=MLalgo_to_use
                             [label_post(ii),score] = predict(handles_not_out.MLalgo(MLalgo).models(which_model(ii)).Mdl,this_time_point);
                             scores_post(ii,:)=score;
                         catch
-%                             scores_post(ii,:)=rand(1,2);
+                            %                             scores_post(ii,:)=rand(1,2);
                             if rand(1)>0.5
                                 label_post(ii)=1;
                             else
                                 label_post(ii)=0;
                             end
                         end
-                    
+                        
                     end
                 end
-
-
+                
+                
                 % handles_not_out.MLalgo(MLalgo).label_post=label_post;
                 handles_out.MLalgo(MLalgo).label_traces=label_traces;
                 % handles_out.MLalgo(MLalgo).scores=scores;
                 % handles_not_out.MLalgo(MLalgo).scores_post=scores_post;
-
+                
                 %Now do prediction with shuffled training decisions
                 %k-fold cross validation evaluating performance with left-out data
                 %Store the training data in a table.
-
+                
                 handles_not_out.MLalgo(MLalgo).sh_models=[];
                 points_masked=floor(no_points_post/k_fold);
                 which_model=ones(1,size(measurements_post,1));
-
                 
-
+                
+                
                 if do_parfor==1
                     %parfor processing
                     for kk=1:no_trials
@@ -1404,19 +1412,19 @@ for MLalgo=MLalgo_to_use
                         which_model((kk-1)*no_points_post+1:(kk-1)*no_points_post+no_points_post)=kk;
                         parmodels(kk).processed_succesfully=1;
                     end
-
+                     
                     parfor kk=1:no_trials
-
-
+                        
+                        
                         training_mask=ones(size(measurements_post,1),1);
                         training_mask((kk-1)*no_points_post+1:(kk-1)*no_points_post+no_points_post)=0;
                         % which_model((kk-1)*no_points_post+1:(kk-1)*no_points_post+no_points_post)=kk;
-
-
+                        
+                        
                         these_training_measurements=zeros(sum(training_mask),size(measurements_post,2));
                         these_training_decisions=zeros(1,sum(training_mask));
-
-
+                        
+                        
                         jj=0;
                         for ii=1:size(measurements_post,1)
                             if training_mask(ii)==1
@@ -1425,66 +1433,66 @@ for MLalgo=MLalgo_to_use
                                 these_training_decisions(jj)=training_decisions_post_sh(ii);
                             end
                         end
-
+                        
                         tblTrn=[];
                         tblTrn = array2table(these_training_measurements);
-
+                        
                         %Store the decisions in Y
                         Y=these_training_decisions;
-
+                        
                         parmodels(kk).processed_succesfully=1;
-
+                        
                         switch MLalgo
                             case 1
                                 try
-                                    parmodels(kk).Mdl = fitcdiscr(tblTrn,Y,'Cost',this_cost);
+                                    parmodels(kk).Mdl = fitcdiscr(tblTrn,Y);
                                 catch
                                     % Error using ClassificationDiscriminant (line 380)
                                     % Predictor these_training_measurements3 has zero within-class variance. Either exclude this predictor
                                     % or set 'discrimType' to 'pseudoLinear' or 'diagLinear'.
-                                    parmodels(kk).Mdl = fitcdiscr(tblTrn,Y,'Cost',this_cost,'discrimType','pseudoLinear');
+                                    parmodels(kk).Mdl = fitcdiscr(tblTrn,Y,'discrimType','pseudoLinear');
                                 end
                             case 2
-                                parmodels(kk).Mdl = fitcsvm(tblTrn,Y,'Cost',this_cost);
+                                parmodels(kk).Mdl = fitcsvm(tblTrn,Y);
                             case 3
-
+                                
                                 %The try catch was entered here because of this
                                 %error
                                 % Error using ClassificationNaiveBayes/findNoDataCombos (line 347)
                                 % A normal distribution cannot be fit for the combination of class 1 and predictor
                                 % these_training_measurements107. The data has zero variance.
-                                try
-                                    parmodels(kk).Mdl = fitcnb(tblTrn,Y,'Cost',this_cost);
-                                catch
-                                    parmodels(kk).processed_succesfully=0;
-                                end
+                                %                                 try
+                                parmodels(kk).Mdl = fitcnb(tblTrn,Y);
+                                %                                 catch
+                                %                                     parmodels(kk).processed_succesfully=0;
+                                %                                 end
                             case 4
                                 parmodels(kk).Mdl = fitcnet(tblTrn,Y);
                             case 5
-                                parmodels(kk).Mdl = fitctree(tblTrn,Y,'Cost',this_cost);
+                                parmodels(kk).Mdl = fitctree(tblTrn,Y);
                             case 6
                                 parmodels(kk).Mdl = fitglm(these_training_measurements,Y','Distribution','binomial');
                         end
                     end
-
+                    
                     for kk=1:no_trials
                         handles_not_out.MLalgo(MLalgo).sh_models(kk).Mdl=parmodels(kk).Mdl;
                         handles_not_out.MLalgo(MLalgo).sh_models(kk).processed_succesfully=parmodels(kk).processed_succesfully;
                     end
-
+                    
                 else
                     for kk=1:no_trials
-
-
+                        
+                        
                         training_mask=ones(size(measurements_post,1),1);
                         training_mask((kk-1)*no_points_post+1:(kk-1)*no_points_post+no_points_post)=0;
                         which_model((kk-1)*no_points_post+1:(kk-1)*no_points_post+no_points_post)=kk;
-
-
+                        
+                        
                         these_training_measurements=zeros(sum(training_mask),size(measurements_post,2));
                         these_training_decisions=zeros(1,sum(training_mask));
-
-
+                        
+                        
                         jj=0;
                         for ii=1:size(measurements_post,1)
                             if training_mask(ii)==1
@@ -1493,43 +1501,43 @@ for MLalgo=MLalgo_to_use
                                 these_training_decisions(jj)=training_decisions_post_sh(ii);
                             end
                         end
-
+                        
                         tblTrn=[];
                         tblTrn = array2table(these_training_measurements);
-
+                        
                         %Store the decisions in Y
                         Y=these_training_decisions;
-
+                        
                         handles_not_out.MLalgo(MLalgo).sh_models(kk).processed_succesfully=1;
-
+                        
                         switch MLalgo
                             case 1
                                 try
-                                    handles_not_out.MLalgo(MLalgo).sh_models(kk).Mdl = fitcdiscr(tblTrn,Y,'Cost',this_cost);
+                                    handles_not_out.MLalgo(MLalgo).sh_models(kk).Mdl = fitcdiscr(tblTrn,Y);
                                 catch
                                     % Error using ClassificationDiscriminant (line 380)
                                     % Predictor these_training_measurements3 has zero within-class variance. Either exclude this predictor
                                     % or set 'discrimType' to 'pseudoLinear' or 'diagLinear'.
-                                    handles_not_out.MLalgo(MLalgo).sh_models(kk).Mdl = fitcdiscr(tblTrn,Y,'Cost',this_cost,'discrimType','pseudoLinear');
+                                    handles_not_out.MLalgo(MLalgo).sh_models(kk).Mdl = fitcdiscr(tblTrn,Y,'discrimType','pseudoLinear');
                                 end
                             case 2
-                                handles_not_out.MLalgo(MLalgo).sh_models(kk).Mdl = fitcsvm(tblTrn,Y,'Cost',this_cost);
+                                handles_not_out.MLalgo(MLalgo).sh_models(kk).Mdl = fitcsvm(tblTrn,Y);
                             case 3
-
+                                
                                 %The try catch was entered here because of this
                                 %error
                                 % Error using ClassificationNaiveBayes/findNoDataCombos (line 347)
                                 % A normal distribution cannot be fit for the combination of class 1 and predictor
                                 % these_training_measurements107. The data has zero variance.
-                                try
-                                    handles_not_out.MLalgo(MLalgo).sh_models(kk).Mdl = fitcnb(tblTrn,Y,'Cost',this_cost);
-                                catch
-                                    handles_not_out.MLalgo(MLalgo).sh_models(kk).processed_succesfully=0;
-                                end
+                                %                                 try
+                                handles_not_out.MLalgo(MLalgo).sh_models(kk).Mdl = fitcnb(tblTrn,Y);
+                                %                                 catch
+                                %                                     handles_not_out.MLalgo(MLalgo).sh_models(kk).processed_succesfully=0;
+                                %                                 end
                             case 4
                                 handles_not_out.MLalgo(MLalgo).sh_models(kk).Mdl = fitcnet(tblTrn,Y);
                             case 5
-                                handles_not_out.MLalgo(MLalgo).sh_models(kk).Mdl = fitctree(tblTrn,Y,'Cost',this_cost);
+                                handles_not_out.MLalgo(MLalgo).sh_models(kk).Mdl = fitctree(tblTrn,Y);
                             case 6
                                 handles_not_out.MLalgo(MLalgo).sh_models(kk).Mdl = fitglm(these_training_measurements,Y','Distribution','binomial');
                         end
@@ -1540,11 +1548,11 @@ for MLalgo=MLalgo_to_use
                 % [label_traces,score] = predict(Mdl,traces');
                 % [label_post,score] = predict(Mdl,measurements_post);
                 %I had to resort to the for loop:
-
-
-
+                
+                
+                
                 if MLalgo==6
-
+                    
                     for ii=1:size(traces,2)
                         this_time_point=zeros(1,size(traces,1));
                         this_time_point(1,:)=traces(:,ii);
@@ -1582,7 +1590,7 @@ for MLalgo=MLalgo_to_use
                         % Error in drgCaImAn_decode_licks_entire_session (line 1574)
                         %                         scores_sh(ii,:)=score;
                     end
-
+                    
                     % for ii=1:size(measurements_post,1)
                     %     this_time_point=zeros(1,size(traces,1));
                     %     this_time_point(1,:)=measurements_post(ii,:);
@@ -1590,46 +1598,46 @@ for MLalgo=MLalgo_to_use
                     %     scores_post_sh(ii,:)=score;
                     % end
                 end
-
-
-
+                
+                
+                
                 % handles_not_out.MLalgo(MLalgo).label_post_sh=label_post_sh;
                 handles_out.MLalgo(MLalgo).label_traces_sh=label_traces_sh;
                 % handles_out.MLalgo(MLalgo).scores_sh=scores_sh;
                 % handles_not_out.MLalgo(MLalgo).scores_post_sh=scores_post_sh;
-
+                
                 %Now do shuffling on a per trial basis
                 for ii_sh=1:no_shuffles
-
-
+                    
+                    
                     %Now do prediction with shuffled training decisions
                     %k-fold cross validation evaluating performance with left-out data
                     %Store the training data in a table.
-
+                    
                     handles_not_out.MLalgo(MLalgo).sh2(ii).sh_models=[];
                     points_masked=floor(no_points_post/k_fold);
                     which_model=ones(1,size(measurements_post,1));
-
+                    
                     if do_parfor==1
-
+                        
                         %parfor processing
                         for kk=1:no_trials
                             parmodels(kk).Mdl=[];
                             which_model((kk-1)*no_points_post+1:(kk-1)*no_points_post+no_points_post)=kk;
                             parmodels(kk).processed_succesfully=1;
                         end
-
+                        
                         for kk=1:no_trials
-
-
+                            
+                            
                             training_mask=ones(size(measurements_post,1),1);
                             training_mask((kk-1)*no_points_post+1:(kk-1)*no_points_post+no_points_post)=0;
                             which_model((kk-1)*no_points_post+1:(kk-1)*no_points_post+no_points_post)=kk;
-
+                            
                             these_training_measurements=zeros(sum(training_mask),size(measurements_post,2));
                             these_training_decisions=zeros(1,sum(training_mask));
-
-
+                            
+                            
                             jj=0;
                             for ii=1:size(measurements_post,1)
                                 if training_mask(ii)==1
@@ -1638,47 +1646,47 @@ for MLalgo=MLalgo_to_use
                                     these_training_decisions(jj)=training_decisions_post_sh2(ii_sh,ii);
                                 end
                             end
-
+                            
                             tblTrn=[];
                             tblTrn = array2table(these_training_measurements);
-
+                            
                             %Store the decisions in Y
                             Y=these_training_decisions;
-
+                            
                             handles_not_out.MLalgo(MLalgo).sh2(ii_sh).sh_models(kk).processed_succesfully=1;
-
+                            
                             switch MLalgo
                                 case 1
                                     try
-                                        parmodels(kk).Mdl = fitcdiscr(tblTrn,Y,'Cost',this_cost);
+                                        parmodels(kk).Mdl = fitcdiscr(tblTrn,Y);
                                     catch
                                         % Error using ClassificationDiscriminant (line 380)
                                         % Predictor these_training_measurements3 has zero within-class variance. Either exclude this predictor
                                         % or set 'discrimType' to 'pseudoLinear' or 'diagLinear'.
-                                        parmodels(kk).Mdl  = fitcdiscr(tblTrn,Y,'Cost',this_cost,'discrimType','pseudoLinear');
+                                        parmodels(kk).Mdl  = fitcdiscr(tblTrn,Y,'discrimType','pseudoLinear');
                                     end
                                 case 2
-                                    parmodels(kk).Mdl = fitcsvm(tblTrn,Y,'Cost',this_cost);
+                                    parmodels(kk).Mdl = fitcsvm(tblTrn,Y);
                                 case 3
                                     %The try catch was entered here because of this
                                     %error
                                     % Error using ClassificationNaiveBayes/findNoDataCombos (line 347)
                                     % A normal distribution cannot be fit for the combination of class 1 and predictor
                                     % these_training_measurements107. The data has zero variance.
-                                    try
-                                        parmodels(kk).Mdl = fitcnb(tblTrn,Y,'Cost',this_cost);
-                                    catch
-                                        parmodels(kk).processed_succesfully=0;
-                                    end
+                                    %                                     try
+                                    parmodels(kk).Mdl = fitcnb(tblTrn,Y,'Cost',this_cost);
+                                    %                                     catch
+                                    %                                         parmodels(kk).processed_succesfully=0;
+                                    %                                     end
                                 case 4
                                     parmodels(kk).Mdl = fitcnet(tblTrn,Y);
                                 case 5
-                                    parmodels(kk).Mdl = fitctree(tblTrn,Y,'Cost',this_cost);
+                                    parmodels(kk).Mdl = fitctree(tblTrn,Y);
                                 case 6
                                     parmodels(kk).Mdl = fitglm(these_training_measurements,Y','Distribution','binomial');
                             end
                         end
-
+                        
                         for kk=1:no_trials
                             handles_not_out.MLalgo(MLalgo).sh2(ii_sh).sh_models(kk).Mdl=parmodels(kk).Mdl;
                             handles_not_out.MLalgo(MLalgo).sh2(ii_sh).sh_models(kk).processed_succesfully=parmodels(kk).processed_succesfully;
@@ -1686,16 +1694,16 @@ for MLalgo=MLalgo_to_use
                     else
                         %regular for
                         for kk=1:no_trials
-
-
+                            
+                            
                             training_mask=ones(size(measurements_post,1),1);
                             training_mask((kk-1)*no_points_post+1:(kk-1)*no_points_post+no_points_post)=0;
                             which_model((kk-1)*no_points_post+1:(kk-1)*no_points_post+no_points_post)=kk;
-
+                            
                             these_training_measurements=zeros(sum(training_mask),size(measurements_post,2));
                             these_training_decisions=zeros(1,sum(training_mask));
-
-
+                            
+                            
                             jj=0;
                             for ii=1:size(measurements_post,1)
                                 if training_mask(ii)==1
@@ -1704,38 +1712,38 @@ for MLalgo=MLalgo_to_use
                                     these_training_decisions(jj)=training_decisions_post_sh2(ii_sh,ii);
                                 end
                             end
-
+                            
                             tblTrn=[];
                             tblTrn = array2table(these_training_measurements);
-
+                            
                             %Store the decisions in Y
                             Y=these_training_decisions;
-
+                            
                             handles_not_out.MLalgo(MLalgo).sh2(ii_sh).sh_models(kk).processed_succesfully=1;
-
+                            
                             switch MLalgo
                                 case 1
                                     try
-                                        handles_not_out.MLalgo(MLalgo).sh2(ii_sh).sh_models(kk).Mdl = fitcdiscr(tblTrn,Y,'Cost',this_cost);
+                                        handles_not_out.MLalgo(MLalgo).sh2(ii_sh).sh_models(kk).Mdl = fitcdiscr(tblTrn,Y);
                                     catch
                                         % Error using ClassificationDiscriminant (line 380)
                                         % Predictor these_training_measurements3 has zero within-class variance. Either exclude this predictor
                                         % or set 'discrimType' to 'pseudoLinear' or 'diagLinear'.
-                                        handles_not_out.MLalgo(MLalgo).sh2(ii_sh).sh_models(kk).Mdl  = fitcdiscr(tblTrn,Y,'Cost',this_cost,'discrimType','pseudoLinear');
+                                        handles_not_out.MLalgo(MLalgo).sh2(ii_sh).sh_models(kk).Mdl  = fitcdiscr(tblTrn,Y,'discrimType','pseudoLinear');
                                     end
                                 case 2
-                                    handles_not_out.MLalgo(MLalgo).sh2(ii_sh).sh_models(kk).Mdl = fitcsvm(tblTrn,Y,'Cost',this_cost);
+                                    handles_not_out.MLalgo(MLalgo).sh2(ii_sh).sh_models(kk).Mdl = fitcsvm(tblTrn,Y);
                                 case 3
                                     %The try catch was entered here because of this
                                     %error
                                     % Error using ClassificationNaiveBayes/findNoDataCombos (line 347)
                                     % A normal distribution cannot be fit for the combination of class 1 and predictor
                                     % these_training_measurements107. The data has zero variance.
-                                    try
-                                        handles_not_out.MLalgo(MLalgo).sh2(ii_sh).sh_models(kk).Mdl = fitcnb(tblTrn,Y,'Cost',this_cost);
-                                    catch
-                                        handles_not_out.MLalgo(MLalgo).sh2(ii_sh).sh_models(kk).processed_succesfully=0;
-                                    end
+                                    %                                     try
+                                    handles_not_out.MLalgo(MLalgo).sh2(ii_sh).sh_models(kk).Mdl = fitcnb(tblTrn,Y);
+                                    %                                     catch
+                                    %                                         handles_not_out.MLalgo(MLalgo).sh2(ii_sh).sh_models(kk).processed_succesfully=0;
+                                    %                                     end
                                 case 4
                                     handles_not_out.MLalgo(MLalgo).sh2(ii_sh).sh_models(kk).Mdl = fitcnet(tblTrn,Y);
                                 case 5
@@ -1745,7 +1753,7 @@ for MLalgo=MLalgo_to_use
                             end
                         end
                     end
-
+                    
                     %Predict labels for the test set. You trained Mdl using a table of data, but you can predict labels using a matrix.
                     %Note: for some reason this did not work for net when I did this:
                     % [label_traces,score] = predict(Mdl,traces');
@@ -1816,7 +1824,7 @@ for MLalgo=MLalgo_to_use
         %         correct_predict_tr(ii)=0;
         %     end
         % end
-        % 
+        %
         
         % %Calculate wta for windows of no_points_post
         % correct_predict_tr_wta=zeros(1,length(training_decisions_post));
@@ -1844,7 +1852,7 @@ for MLalgo=MLalgo_to_use
         %         correct_predict_tr_sh(ii)=0;
         %     end
         % end
-        % 
+        %
         % %Calculate wta for windows of no_points_post
         % correct_predict_tr_wta_sh=zeros(1,length(training_decisions_post_sh));
         % for ii=1:length(training_decisions_post_sh)-no_points_post
@@ -1860,7 +1868,7 @@ for MLalgo=MLalgo_to_use
         %         correct_predict_tr_wta_sh(ii+floor(no_points_post/2))=0;
         %     end
         % end
-        % 
+        %
         % %Now do shuffled per trial
         % correct_predict_tr_wta_sh2=zeros(no_shuffles,size(training_decisions_post_sh2,2));
         % correct_predict_tr_sh2=zeros(no_shuffles,size(training_decisions_post_sh2,2));
@@ -1874,9 +1882,9 @@ for MLalgo=MLalgo_to_use
         %             correct_predict_tr_sh2(ii_sh,ii)=0;
         %         end
         %     end
-        % 
+        %
         %     %Calculate wta for windows of no_points_post
-        % 
+        %
         %     for ii=1:size(training_decisions_post_sh2,2)-no_points_post
         %         this_correct=zeros(1,no_points_post);
         %         for jj=1:no_points_post
@@ -1890,9 +1898,9 @@ for MLalgo=MLalgo_to_use
         %             correct_predict_tr_wta_sh2(ii_sh,ii+floor(no_points_post/2))=0;
         %         end
         %     end
-        % 
+        %
         % end
-        % 
+        %
         % if show_figures==1
         %     fprintf(1, ['Training accuracy for ' classifier_names{MLalgo} ' and cost %d is %d, wta accuracy is %d\n']...
         %         ,ii_cost, sum(correct_predict_tr)/length(correct_predict_tr),sum(correct_predict_tr_wta)/length(correct_predict_tr_wta));
@@ -1907,12 +1915,12 @@ for MLalgo=MLalgo_to_use
         % handles_not_out.MLalgo(MLalgo).correct_predict_tr_wta=correct_predict_tr_wta;
         % handles_out.MLalgo(MLalgo).accuracy_tr=sum(correct_predict_tr)/length(correct_predict_tr);
         % handles_out.MLalgo(MLalgo).accuracy_tr_wta=sum(correct_predict_tr_wta)/length(correct_predict_tr_wta);
-        % 
+        %
         % handles_not_out.MLalgo(MLalgo).correct_predict_tr_sh=correct_predict_tr_sh;
         % handles_not_out.MLalgo(MLalgo).correct_predict_tr_wta_sh=correct_predict_tr_wta_sh;
         % handles_out.MLalgo(MLalgo).accuracy_tr_sh=sum(correct_predict_tr_sh)/length(correct_predict_tr_sh);
         % handles_out.MLalgo(MLalgo).accuracy_tr_wta_sh=sum(correct_predict_tr_wta_sh)/length(correct_predict_tr_wta_sh);
-        % 
+        %
         % handles_not_out.MLalgo(MLalgo).correct_predict_tr_sh2=correct_predict_tr_sh2;
         % handles_not_out.MLalgo(MLalgo).correct_predict_tr_wta_sh2=correct_predict_tr_wta_sh2;
         % handles_out.MLalgo(MLalgo).accuracy_tr_sh2=sum(correct_predict_tr_sh2(:))/length(correct_predict_tr_sh2(:));
@@ -1971,8 +1979,8 @@ for MLalgo=MLalgo_to_use
             ylim([-0.2 1.2])
             title(['Label prediction for entire session for ' classifier_names{MLalgo} ' and p value threshold ' num2str(p_threshold)])
             
-
-             figNo=figNo+1;
+            
+            figNo=figNo+1;
             try
                 close(figNo)
             catch
@@ -1985,7 +1993,7 @@ for MLalgo=MLalgo_to_use
             hold on
             
             
-          
+            
             
             %                 plot(time,moving_mean_label_traces_sh,'-','Color',[80/255 194/255 255/255])
             plot(time,trimmed_licks,'-k','LineWidth',1)
@@ -2015,12 +2023,12 @@ for MLalgo=MLalgo_to_use
             pzero=sum(label_traces_sh2(ii,:)==0)/size(label_traces_sh2,2);
             handles_out.MLalgo(MLalgo).shannon_e_sh2(ii)=-pzero*log2(pzero) - pone*log2(pone);
         end
-
+        
         if show_figures==1
             fprintf(1, ['Shannon entropy %d, shuffled 1 %d, shuffled 2 %d\n'],handles_out.MLalgo(MLalgo).shannon_e...
                 ,handles_out.MLalgo(MLalgo).shannon_e_sh,mean(handles_out.MLalgo(MLalgo).shannon_e_sh2));
         end
-
+        
         %Now let's do accounting and show it in a bar graph
         
         %post Splus
@@ -2100,69 +2108,69 @@ for MLalgo=MLalgo_to_use
             edges=[0:0.033:1.2];
             rand_offset=0.8;
             
-%             
-%             figNo=figNo+1;
-%             try
-%                 close(figNo)
-%             catch
-%             end
-%             
-%             hFig = figure(figNo);
-%             
-%             set(hFig, 'units','normalized','position',[.05 .1 .3 .3])
-%             
-%             hold on
-%             
-%             bar_offset=1;
-%             
-%             %                 %S- pre
-%             %                 bar_offset=1;
-%             %
-%             %                 bar(bar_offset,mean(mean_pre_label_sm),'LineWidth', 3,'EdgeColor','none','FaceColor',[238/255 111/255 179/255])
-%             %
-%             %                 %Violin plot
-%             %                 [mean_out, CIout]=drgViolinPoint(mean_pre_label_sm...
-%             %                     ,edges,bar_offset,rand_offset,'k','k',3);
-%             %
-%             %                 bar_offset=bar_offset+1;
-%             %
-%             %                 %S+ pre
-%             %                 bar(bar_offset,mean(mean_pre_label_sp),'LineWidth', 3,'EdgeColor','none','FaceColor',[80/255 194/255 255/255])
-%             %
-%             %                 %Violin plot
-%             %                 [mean_out, CIout]=drgViolinPoint(mean_pre_label_sp...
-%             %                     ,edges,bar_offset,rand_offset,'k','k',3);
-%             %
-%             %                 bar_offset=bar_offset+2;
-% 
-%             %S- post
-%             bar(bar_offset,mean(mean_post_label_sm),'LineWidth', 3,'EdgeColor','none','FaceColor',[158/255 31/255 99/255])
-% 
-%             %Violin plot
-%             [mean_out, CIout]=drgViolinPoint(mean_post_label_sm...
-%                 ,edges,bar_offset,rand_offset,'k','k',3);
-%             bar_offset=bar_offset+1;
-% 
-%             %S+ post
-%             bar(bar_offset,mean(mean_post_label_sp),'LineWidth', 3,'EdgeColor','none','FaceColor',[0 114/255 178/255])
-% 
-%             %Violin plot
-%             [mean_out, CIout]=drgViolinPoint(mean_post_label_sp...
-%                 ,edges,bar_offset,rand_offset,'k','k',3);
-% 
-%             bar_offset=bar_offset+2;
-%             bar(bar_offset,mean(mean_all_label),'LineWidth', 3,'EdgeColor','none','FaceColor','m')
-% 
-%             %Violin plot
-%             [mean_out, CIout]=drgViolinPoint(mean_all_label...
-%                 ,edges,bar_offset,rand_offset,'k','k',3);
-% 
-%             xticks([1 2 4 5 7])
-%             xticklabels({'S- post', 'S+ post','Entire session'})
-%             title(['Label prediction for ' classifier_names{MLalgo} ' and p value threshold ' num2str(p_threshold)])
-
+            %
+            %             figNo=figNo+1;
+            %             try
+            %                 close(figNo)
+            %             catch
+            %             end
+            %
+            %             hFig = figure(figNo);
+            %
+            %             set(hFig, 'units','normalized','position',[.05 .1 .3 .3])
+            %
+            %             hold on
+            %
+            %             bar_offset=1;
+            %
+            %             %                 %S- pre
+            %             %                 bar_offset=1;
+            %             %
+            %             %                 bar(bar_offset,mean(mean_pre_label_sm),'LineWidth', 3,'EdgeColor','none','FaceColor',[238/255 111/255 179/255])
+            %             %
+            %             %                 %Violin plot
+            %             %                 [mean_out, CIout]=drgViolinPoint(mean_pre_label_sm...
+            %             %                     ,edges,bar_offset,rand_offset,'k','k',3);
+            %             %
+            %             %                 bar_offset=bar_offset+1;
+            %             %
+            %             %                 %S+ pre
+            %             %                 bar(bar_offset,mean(mean_pre_label_sp),'LineWidth', 3,'EdgeColor','none','FaceColor',[80/255 194/255 255/255])
+            %             %
+            %             %                 %Violin plot
+            %             %                 [mean_out, CIout]=drgViolinPoint(mean_pre_label_sp...
+            %             %                     ,edges,bar_offset,rand_offset,'k','k',3);
+            %             %
+            %             %                 bar_offset=bar_offset+2;
+            %
+            %             %S- post
+            %             bar(bar_offset,mean(mean_post_label_sm),'LineWidth', 3,'EdgeColor','none','FaceColor',[158/255 31/255 99/255])
+            %
+            %             %Violin plot
+            %             [mean_out, CIout]=drgViolinPoint(mean_post_label_sm...
+            %                 ,edges,bar_offset,rand_offset,'k','k',3);
+            %             bar_offset=bar_offset+1;
+            %
+            %             %S+ post
+            %             bar(bar_offset,mean(mean_post_label_sp),'LineWidth', 3,'EdgeColor','none','FaceColor',[0 114/255 178/255])
+            %
+            %             %Violin plot
+            %             [mean_out, CIout]=drgViolinPoint(mean_post_label_sp...
+            %                 ,edges,bar_offset,rand_offset,'k','k',3);
+            %
+            %             bar_offset=bar_offset+2;
+            %             bar(bar_offset,mean(mean_all_label),'LineWidth', 3,'EdgeColor','none','FaceColor','m')
+            %
+            %             %Violin plot
+            %             [mean_out, CIout]=drgViolinPoint(mean_all_label...
+            %                 ,edges,bar_offset,rand_offset,'k','k',3);
+            %
+            %             xticks([1 2 4 5 7])
+            %             xticklabels({'S- post', 'S+ post','Entire session'})
+            %             title(['Label prediction for ' classifier_names{MLalgo} ' and p value threshold ' num2str(p_threshold)])
+            
         end
-
+        
         %Now show average labels for S+, S-, etc for 30 sec
         handles_not_out.MLalgo(MLalgo).mean_all_label=mean_all_label;
         handles_not_out.MLalgo(MLalgo).mean_pre_label_sm=mean_pre_label_sm;
@@ -2170,7 +2178,7 @@ for MLalgo=MLalgo_to_use
         handles_not_out.MLalgo(MLalgo).mean_post_label_sm=mean_post_label_sm;
         handles_not_out.MLalgo(MLalgo).mean_post_label_sp=mean_post_label_sp;
         handles_not_out.MLalgo(MLalgo).mean_all_label=mean_all_label;
-
+        
         %Now do the per trial plots
         %First extract per trial prediction and per trial licks
         at_end=0;
@@ -2183,14 +2191,14 @@ for MLalgo=MLalgo_to_use
         per_trial_sm_timecourse=[];
         per_trial_sm_licks=[];
         epoch_before_sm=[];
-
+        
         %For post period only
         per_trial_sp_timecourse_post=[];
         per_trial_sp_licks_post=[];
-
+        
         per_trial_sm_timecourse_post=[];
         per_trial_sm_licks_post=[];
-
+        
         tr_ii=0;
         hit_ii=0;
         miss_ii=0;
@@ -2206,18 +2214,18 @@ for MLalgo=MLalgo_to_use
         these_sm_fas=[];
         these_sps=[];
         theese_sms=[];
-
+        
         per_trial_hit_timecourse_post=[];
         per_trial_miss_timecourse_post=[];
         per_trial_cr_timecourse_post=[];
         per_trial_fa_timecourse_post=[];
-
+        
         % per_trial_scores_sp=[];
         % per_trial_scores_sm=[];
-
+        
         last_sp_sm=-1;
-
-
+        
+        
         while at_end==0
             next_ii=[];
             next_ii_sp=find(epochs_sp_post(ii:end)==1,1,'first');
@@ -2240,17 +2248,17 @@ for MLalgo=MLalgo_to_use
                     this_sp_sm=0;
                 end
             end
-
+            
             if ~isempty(next_ii)
                 if ((ii+next_ii-ii_span)>0)&((ii+next_ii+ii_span<length(label_traces)))
                     if this_sp_sm==1
-
+                        
                         tr_ii=tr_ii+1;
                         these_crs(tr_ii)=0;
                         these_fas(tr_ii)=0;
                         these_sps(tr_ii)=1;
                         these_sms(tr_ii)=0;
-
+                        
                         sp_ii=sp_ii+1;
                         per_trial_sp_timecourse(sp_ii,:)=label_traces(ii+next_ii-ii_span:ii+next_ii+ii_span);
                         per_trial_sp_licks(sp_ii,:)=trimmed_licks(ii+next_ii-ii_span:ii+next_ii+ii_span);
@@ -2259,7 +2267,7 @@ for MLalgo=MLalgo_to_use
                         % per_trial_scores_sp(sp_ii,1:size(scores,2),:)=scores(ii+next_ii-ii_span:ii+next_ii+ii_span,:)';
                         epoch_before_sp(sp_ii)=last_sp_sm;
                         last_sp_sm=1;
-
+                        
                         if epochs(ii+next_ii)==6
                             hit_ii=hit_ii+1;
                             per_trial_hit_timecourse_post(hit_ii,:)=label_traces(ii+next_ii+ii_post_shift:ii+next_ii+ii_post_shift+ii_post_time);
@@ -2276,13 +2284,13 @@ for MLalgo=MLalgo_to_use
                             these_sp_hits(sp_ii)=0;
                             these_sp_miss(sp_ii)=1;
                         end
-
+                        
                         ii_next_post=find(epochs_sp_post(ii+next_ii:end)==0,1,'first');
                         ii=ii+next_ii+ii_next_post;
                     else
-
-
-
+                        
+                        
+                        
                         sm_ii=sm_ii+1;
                         per_trial_sm_timecourse(sm_ii,:)=label_traces(ii+next_ii-ii_span:ii+next_ii+ii_span);
                         per_trial_sm_licks(sm_ii,:)=trimmed_licks(ii+next_ii-ii_span:ii+next_ii+ii_span);
@@ -2291,7 +2299,7 @@ for MLalgo=MLalgo_to_use
                         % per_trial_scores_sm(sm_ii,1:size(scores,2),:)=scores(ii+next_ii-ii_span:ii+next_ii+ii_span,:)';
                         epoch_before_sm(sm_ii)=last_sp_sm;
                         last_sp_sm=0;
-
+                        
                         tr_ii=tr_ii+1;
                         these_hits(tr_ii)=0;
                         these_miss(tr_ii)=0;
@@ -2313,8 +2321,8 @@ for MLalgo=MLalgo_to_use
                             these_sm_crs(sm_ii)=0;
                             these_sm_fas(sm_ii)=1;
                         end
-
-
+                        
+                        
                         ii_next_post=find(epochs_sm_post(ii+next_ii:end)==0,1,'first');
                         ii=ii+next_ii+ii_next_post;
                     end
@@ -2328,9 +2336,9 @@ for MLalgo=MLalgo_to_use
             else
                 at_end=1;
             end
-
+            
         end
-
+        
         handles_out.MLalgo(MLalgo).these_sm_crs=these_sm_crs;
         handles_out.MLalgo(MLalgo).these_sm_fas=these_sm_fas;
         handles_out.MLalgo(MLalgo).these_sp_hits=these_sp_hits;
@@ -2344,25 +2352,25 @@ for MLalgo=MLalgo_to_use
         handles_out.MLalgo(MLalgo).cr_per_trial=cr_per_trial;
         handles_out.MLalgo(MLalgo).miss_per_trial=miss_per_trial;
         handles_out.MLalgo(MLalgo).fa_per_trial=fa_per_trial;
-
+        
         handles_out.MLalgo(MLalgo).per_trial_sp_timecourse=per_trial_sp_timecourse;
         handles_not_out.MLalgo(MLalgo).epoch_before_sp=epoch_before_sp;
         handles_out.MLalgo(MLalgo).per_trial_sm_timecourse=per_trial_sm_timecourse;
         handles_not_out.MLalgo(MLalgo).epoch_before_sm=epoch_before_sm;
         handles_out.MLalgo(MLalgo).per_trial_sp_timecourse_post=per_trial_sp_timecourse_post;
         handles_out.MLalgo(MLalgo).per_trial_sm_timecourse_post=per_trial_sm_timecourse_post;
-
+        
         handles_out.MLalgo(MLalgo).per_trial_hit_timecourse_post=per_trial_hit_timecourse_post;
         handles_out.MLalgo(MLalgo).per_trial_miss_timecourse_post=per_trial_miss_timecourse_post;
         handles_out.MLalgo(MLalgo).per_trial_cr_timecourse_post=per_trial_cr_timecourse_post;
         handles_out.MLalgo(MLalgo).per_trial_fa_timecourse_post=per_trial_fa_timecourse_post;
-
-
+        
+        
         handles_out.MLalgo(MLalgo).per_trial_sp_licks=per_trial_sp_licks;
         handles_out.MLalgo(MLalgo).per_trial_sm_licks=per_trial_sm_licks;
         handles_out.MLalgo(MLalgo).per_trial_sp_licks_post=per_trial_sp_licks_post;
         handles_out.MLalgo(MLalgo).per_trial_sm_licks_post=per_trial_sm_licks_post;
-
+        
         
         % handles_out.MLalgo(MLalgo).per_trial_scores_sp=per_trial_scores_sp;
         % handles_out.MLalgo(MLalgo).per_trial_scores_sm=per_trial_scores_sm;
@@ -2370,12 +2378,12 @@ for MLalgo=MLalgo_to_use
         
         moving_mean_per_trial_sp_timecourse = movmean(per_trial_sp_timecourse',moving_mean_n)';
         moving_mean_per_trial_sm_timecourse = movmean(per_trial_sm_timecourse',moving_mean_n)';
-
+        
         moving_mean_per_trial_sp_licks = movmean(per_trial_sp_licks',moving_mean_n)';
         moving_mean_per_trial_sm_licks = movmean(per_trial_sm_licks',moving_mean_n)';
         
-%         time_span=[0:dt:dt*size(per_trial_sp_timecourse,2)]-dt_span+dt;
-%         time_span=time_span(1:end-1)+post_shift;
+        %         time_span=[0:dt:dt*size(per_trial_sp_timecourse,2)]-dt_span+dt;
+        %         time_span=time_span(1:end-1)+post_shift;
         
         %Calculate correct predict
         for ii_tr=1:size(per_trial_sp_timecourse,1)
@@ -2397,7 +2405,7 @@ for MLalgo=MLalgo_to_use
                 end
             end
         end
-
+        
         %Calculate correct predict post
         for ii_tr=1:size(per_trial_sp_timecourse_post,1)
             for ii_time=1:size(per_trial_sp_timecourse_post,2)
@@ -2448,7 +2456,7 @@ for MLalgo=MLalgo_to_use
             end
             ii_plus=ii_plus+sm_ii;
         end
-
+        
         %Calculate correct predict post shuffled
         ii_plus=0;
         for ww=1:10
@@ -2496,7 +2504,7 @@ for MLalgo=MLalgo_to_use
             
             set(hFig, 'units','normalized','position',[.05 .1 .3 .3])
             
-%             subplot(2,1,1)
+            %             subplot(2,1,1)
             hold on
             
             CIsm = bootci(1000, @mean, moving_mean_per_trial_sm_licks);
@@ -2522,30 +2530,30 @@ for MLalgo=MLalgo_to_use
             
             xlim([-7 15])
             ylim([0 1.1])
-
+            
             this_ylim=ylim;
-
-
+            
+            
             %FV
             plot([-1.5 0],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'LineWidth',5, Color=[0.9 0.9 0.9])
             plot([-1.5 -1.5],[this_ylim],'-','Color',[0.5 0.5 0.5])
-
+            
             %Odor on markers
             plot([0 0],this_ylim,'-k')
             odorhl=plot([0 mean(delta_odor)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-k','LineWidth',5);
             plot([mean(delta_odor) mean(delta_odor)],this_ylim,'-k')
-
+            
             %Reinforcement markers
             plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on)],this_ylim,'-r')
             reinfhl=plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on+delta_reinf)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-r','LineWidth',5);
             plot([mean(delta_odor_on_reinf_on+delta_reinf) mean(delta_odor_on_reinf_on+delta_reinf)],this_ylim,'-r')
-
-
+            
+            
             title(['Lick timecourse'])
             xlabel('Time(sec)')
             ylabel('Lick fraction')
-
-            %Plot the lick prediction 
+            
+            %Plot the lick prediction
             figNo=figNo+1;
             try
                 close(figNo)
@@ -2556,7 +2564,7 @@ for MLalgo=MLalgo_to_use
             
             set(hFig, 'units','normalized','position',[.05 .1 .3 .3])
             
-%             subplot(2,1,1)
+            %             subplot(2,1,1)
             hold on
             
             CIsm = bootci(1000, @mean, moving_mean_per_trial_sm_timecourse);
@@ -2582,25 +2590,25 @@ for MLalgo=MLalgo_to_use
             
             xlim([-7 15])
             ylim([0 1.1])
-
+            
             this_ylim=ylim;
-
-
+            
+            
             %FV
             plot([-1.5 0],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'LineWidth',5, Color=[0.9 0.9 0.9])
             plot([-1.5 -1.5],[this_ylim],'-','Color',[0.5 0.5 0.5])
-
+            
             %Odor on markers
             plot([0 0],this_ylim,'-k')
             odorhl=plot([0 mean(delta_odor)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-k','LineWidth',5);
             plot([mean(delta_odor) mean(delta_odor)],this_ylim,'-k')
-
+            
             %Reinforcement markers
             plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on)],this_ylim,'-r')
             reinfhl=plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on+delta_reinf)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-r','LineWidth',5);
             plot([mean(delta_odor_on_reinf_on+delta_reinf) mean(delta_odor_on_reinf_on+delta_reinf)],this_ylim,'-r')
-
-
+            
+            
             title(['Lick prediction for ' classifier_names{MLalgo} ' trained from ' num2str(post_shift) ' to ' num2str(post_shift+post_time)])
             xlabel('Time(sec)')
             ylabel('Lick prediction')
@@ -2638,32 +2646,32 @@ for MLalgo=MLalgo_to_use
             text(30,0.75,'Shuffled','Color','k')
             text(30,0.65,'S+ vs S-','Color',[0 114/255 178/255])
             
-
+            
             xlim([-7 15])
             ylim([0.2 1])
-
+            
             this_ylim=ylim;
-
-
+            
+            
             %FV
             plot([-1.5 0],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'LineWidth',5, Color=[0.9 0.9 0.9])
             plot([-1.5 -1.5],[this_ylim],'-','Color',[0.5 0.5 0.5])
-
+            
             %Odor on markers
             plot([0 0],this_ylim,'-k')
             odorhl=plot([0 mean(delta_odor)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-k','LineWidth',5);
             plot([mean(delta_odor) mean(delta_odor)],this_ylim,'-k')
-
+            
             %Reinforcement markers
             plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on)],this_ylim,'-r')
             reinfhl=plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on+delta_reinf)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-r','LineWidth',5);
             plot([mean(delta_odor_on_reinf_on+delta_reinf) mean(delta_odor_on_reinf_on+delta_reinf)],this_ylim,'-r')
-
-
+            
+            
             title(['Accuracy v3 for ' classifier_names{MLalgo} ' trained from ' num2str(post_shift) ' to ' num2str(post_shift+post_time)])
             xlabel('Time(sec)')
             ylabel('Accuracy')
-
+            
             
             
             % %Plot the posterior probabilities for Sp (scores,:,2) and Sm (scores(:,1))
@@ -2672,11 +2680,11 @@ for MLalgo=MLalgo_to_use
             %     close(figNo)
             % catch
             % end
-            % 
+            %
             % hFig = figure(figNo);
-            % 
+            %
             % set(hFig, 'units','normalized','position',[.05 .1 .3 .3])
-            % 
+            %
             % subplot(2,1,1)
             % hold on
             % try
@@ -2686,38 +2694,38 @@ for MLalgo=MLalgo_to_use
             %     meansm=mean(these_scores_sm,1);
             %     CIsm(1,:)=meansm-CIsm(1,:);
             %     CIsm(2,:)=CIsm(2,:)-meansm;
-            % 
+            %
             %     [hlsm, hpsm] = boundedline(time_span',mean(these_scores_sm,1)', CIsm', 'cmap',[158/255 31/255 99/255]);
-            % 
+            %
             %     these_scores_sp=zeros(size(per_trial_scores_sp,1),size(per_trial_scores_sp,3));
             %     these_scores_sp(:,:)=per_trial_scores_sp(:,2,:);
             %     CIsp = bootci(1000, @mean, these_scores_sp);
             %     meansp=mean(these_scores_sp,1);
             %     CIsp(1,:)=meansp-CIsp(1,:);
             %     CIsp(2,:)=CIsp(2,:)-meansp;
-            % 
-            % 
+            %
+            %
             %     [hlsp, hpsp] = boundedline(time_span',mean(these_scores_sp,1)', CIsp', 'cmap',[0 114/255 178/255]);
-            % 
-            % 
+            %
+            %
             %     plot(time_span',mean(these_scores_sm,1)','-','Color',[158/255 31/255 99/255],'DisplayName','S-')
             %     plot(time_span',mean(these_scores_sp,1)', '-','Color',[0 114/255 178/255],'DisplayName','S+');
-            % 
+            %
             % catch
             % end
-            % 
+            %
             % text(30,0.75,'S-','Color',[158/255 31/255 99/255])
             % text(30,0.65,'S+','Color',[0 114/255 178/255])
-            % 
+            %
             % ylim([0 1])
             % xlim([-10 20])
             % title(['Posterior probability for S+ or S- prediction for S+ trials ' classifier_names{MLalgo} ' ' num2str(p_threshold)])
             % xlabel('Time(sec)')
             % ylabel('Posterior probability')
-            % 
+            %
             % subplot(2,1,2)
             % hold on
-            % 
+            %
             % try
             %     these_scores_sm=zeros(size(per_trial_scores_sm,1),size(per_trial_scores_sm,3));
             %     these_scores_sm(:,:)=per_trial_scores_sm(:,1,:);
@@ -2725,26 +2733,26 @@ for MLalgo=MLalgo_to_use
             %     meansm=mean(these_scores_sm,1);
             %     CIsm(1,:)=meansm-CIsm(1,:);
             %     CIsm(2,:)=CIsm(2,:)-meansm;
-            % 
+            %
             %     [hlsm, hpsm] = boundedline(time_span',mean(these_scores_sm,1)', CIsm', 'cmap',[158/255 31/255 99/255]);
-            % 
+            %
             %     these_scores_sp=zeros(size(per_trial_scores_sm,1),size(per_trial_scores_sm,3));
             %     these_scores_sp(:,:)=per_trial_scores_sm(:,2,:);
             %     CIsp = bootci(1000, @mean, these_scores_sp);
             %     meansp=mean(these_scores_sp,1);
             %     CIsp(1,:)=meansp-CIsp(1,:);
             %     CIsp(2,:)=CIsp(2,:)-meansp;
-            % 
-            % 
+            %
+            %
             %     [hlsp, hpsp] = boundedline(time_span',mean(these_scores_sp,1)', CIsp', 'cmap',[0 114/255 178/255]);
-            % 
+            %
             %     plot(time_span',mean(these_scores_sm,1)','-','Color',[158/255 31/255 99/255],'DisplayName','S-')
             %     plot(time_span',mean(these_scores_sp,1)', '-','Color',[0 114/255 178/255],'DisplayName','S+');
             % catch
             % end
             % text(30,0.75,'S-','Color',[158/255 31/255 99/255])
             % text(30,0.65,'S+','Color',[0 114/255 178/255])
-            % 
+            %
             % ylim([0 1])
             % xlim([-10 20])
             % title(['Posterior probability for S+ or S- prediction for S- trials ' classifier_names{MLalgo} ' ' num2str(p_threshold)])
@@ -2758,10 +2766,10 @@ for MLalgo=MLalgo_to_use
         end
     end
     
-%     if show_figures==1
-%         fprintf(1,['Accuracy for ' classifier_names{MLalgo} ' = %d\n\n'],mean(mean(handles_out.MLalgo(MLalgo).this_correct_predict(:,(time_span>=time_windows(window_no,1))&(time_span<=time_windows(window_no,2))),1)))
-%     end
-
+    %     if show_figures==1
+    %         fprintf(1,['Accuracy for ' classifier_names{MLalgo} ' = %d\n\n'],mean(mean(handles_out.MLalgo(MLalgo).this_correct_predict(:,(time_span>=time_windows(window_no,1))&(time_span<=time_windows(window_no,2))),1)))
+    %     end
+    
 end
 
 % this_correct_predict=handles_out.MLalgo(MLalgo).this_correct_predict;

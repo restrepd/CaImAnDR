@@ -1,4 +1,4 @@
-function handles_out=drgCaImAn_analyze_one_decode_licks_entire_sessionv2(handles_choices)
+function handles_outld=drgCaImAn_analyze_one_decode_licks_entire_sessionv2(handles_choices)
 %This program trains several decoding algorithms with the post odorant and then determines what happens throughout the entire timecouse
 %The user enters the choices entered under exist('handles_choices')==0
 %
@@ -15,9 +15,11 @@ if exist('handles_choices')==0
     %Load file
     [pre_perFileName,pre_perPathName] = uigetfile({'*.mat'},'Select the .mat file for analysis');
 
-
+    show_images=1;
 else
-
+    show_images=handles_choices.show_images;
+    pre_perFileName=handles_choices.pre_perFileName;
+    pre_perPathName=handles_choices.pre_perPathName;
 end
 
 load([pre_perPathName pre_perFileName])
@@ -44,6 +46,7 @@ training_delta_time=handles_out.handles.training_delta_time;
 length_trimmed_time_span=sum((time_span>=training_time_from(1))&(time_span<=training_time_from(end)+training_delta_time));
 trimmed_time_span=time_span((time_span>=training_time_from(1))&(time_span<=training_time_from(end)+training_delta_time));
 
+handles_outld.trimmed_time_span=trimmed_time_span;
 
 
 ii_cp=0;
@@ -64,12 +67,22 @@ u_no_trials=unique(no_trials_per_time_from);
 
 ii_standard=find(no_trials_per_time_from==min(u_no_trials),1,'first');
 st_no_trials=no_trials_per_time_from(ii_standard);
-st_hit_per_trial=handles_out.ii_out(ii_standard).handles_out.hit_per_trial;
-st_miss_per_trial=handles_out.ii_out(ii_standard).handles_out.miss_per_trial;
-st_cr_per_trial=handles_out.ii_out(ii_standard).handles_out.cr_per_trial;
-st_fa_per_trial=handles_out.ii_out(ii_standard).handles_out.fa_per_trial;
-st_sp_no_trials=sum(st_hit_per_trial)+sum(st_miss_per_trial);
-st_sm_no_trials=sum(st_cr_per_trial)+sum(st_fa_per_trial);
+st_hit_per_trial=handles_out.ii_out(ii_standard).handles_out.hit_per_trial(1:st_no_trials);
+st_miss_per_trial=handles_out.ii_out(ii_standard).handles_out.miss_per_trial(1:st_no_trials);
+st_cr_per_trial=handles_out.ii_out(ii_standard).handles_out.cr_per_trial(1:st_no_trials);
+st_fa_per_trial=handles_out.ii_out(ii_standard).handles_out.fa_per_trial(1:st_no_trials);
+% st_sp_no_trials=sum(st_hit_per_trial)+sum(st_miss_per_trial);
+% st_sm_no_trials=sum(st_cr_per_trial)+sum(st_fa_per_trial);
+
+handles_outld.st_no_trials=no_trials_per_time_from(ii_standard);
+handles_outld.st_hit_per_trial=handles_out.ii_out(ii_standard).handles_out.hit_per_trial(1:st_no_trials);
+handles_outld.st_miss_per_trial=handles_out.ii_out(ii_standard).handles_out.miss_per_trial(1:st_no_trials);
+handles_outld.st_cr_per_trial=handles_out.ii_out(ii_standard).handles_out.cr_per_trial(1:st_no_trials);
+handles_outld.st_fa_per_trial=handles_out.ii_out(ii_standard).handles_out.fa_per_trial(1:st_no_trials);
+handles_outld.st_sp_no_trials=sum(st_hit_per_trial)+sum(st_miss_per_trial);
+handles_outld.st_sm_no_trials=sum(st_cr_per_trial)+sum(st_fa_per_trial);
+
+
 
 trials_from=zeros(1,length(training_time_from));
 trials_to=zeros(1,length(training_time_from));
@@ -138,7 +151,7 @@ for ii=1:length(training_time_from)
         these_cp_sh=zeros(n_shuffled,min(u_no_trials));
         for jj=1:n_shuffled
             these_cp_sh(jj,:)=handles_out.ii_out(ii).handles_out.correct_predict_sh_post(jj_cp+trials_from(ii):jj_cp+trials_to(ii),jj_step+1);
-            jj_cp=jj_cp+ii_step;
+            jj_cp=jj_cp+min(u_no_trials);
         end
         these_correct_predict_sh(:,jj_step)=mean(these_cp_sh);
     end
@@ -178,185 +191,195 @@ end
 this_per_trial_mean_sp_licks_post = movmean(this_per_trial_sp_licks_post',moving_mean_n)';
 this_per_trial_mean_sm_licks_post = movmean(this_per_trial_sm_licks_post',moving_mean_n)';
 
+handles_outld.this_per_trial_mean_sp_licks_post = movmean(this_per_trial_sp_licks_post',moving_mean_n)';
+handles_outld.this_per_trial_mean_sm_licks_post = movmean(this_per_trial_sm_licks_post',moving_mean_n)';
 
 this_prediction_mean_per_trial_sp_timecourse = movmean(this_prediction_per_trial_sp_timecourse',moving_mean_n)';
 this_prediction_mean_per_trial_sm_timecourse = movmean(this_prediction_per_trial_sm_timecourse',moving_mean_n)';
 
+handles_outld.this_prediction_mean_per_trial_sp_timecourse = movmean(this_prediction_per_trial_sp_timecourse',moving_mean_n)';
+handles_outld.this_prediction_mean_per_trial_sm_timecourse = movmean(this_prediction_per_trial_sm_timecourse',moving_mean_n)';
+
+handles_outld.this_correct_predict=this_correct_predict;
+handles_outld.this_correct_predict_sh=this_correct_predict_sh;
+
 %Plot accuracy
-figNo=figNo+1;
-try
-    close(figNo)
-catch
+if show_images==1
+    figNo=figNo+1;
+    try
+        close(figNo)
+    catch
+    end
+
+    hFig = figure(figNo);
+
+    set(hFig, 'units','normalized','position',[.05 .1 .3 .3])
+    hold on
+
+
+    CIsm = bootci(1000, @mean, this_correct_predict_sh);
+    meansm=mean(this_correct_predict_sh,1);
+    CIsm(1,:)=meansm-CIsm(1,:);
+    CIsm(2,:)=CIsm(2,:)-meansm;
+
+    [hlsm, hpsm] = boundedline(trimmed_time_span',mean(this_correct_predict_sh,1)', CIsm', 'k');
+
+
+    CIsm = bootci(1000, @mean, this_correct_predict);
+    meansm=mean(this_correct_predict,1);
+    CIsm(1,:)=meansm-CIsm(1,:);
+    CIsm(2,:)=CIsm(2,:)-meansm;
+
+    [hlsm, hpsm] = boundedline(trimmed_time_span',mean(this_correct_predict,1)', CIsm', 'cmap',[0 114/255 178/255]);
+
+    plot(trimmed_time_span',mean(this_correct_predict_sh,1)','-k','DisplayName','Shuffled')
+    plot(trimmed_time_span',mean(this_correct_predict,1)', '-','Color',[0 114/255 178/255]);
+
+    text(30,0.75,'Shuffled','Color','k')
+    text(30,0.65,'S+ vs S-','Color',[0 114/255 178/255])
+
+
+    xlim([-7 15])
+    ylim([0.2 1])
+
+    this_ylim=ylim;
+
+
+    %FV
+    plot([-1.5 0],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'LineWidth',5, Color=[0.9 0.9 0.9])
+    plot([-1.5 -1.5],[this_ylim],'-','Color',[0.5 0.5 0.5])
+
+    %Odor on markers
+    plot([0 0],this_ylim,'-k')
+    odorhl=plot([0 mean(delta_odor)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-k','LineWidth',5);
+    plot([mean(delta_odor) mean(delta_odor)],this_ylim,'-k')
+
+    %Reinforcement markers
+    plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on)],this_ylim,'-r')
+    reinfhl=plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on+delta_reinf)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-r','LineWidth',5);
+    plot([mean(delta_odor_on_reinf_on+delta_reinf) mean(delta_odor_on_reinf_on+delta_reinf)],this_ylim,'-r')
+
+
+    title(['Accuracy ' classifier_names{handles_choices.MLalgo_to_use}])
+    xlabel('Time(sec)')
+    ylabel('Accuracy')
+
+    %Plor lick fraction
+    figNo=figNo+1;
+    try
+        close(figNo)
+    catch
+    end
+
+    hFig = figure(figNo);
+
+    set(hFig, 'units','normalized','position',[.05 .1 .3 .3])
+    hold on
+
+
+    CIsm = bootci(1000, @mean, this_per_trial_mean_sm_licks_post);
+    meansm=mean(this_per_trial_mean_sm_licks_post,1);
+    CIsm(1,:)=meansm-CIsm(1,:);
+    CIsm(2,:)=CIsm(2,:)-meansm;
+
+    [hlsm, hpsm] = boundedline(trimmed_time_span',mean(this_per_trial_mean_sm_licks_post,1)', CIsm', 'cmap',[158/255 31/255 99/255]);
+
+
+    CIsm = bootci(1000, @mean, this_per_trial_mean_sp_licks_post);
+    meansm=mean(this_per_trial_mean_sp_licks_post,1);
+    CIsm(1,:)=meansm-CIsm(1,:);
+    CIsm(2,:)=CIsm(2,:)-meansm;
+
+    [hlsm, hpsm] = boundedline(trimmed_time_span',mean(this_per_trial_mean_sp_licks_post,1)', CIsm', 'cmap',[0 114/255 178/255]);
+
+    plot(trimmed_time_span',mean(this_per_trial_mean_sm_licks_post,1)','Color',[158/255 31/255 99/255])
+    plot(trimmed_time_span',mean(this_per_trial_mean_sp_licks_post,1)', '-','Color',[0 114/255 178/255]);
+
+
+
+    xlim([-7 15])
+    ylim([0 1])
+
+    this_ylim=ylim;
+
+
+    %FV
+    plot([-1.5 0],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'LineWidth',5, Color=[0.9 0.9 0.9])
+    plot([-1.5 -1.5],[this_ylim],'-','Color',[0.5 0.5 0.5])
+
+    %Odor on markers
+    plot([0 0],this_ylim,'-k')
+    odorhl=plot([0 mean(delta_odor)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-k','LineWidth',5);
+    plot([mean(delta_odor) mean(delta_odor)],this_ylim,'-k')
+
+    %Reinforcement markers
+    plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on)],this_ylim,'-r')
+    reinfhl=plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on+delta_reinf)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-r','LineWidth',5);
+    plot([mean(delta_odor_on_reinf_on+delta_reinf) mean(delta_odor_on_reinf_on+delta_reinf)],this_ylim,'-r')
+
+
+    title(['Lick fraction' ])
+    xlabel('Time(sec)')
+    ylabel('Lick fraction')
+
+
+    %Plor prediction
+    figNo=figNo+1;
+    try
+        close(figNo)
+    catch
+    end
+
+    hFig = figure(figNo);
+
+    set(hFig, 'units','normalized','position',[.05 .1 .3 .3])
+    hold on
+
+
+    CIsm = bootci(1000, @mean, this_prediction_mean_per_trial_sm_timecourse);
+    meansm=mean(this_prediction_mean_per_trial_sm_timecourse,1);
+    CIsm(1,:)=meansm-CIsm(1,:);
+    CIsm(2,:)=CIsm(2,:)-meansm;
+
+    [hlsm, hpsm] = boundedline(trimmed_time_span',mean(this_prediction_mean_per_trial_sm_timecourse,1)', CIsm', 'cmap',[158/255 31/255 99/255]);
+
+
+    CIsm = bootci(1000, @mean, this_prediction_mean_per_trial_sp_timecourse);
+    meansm=mean(this_prediction_mean_per_trial_sp_timecourse,1);
+    CIsm(1,:)=meansm-CIsm(1,:);
+    CIsm(2,:)=CIsm(2,:)-meansm;
+
+    [hlsm, hpsm] = boundedline(trimmed_time_span',mean(this_prediction_mean_per_trial_sp_timecourse,1)', CIsm', 'cmap',[0 114/255 178/255]);
+
+    plot(trimmed_time_span',mean(this_prediction_mean_per_trial_sm_timecourse,1)','Color',[158/255 31/255 99/255])
+    plot(trimmed_time_span',mean(this_prediction_mean_per_trial_sp_timecourse,1)', '-','Color',[0 114/255 178/255]);
+
+
+
+    xlim([-7 15])
+    ylim([0 1])
+
+    this_ylim=ylim;
+
+
+    %FV
+    plot([-1.5 0],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'LineWidth',5, Color=[0.9 0.9 0.9])
+    plot([-1.5 -1.5],[this_ylim],'-','Color',[0.5 0.5 0.5])
+
+    %Odor on markers
+    plot([0 0],this_ylim,'-k')
+    odorhl=plot([0 mean(delta_odor)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-k','LineWidth',5);
+    plot([mean(delta_odor) mean(delta_odor)],this_ylim,'-k')
+
+    %Reinforcement markers
+    plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on)],this_ylim,'-r')
+    reinfhl=plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on+delta_reinf)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-r','LineWidth',5);
+    plot([mean(delta_odor_on_reinf_on+delta_reinf) mean(delta_odor_on_reinf_on+delta_reinf)],this_ylim,'-r')
+
+
+    title(['Prediction ' classifier_names{handles_choices.MLalgo_to_use}])
+    xlabel('Time(sec)')
+    ylabel('Prediction')
 end
-
-hFig = figure(figNo);
-
-set(hFig, 'units','normalized','position',[.05 .1 .3 .3])
-hold on
-
-
-CIsm = bootci(1000, @mean, this_correct_predict_sh);
-meansm=mean(this_correct_predict_sh,1);
-CIsm(1,:)=meansm-CIsm(1,:);
-CIsm(2,:)=CIsm(2,:)-meansm;
-
-[hlsm, hpsm] = boundedline(trimmed_time_span',mean(this_correct_predict_sh,1)', CIsm', 'k');
-
-
-CIsm = bootci(1000, @mean, this_correct_predict);
-meansm=mean(this_correct_predict,1);
-CIsm(1,:)=meansm-CIsm(1,:);
-CIsm(2,:)=CIsm(2,:)-meansm;
-
-[hlsm, hpsm] = boundedline(trimmed_time_span',mean(this_correct_predict,1)', CIsm', 'cmap',[0 114/255 178/255]);
-
-plot(trimmed_time_span',mean(this_correct_predict_sh,1)','-k','DisplayName','Shuffled')
-plot(trimmed_time_span',mean(this_correct_predict,1)', '-','Color',[0 114/255 178/255]);
-
-text(30,0.75,'Shuffled','Color','k')
-text(30,0.65,'S+ vs S-','Color',[0 114/255 178/255])
-
-
-xlim([-7 15])
-ylim([0.2 1])
-
-this_ylim=ylim;
-
-
-%FV
-plot([-1.5 0],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'LineWidth',5, Color=[0.9 0.9 0.9])
-plot([-1.5 -1.5],[this_ylim],'-','Color',[0.5 0.5 0.5])
-
-%Odor on markers
-plot([0 0],this_ylim,'-k')
-odorhl=plot([0 mean(delta_odor)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-k','LineWidth',5);
-plot([mean(delta_odor) mean(delta_odor)],this_ylim,'-k')
-
-%Reinforcement markers
-plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on)],this_ylim,'-r')
-reinfhl=plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on+delta_reinf)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-r','LineWidth',5);
-plot([mean(delta_odor_on_reinf_on+delta_reinf) mean(delta_odor_on_reinf_on+delta_reinf)],this_ylim,'-r')
-
-
-title(['Accuracy v3  trained per time point' ])
-xlabel('Time(sec)')
-ylabel('Accuracy')
-
-%Plor lick fraction
-figNo=figNo+1;
-try
-    close(figNo)
-catch
-end
-
-hFig = figure(figNo);
-
-set(hFig, 'units','normalized','position',[.05 .1 .3 .3])
-hold on
-
-
-CIsm = bootci(1000, @mean, this_per_trial_mean_sm_licks_post);
-meansm=mean(this_per_trial_mean_sm_licks_post,1);
-CIsm(1,:)=meansm-CIsm(1,:);
-CIsm(2,:)=CIsm(2,:)-meansm;
-
-[hlsm, hpsm] = boundedline(trimmed_time_span',mean(this_per_trial_mean_sm_licks_post,1)', CIsm', 'cmap',[158/255 31/255 99/255]);
-
-
-CIsm = bootci(1000, @mean, this_per_trial_mean_sp_licks_post);
-meansm=mean(this_per_trial_mean_sp_licks_post,1);
-CIsm(1,:)=meansm-CIsm(1,:);
-CIsm(2,:)=CIsm(2,:)-meansm;
-
-[hlsm, hpsm] = boundedline(trimmed_time_span',mean(this_per_trial_mean_sp_licks_post,1)', CIsm', 'cmap',[0 114/255 178/255]);
-
-plot(trimmed_time_span',mean(this_per_trial_mean_sm_licks_post,1)','Color',[158/255 31/255 99/255])
-plot(trimmed_time_span',mean(this_per_trial_mean_sp_licks_post,1)', '-','Color',[0 114/255 178/255]);
-
-
-
-xlim([-7 15])
-ylim([0 1])
-
-this_ylim=ylim;
-
-
-%FV
-plot([-1.5 0],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'LineWidth',5, Color=[0.9 0.9 0.9])
-plot([-1.5 -1.5],[this_ylim],'-','Color',[0.5 0.5 0.5])
-
-%Odor on markers
-plot([0 0],this_ylim,'-k')
-odorhl=plot([0 mean(delta_odor)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-k','LineWidth',5);
-plot([mean(delta_odor) mean(delta_odor)],this_ylim,'-k')
-
-%Reinforcement markers
-plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on)],this_ylim,'-r')
-reinfhl=plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on+delta_reinf)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-r','LineWidth',5);
-plot([mean(delta_odor_on_reinf_on+delta_reinf) mean(delta_odor_on_reinf_on+delta_reinf)],this_ylim,'-r')
-
-
-title(['Lick fraction' ])
-xlabel('Time(sec)')
-ylabel('Lick fraction')
-
-
-%Plor prediction
-figNo=figNo+1;
-try
-    close(figNo)
-catch
-end
-
-hFig = figure(figNo);
-
-set(hFig, 'units','normalized','position',[.05 .1 .3 .3])
-hold on
-
-
-CIsm = bootci(1000, @mean, this_prediction_mean_per_trial_sm_timecourse);
-meansm=mean(this_prediction_mean_per_trial_sm_timecourse,1);
-CIsm(1,:)=meansm-CIsm(1,:);
-CIsm(2,:)=CIsm(2,:)-meansm;
-
-[hlsm, hpsm] = boundedline(trimmed_time_span',mean(this_prediction_mean_per_trial_sm_timecourse,1)', CIsm', 'cmap',[158/255 31/255 99/255]);
-
-
-CIsm = bootci(1000, @mean, this_prediction_mean_per_trial_sp_timecourse);
-meansm=mean(this_prediction_mean_per_trial_sp_timecourse,1);
-CIsm(1,:)=meansm-CIsm(1,:);
-CIsm(2,:)=CIsm(2,:)-meansm;
-
-[hlsm, hpsm] = boundedline(trimmed_time_span',mean(this_prediction_mean_per_trial_sp_timecourse,1)', CIsm', 'cmap',[0 114/255 178/255]);
-
-plot(trimmed_time_span',mean(this_prediction_mean_per_trial_sm_timecourse,1)','Color',[158/255 31/255 99/255])
-plot(trimmed_time_span',mean(this_prediction_mean_per_trial_sp_timecourse,1)', '-','Color',[0 114/255 178/255]);
-
-
-
-xlim([-7 15])
-ylim([0 1])
-
-this_ylim=ylim;
-
-
-%FV
-plot([-1.5 0],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'LineWidth',5, Color=[0.9 0.9 0.9])
-plot([-1.5 -1.5],[this_ylim],'-','Color',[0.5 0.5 0.5])
-
-%Odor on markers
-plot([0 0],this_ylim,'-k')
-odorhl=plot([0 mean(delta_odor)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-k','LineWidth',5);
-plot([mean(delta_odor) mean(delta_odor)],this_ylim,'-k')
-
-%Reinforcement markers
-plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on)],this_ylim,'-r')
-reinfhl=plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on+delta_reinf)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-r','LineWidth',5);
-plot([mean(delta_odor_on_reinf_on+delta_reinf) mean(delta_odor_on_reinf_on+delta_reinf)],this_ylim,'-r')
-
-
-title(['Prediction' ])
-xlabel('Time(sec)')
-ylabel('Prediction')
 
 pffft=1;

@@ -1,4 +1,4 @@
-%drgCaImAn_analyze_batch_pre_per_to_decode_per_mouse_v2
+%drgCaImAn_analyze_batch_pre_per_to_decode_per_mouse_v3
 close all
 clear all
 
@@ -109,6 +109,8 @@ switch is_Fabio
 
 
         per_corr_set_label{1}=''; 
+    case 3
+        no_pcorr=1;
         
 end
 
@@ -163,8 +165,10 @@ fr_per_names{6}='Rev 40-65%%';
 fr_per_names{7}='Rev 65-80%%';
 fr_per_names{8}='Rev >=80%%';
 
-if no_pcorr==1
-    per_names{1}='';
+if exist('no_pcorr')~=0
+    if no_pcorr==1
+        per_names{1}='';
+    end
 end
 
 resample_time_span=[-7:0.05:15];
@@ -173,13 +177,25 @@ these_groups=unique(handles.group);
 
 if is_mat==0
     %Process each file separately
-    for grNo=1:no_pcorr*length(these_groups)
-        handles_out2.group_no(grNo).ii_euclid=0;
-        for iiMLalgo=handles.MLalgo_to_use
-            for ii_out=1:length(handles.p_threshold)
-                handles_out2.group_no(grNo).ii_thr(ii_out).MLalgo(iiMLalgo).ii=0;
+    switch is_Fabio
+        case 0
+            for grNo=1:no_pcorr*length(these_groups)
+                handles_out2.group_no(grNo).ii_euclid=0;
+                for iiMLalgo=handles.MLalgo_to_use
+                    for ii_out=1:length(handles.p_threshold)
+                        handles_out2.group_no(grNo).ii_thr(ii_out).MLalgo(iiMLalgo).ii=0;
+                    end
+                end
             end
-        end
+        case 3
+            for grNo=1:length(these_groups)
+                handles_out2.group_no(grNo).ii_euclid=0;
+                for iiMLalgo=handles.MLalgo_to_use
+                    for ii_out=1:length(handles.p_threshold)
+                        handles_out2.group_no(grNo).ii_thr(ii_out).MLalgo(iiMLalgo).ii=0;
+                    end
+                end
+            end
     end
 
     %Find the mouse numbers
@@ -251,8 +267,13 @@ if is_mat==0
             if (is_Fabio==1)||(is_Fabio==2)
                 ii_pCorr=1;
             end
- 
-            grNo=(this_grNo-1)*no_pcorr+ii_pCorr;
+
+            switch is_Fabio
+                case 0
+                    grNo=(this_grNo-1)*no_pcorr+ii_pCorr;
+                case 3
+                    grNo=this_grNo;
+            end
 
  
 
@@ -1091,6 +1112,8 @@ switch is_Fabio
         these_groups_out=[grNo1 grNo2];
     case 2
         these_groups_out=[1];
+    case 3
+        these_groups_out=[1 2];
 end
 
 

@@ -140,10 +140,18 @@ handles_out_light.per_trial_sp_timecourse_post=zeros(size(this_handles_out.MLalg
 handles_out_light.per_trial_sm_timecourse_post=zeros(size(this_handles_out.MLalgo(MLalgo_to_use).per_trial_sm_timecourse_post,1),...
     size(this_handles_out.MLalgo(MLalgo_to_use).per_trial_sm_timecourse_post,2));
 
-handles_out_light.correct_predict_post(:,:)=mean(these_correct_predict_post);
-handles_out_light.correct_predict_sh_post(:,:)=mean(these_correct_predict_sh_post);
-handles_out_light.per_trial_sp_timecourse_post(:,:)=mean(these_per_trial_sp_timecourse_post);
-handles_out_light.per_trial_sm_timecourse_post(:,:)=mean(these_per_trial_sm_timecourse_post);
+if no_repeats==1
+    handles_out_light.correct_predict_post(:,:)=these_correct_predict_post(1,:,:);
+    handles_out_light.correct_predict_sh_post(:,:)=these_correct_predict_sh_post(1,:,:);
+    handles_out_light.per_trial_sp_timecourse_post(:,:)=these_per_trial_sp_timecourse_post(1,:,:);
+    handles_out_light.per_trial_sm_timecourse_post(:,:)=these_per_trial_sm_timecourse_post(1,:,:);
+else
+    handles_out_light.correct_predict_post(:,:)=mean(these_correct_predict_post);
+    handles_out_light.correct_predict_sh_post(:,:)=mean(these_correct_predict_sh_post);
+    handles_out_light.per_trial_sp_timecourse_post(:,:)=mean(these_per_trial_sp_timecourse_post);
+    handles_out_light.per_trial_sm_timecourse_post(:,:)=mean(these_per_trial_sm_timecourse_post);
+end
+
 
 handles_out_light.these_sm_crs=handles_out.MLalgo(MLalgo_to_use).these_sm_crs;
 handles_out_light.these_sm_fas=handles_out.MLalgo(MLalgo_to_use).these_sm_fas;

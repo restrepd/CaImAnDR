@@ -95,59 +95,62 @@ if all_files_present==1
         pre_per_FileName=handles.FileName_pre_per{fileNo};
         
         [percent_correct,no_trials] = drgCaImAnFindPercentCorrect(pre_per_PathName, pre_per_FileName);
-        
-        if (percent_correct>=80)&(no_trials>=min_trials)
-            
-            drgCaImAn_add_trimmed_licks_to_pre_per(pre_per_FileName,pre_per_PathName);
-            
-            handles_choices.pre_per_PathName=pre_per_PathName;
-            handles_choices.pre_per_FileName=pre_per_FileName;
-            handles_choices.processing_algorithm=handles.processing_algorithm;
-            handles_choices.MLalgo_to_use=handles.MLalgo_to_use;
-            handles_choices.dt_p_threshold=handles.dt_p_threshold;
-            handles_choices.show_figures=handles.show_figures;
-            if handles.MLalgo_to_use==4
-                handles_choices.no_repeats=handles.no_repeats;
+        if exist([handles.PathName_out pre_per_FileName(1:end-4) suffix_out],'file')~=2
+            if (percent_correct>=80)&(no_trials>=min_trials)
+                
+                drgCaImAn_add_trimmed_licks_to_pre_per(pre_per_FileName,pre_per_PathName);
+                
+                handles_choices.pre_per_PathName=pre_per_PathName;
+                handles_choices.pre_per_FileName=pre_per_FileName;
+                handles_choices.processing_algorithm=handles.processing_algorithm;
+                handles_choices.MLalgo_to_use=handles.MLalgo_to_use;
+                handles_choices.dt_p_threshold=handles.dt_p_threshold;
+                handles_choices.show_figures=handles.show_figures;
+                if handles.MLalgo_to_use==4
+                    handles_choices.no_repeats=handles.no_repeats;
+                else
+                    handles_choices.no_repeats=1; %Note: the only algorithm that needs repeats is ANN, other aglorithms give the same result each run
+                end
+                handles_choices.k_fold=handles.k_fold;
+                
+                handles_choices.pre_time=handles.pre_time;
+                handles_choices.ii_cost=handles.ii_cost;
+                
+                for ii_training=1:length(training_time_from)
+                    
+                    handles_choices.p_threshold=1.1;
+                    handles_choices.post_time=training_delta_time;
+                    handles_choices.post_shift=training_time_from(ii_training);
+                    
+                    ii_out=ii_out+1;
+                    handles_out.ii_out(ii_out).handles_choices=handles_choices;
+                    handles_out.ii_out(ii_out).grNo=handles.group(fileNo);
+                    handles_out.ii_out(ii_out).fileNo=fileNo;
+                    
+                    start_toc=toc;
+                    
+                    %                 fprintf(1, ['Started processing file number %d, condition number %d\n'],fileNo,ii_training);
+                    
+                    handles_out.ii_out(ii_out).handles_out=drgCaImAn_repeat_decode_licks_entire_sessionv2(handles_choices);
+                    
+                    fprintf(1, ['Data processed for file number %d, condition number %d\n'],fileNo,ii_training);
+                    
+                    %                 fprintf(1,'Processing time for drgCaImAn_pre_per_to_LDA_fsdz_new %d hours\n',(toc-start_toc)/(60*60));
+                end
+                
+                fprintf(1,['\nProcessing time for file No %d is ' num2str((toc-first_toc)/60) ' minutes\n\n'],fileNo);
+                
+                %Save output file
+                handles_out.last_file_processed=fileNo;
+                handles_out.last_ii_out=ii_out;
+                handles_out.handles=handles;
+                save([handles.PathName_out pre_per_FileName(1:end-4) suffix_out],'handles_out','handles_choices','-v7.3')
+                pffft=1;
             else
-                handles_choices.no_repeats=1; %Note: the only algorithm that needs repeats is ANN, other aglorithms give the same result each run
+                fprintf(1,'\n\nFile %d not procressed because it is not proficient or has few trials\n',fileNo);
             end
-            handles_choices.k_fold=handles.k_fold;
-            
-            handles_choices.pre_time=handles.pre_time;
-            handles_choices.ii_cost=handles.ii_cost;
-            
-            for ii_training=1:length(training_time_from)
-                
-                handles_choices.p_threshold=1.1;
-                handles_choices.post_time=training_delta_time;
-                handles_choices.post_shift=training_time_from(ii_training);
-                
-                ii_out=ii_out+1;
-                handles_out.ii_out(ii_out).handles_choices=handles_choices;
-                handles_out.ii_out(ii_out).grNo=handles.group(fileNo);
-                handles_out.ii_out(ii_out).fileNo=fileNo;
-                
-                start_toc=toc;
-                
-%                 fprintf(1, ['Started processing file number %d, condition number %d\n'],fileNo,ii_training);
-                
-                handles_out.ii_out(ii_out).handles_out=drgCaImAn_repeat_decode_licks_entire_sessionv2(handles_choices);
-                
-                fprintf(1, ['Data processed for file number %d, condition number %d\n'],fileNo,ii_training);
-                
-%                 fprintf(1,'Processing time for drgCaImAn_pre_per_to_LDA_fsdz_new %d hours\n',(toc-start_toc)/(60*60));
-            end
-            
-            fprintf(1,['\nProcessing time for file No %d is ' num2str((toc-first_toc)/60) ' minutes\n\n'],fileNo);
-            
-            %Save output file
-            handles_out.last_file_processed=fileNo;
-            handles_out.last_ii_out=ii_out;
-            handles_out.handles=handles;
-            save([handles.PathName_out pre_per_FileName(1:end-4) suffix_out],'handles_out','handles_choices','-v7.3')
-            pffft=1; 
         else
-            fprintf(1,'\n\nFile %d not procressed because percent correct behavior <80\n',fileNo);
+            fprintf(1,'\n\nFile %d not procressed because it already exists\n',fileNo);
         end
     end
     
