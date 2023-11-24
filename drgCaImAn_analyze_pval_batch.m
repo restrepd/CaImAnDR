@@ -13,7 +13,7 @@ if ~isfield(handles_out,'use_pFDR')
 end
 time_span=handles_out.time_span;
 
-which_task=0; %0=spm, 1=passive Ming
+which_task=1; %0=spm, 1=passive Ming
 if which_task==1
     perCorr=50*ones(1,size(handles_out.perCorr,2));
     handles_out.perCorr=perCorr;
@@ -271,11 +271,12 @@ title('Percent divergent ROIs per mouse')
 % txt=regexp(txt,'</strong>','split');
 % txt=cell2mat(txt);
 
+if which_task==0
+    %Do the ranksum/t-test
+    fprintf(1, ['\n\nRanksum or t-test p values for percent divergent per mouse\n']);
 
-%Do the ranksum/t-test
-fprintf(1, ['\n\nRanksum or t-test p values for percent divergent per mouse\n']);
-
-[output_data] = drgMutiRanksumorTtest(input_sig_data);
+    [output_data] = drgMutiRanksumorTtest(input_sig_data);
+end
 
 %Plot a bar graph showing percent responding to S+
 glm_sig=[];
@@ -433,11 +434,12 @@ title('Percent ROIs responding to S+ per mouse')
 % txt=regexp(txt,'</strong>','split');
 % txt=cell2mat(txt);
 
-%Do the ranksum/t-test
-fprintf(1, ['\n\nRanksum or t-test p values for percent responding to S+ per mouse\n']);
+if which_task==0
+    %Do the ranksum/t-test
+    fprintf(1, ['\n\nRanksum or t-test p values for percent responding to S+ per mouse\n']);
 
-[output_data] = drgMutiRanksumorTtest(input_sig_data);
-
+    [output_data] = drgMutiRanksumorTtest(input_sig_data);
+end
 
 
 %Plot a bar graph showing percent responding to S-
@@ -600,11 +602,12 @@ title('Percent ROIs responding to S-')
 % txt=cell2mat(txt);
 % txt=regexp(txt,'</strong>','split');
 % txt=cell2mat(txt);
+if which_task==0
+    %Do the ranksum/t-test
+    fprintf(1, ['\n\nRanksum or t-test p values for percent responding to S- per mouse\n']);
 
-%Do the ranksum/t-test
-fprintf(1, ['\n\nRanksum or t-test p values for percent responding to S- per mouse\n']);
- 
-[output_data] = drgMutiRanksumorTtest(input_sig_data);
+    [output_data] = drgMutiRanksumorTtest(input_sig_data);
+end
 
 pffft=1;
  

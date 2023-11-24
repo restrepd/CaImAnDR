@@ -180,6 +180,8 @@ if show_figures==1
     plot(time_span',mean(moving_mean_per_trial_sm_timecourse,1)','-','Color',[158/255 31/255 99/255],'DisplayName','S-')
     plot(time_span',mean(moving_mean_per_trial_sp_timecourse,1)', '-','Color',[0 114/255 178/255],'DisplayName','S+');
 
+
+
     text(30,0.75,'S-','Color',[158/255 31/255 99/255])
     text(30,0.85,'S+','Color',[0 114/255 178/255])
 
@@ -375,11 +377,11 @@ if show_figures==1
 
 
     for ii=1:length(sp_times)
-        plot([sp_times(ii) sp_times(ii)],[0 1],'-r')
+        plot([sp_times(ii) sp_times(ii)],[0 1],'-','Color',[80/255 194/255 255/255],'LineWidth',1.5)
     end
 
     for ii=1:length(sm_times)
-        plot([sm_times(ii) sm_times(ii)],[0 1],'-b')
+        plot([sm_times(ii) sm_times(ii)],[0 1],'-','Color',[238/255 111/255 179/255],'LineWidth',1.5)
     end
 
     ylim([-0.2 1.2])
@@ -400,6 +402,8 @@ all_trial_times=sortrows(all_trial_times');
 window_dt=[-7 15];
 spontaneous_trial_times=[];
 spontaneous_delta_prediction=[];
+spontaneous_lick_fraction=[];
+moving_spontaneous_lick_fraction=[];
 before_spontaneous_spm=[];
 after_spontaneous_spm=[];
 time_before=[];
@@ -411,7 +415,20 @@ between_end=[];
 ii_between_periods=0;
 no_increase_trial_times=[];
 no_increase_delta_prediction=[];
+no_increase_lick_fraction=[];
+moving_no_increase_lick_fraction=[];
 ii_no_inc_included=0;
+
+dt=time(2)-time(1);
+
+adc_in=decimate(adc_in,20);
+time_rhd=decimate(time_rhd,20);
+
+pct998=prctile(adc_in,99.8);
+pct1=prctile(adc_in,1);
+norm_fact=0.8*y_shift/(pct998-pct1);
+
+
 for ii_trial=1:2:length(all_trial_times)-2
     %find the next trial
     this_ii=find(time>all_trial_times(ii_trial)+delta_odor,1,'first');
@@ -431,31 +448,50 @@ for ii_trial=1:2:length(all_trial_times)-2
                 try_no_increase=0;
                 if ~isempty(delta_ii2)
                     if time(this_ii+delta_ii-1+delta_ii2-2)<all_trial_times(ii_trial+2)-pre_time
-                        ii_spontaneous=ii_spontaneous+1;
-                        spontaneous_trial_times(ii_spontaneous)=time(this_ii+delta_ii-1+delta_ii2-2);
-                        time_before(ii_spontaneous)=all_trial_times(ii_trial);
-                        dt_from_before(ii_spontaneous)=spontaneous_trial_times(ii_spontaneous)-time_before(ii_spontaneous);
+                        if time(this_ii+delta_ii-1+delta_ii2-2)>=7
+                            ii_spontaneous=ii_spontaneous+1;
+                            spontaneous_trial_times(ii_spontaneous)=time(this_ii+delta_ii-1+delta_ii2-2);
+                            time_before(ii_spontaneous)=all_trial_times(ii_trial);
+                            dt_from_before(ii_spontaneous)=spontaneous_trial_times(ii_spontaneous)-time_before(ii_spontaneous);
 
-                        if sum(sp_times==time_before(ii_spontaneous))>0
-                            before_spontaneous_spm(ii_spontaneous)=1;
-                        else
-                            before_spontaneous_spm(ii_spontaneous)=0;
-                        end
-
-                        if ii_trial+2<=length(all_trial_times)
-                            if sum(sp_times==all_trial_times(ii_trial+2))>0
-                                after_spontaneous_spm(ii_spontaneous)=1;
+                            if sum(sp_times==time_before(ii_spontaneous))>0
+                                before_spontaneous_spm(ii_spontaneous)=1;
                             else
-                                after_spontaneous_spm(ii_spontaneous)=0;
+                                before_spontaneous_spm(ii_spontaneous)=0;
                             end
-                        else
-                            after_spontaneous_spm(ii_spontaneous)=NaN;
+
+                            if ii_trial+2<=length(all_trial_times)
+                                if sum(sp_times==all_trial_times(ii_trial+2))>0
+                                    after_spontaneous_spm(ii_spontaneous)=1;
+                                else
+                                    after_spontaneous_spm(ii_spontaneous)=0;
+                                end
+                            else
+                                after_spontaneous_spm(ii_spontaneous)=NaN;
+                            end
+
+                            spontaneous_delta_prediction(ii_spontaneous,1:sum((time>=-7+spontaneous_trial_times(ii_spontaneous))&(time<=15+spontaneous_trial_times(ii_spontaneous))))...
+                                =moving_mean_label_traces((time>=-7+spontaneous_trial_times(ii_spontaneous))&(time<=15+spontaneous_trial_times(ii_spontaneous)));
+
+                            %Now get the lick timecourse for this spontaneous
+                            %delta prediction
+                            this_time_span=[-7:dt:15];
+                            this_time_span=this_time_span(1:size(spontaneous_delta_prediction,2));
+                            this_spontaneous_lick_fraction=[];
+                            for ii_t=1:length(this_time_span)
+                                time_from=-7+spontaneous_trial_times(ii_spontaneous)+(ii_t-1)*dt;
+                                time_to=time_from+dt;
+                                these_rhds=(time_rhd>=time_from)&(time_rhd<time_to);
+                                if sum(adc_in(these_rhds)>((pct998-pct1)/2))>0
+                                    this_spontaneous_lick_fraction(1,ii_t)=1;
+                                else
+                                    this_spontaneous_lick_fraction(1,ii_t)=0;
+                                end
+                            end
+
+                            spontaneous_lick_fraction(ii_spontaneous,:)=this_spontaneous_lick_fraction;
+                            moving_spontaneous_lick_fraction(ii_spontaneous,:) = movmean(this_spontaneous_lick_fraction,moving_mean_n);
                         end
-
-                        spontaneous_delta_prediction(ii_spontaneous,1:sum((time>=-7+spontaneous_trial_times(ii_spontaneous))&(time<=15+spontaneous_trial_times(ii_spontaneous))))...
-                            =moving_mean_label_traces((time>=-7+spontaneous_trial_times(ii_spontaneous))&(time<=15+spontaneous_trial_times(ii_spontaneous)));
-
-                        pffft=1;
                     else
                         try_no_increase=1;
                     end
@@ -472,11 +508,89 @@ for ii_trial=1:2:length(all_trial_times)-2
 
                     no_increase_delta_prediction(ii_no_inc_included,1:sum((time>=-7+no_increase_trial_times(ii_no_inc_included))&(time<=15+no_increase_trial_times(ii_no_inc_included))))...
                         =moving_mean_label_traces((time>=-7+no_increase_trial_times(ii_no_inc_included))&(time<=15+no_increase_trial_times(ii_no_inc_included)));
+
+
+                    %Now get the lick timecourse for this no
+                    %increase
+                    %delta prediction
+                    this_time_span=[-7:dt:15];
+                    this_time_span=this_time_span(1:size(no_increase_delta_prediction,2));
+                    this_no_increase_lick_fraction=[];
+                    for ii_t=1:length(this_time_span)
+                        time_from=-7+no_increase_trial_times(ii_no_inc_included)+(ii_t-1)*dt;
+                        time_to=time_from+dt;
+                        these_rhds=(time_rhd>=time_from)&(time_rhd<time_to);
+                        if sum(adc_in(these_rhds)>((pct998-pct1)/2))>0
+                            this_no_increase_lick_fraction(1,ii_t)=1;
+                        else
+                            this_no_increase_lick_fraction(1,ii_t)=0;
+                        end
+                    end
+                    equal_size=0;
+                    if isempty(no_increase_lick_fraction)
+                        equal_size=1;
+                    else
+                        if (length(this_no_increase_lick_fraction)==size(no_increase_lick_fraction,2))
+                            equal_size=1;
+                        end
+                    end
+                    if equal_size==1
+                        no_increase_lick_fraction(ii_no_inc_included,:)=this_no_increase_lick_fraction;
+                        moving_no_increase_lick_fraction(ii_no_inc_included,:) = movmean(this_no_increase_lick_fraction,moving_mean_n);
+                    else
+                        no_increase_lick_fraction(ii_no_inc_included,:)=this_no_increase_lick_fraction(1,1:size(no_increase_lick_fraction,2));
+                        moving_no_increase_lick_fraction(ii_no_inc_included,:) = movmean(this_no_increase_lick_fraction(1,1:size(no_increase_lick_fraction,2)),moving_mean_n);
+                    end
                 end
             end
         end
     end
 end
+
+%Make sure all variables are the same size
+min_length=20000000;
+
+if ~isempty(spontaneous_delta_prediction)
+    if min_length>size(spontaneous_delta_prediction,2)
+        min_length=size(spontaneous_delta_prediction,2);
+    end
+end
+
+if ~isempty(spontaneous_lick_fraction)
+    if min_length>size(spontaneous_lick_fraction,2)
+        min_length=size(spontaneous_lick_fraction,2);
+    end
+end
+
+
+if ~isempty(no_increase_delta_prediction)
+    if min_length>size(no_increase_delta_prediction,2)
+        min_length=size(no_increase_delta_prediction,2);
+    end
+end
+
+if ~isempty(no_increase_lick_fraction)
+    if min_length>size(no_increase_lick_fraction,2)
+        min_length=size(no_increase_lick_fraction,2);
+    end
+end
+
+if ~isempty(this_time_span)
+    if min_length>length(this_time_span)
+        min_length=length(this_time_span);
+    end
+end
+if ~isempty(spontaneous_delta_prediction)
+    spontaneous_delta_prediction=spontaneous_delta_prediction(:,1:min_length);
+    spontaneous_lick_fraction=spontaneous_lick_fraction(:,1:min_length);
+    moving_spontaneous_lick_fraction=moving_spontaneous_lick_fraction(:,1:min_length);
+end
+if ~isempty(no_increase_delta_prediction)
+    no_increase_delta_prediction=no_increase_delta_prediction(:,1:min_length);
+    no_increase_lick_fraction=no_increase_lick_fraction(:,1:min_length);
+    moving_no_increase_lick_fraction=moving_no_increase_lick_fraction(:,1:min_length);
+end
+this_time_span=this_time_span(1:min_length);
 
 if show_figures==1
     %Plot label predictions alone
@@ -493,8 +607,6 @@ if show_figures==1
     hold on
 
 
-
-
     CIsh=[mean(moving_mean_label_traces_sh2(:))-per5 per95-mean(moving_mean_label_traces_sh2(:))]';
     [hlCR, hpCR] = boundedline([time(1) time(end)],[mean(moving_mean_label_traces_sh2(:)) mean(moving_mean_label_traces_sh2(:))], CIsh', 'cmap',[80/255 194/255 255/255]);
 
@@ -503,11 +615,11 @@ if show_figures==1
     plot(time,moving_mean_label_traces,'-k','LineWidth',1)
 
     for ii=1:length(sp_times)
-        plot([sp_times(ii) sp_times(ii)],[0 1],'-r')
+        plot([sp_times(ii) sp_times(ii)],[0 1],'-','Color',[0 114/255 178/255])
     end
 
     for ii=1:length(sm_times)
-        plot([sm_times(ii) sm_times(ii)],[0 1],'-b')
+        plot([sm_times(ii) sm_times(ii)],[0 1],'-', 'Color',[158/255 31/255 99/255])
     end
     %                 plot(time,moving_mean_label_traces_sh(1,:),'-b')
 
@@ -515,9 +627,29 @@ if show_figures==1
     title(['Label prediction for entire session for ' classifier_names{iiMLalgo} ' and p threshold ' num2str(p_threshold)])
 end
 
-dt=time(2)-time(1);
-this_time_span=[-7:dt:15];
-this_time_span=this_time_span(1:size(spontaneous_delta_prediction,2));
+if show_figures==1
+    %Plot lick
+    figNo=figNo+1;
+    try
+        close(figNo)
+    catch
+    end
+
+    hFig = figure(figNo);
+
+    set(hFig, 'units','normalized','position',[.05 .1 .85 .3])
+
+    hold on
+
+    plot(time_rhd(time_rhd>0),adc_in(time_rhd>0))
+    title(['Lick time course'])
+    xlabel('Time (sec)')
+    ylabel('Volts')
+
+
+end
+
+
 
 if show_figures==1
 
@@ -591,6 +723,110 @@ handles_out3.this_time_span_spon=this_time_span;
 handles_out3.spontaneous_delta_prediction=spontaneous_delta_prediction;
 handles_out3.no_increase_delta_prediction=no_increase_delta_prediction;
 
+
+
+%Now plot the lick fraction
+if show_figures==1
+
+
+
+    %Plot the spontaneous between lick fraction
+    figNo=figNo+1;
+    try
+        close(figNo)
+    catch
+    end
+
+    hFig = figure(figNo);
+
+    set(hFig, 'units','normalized','position',[.1 .1 .4 .4])
+
+    hold on
+
+
+    if ~isempty(moving_no_increase_lick_fraction)
+        if size(moving_no_increase_lick_fraction,1)>2
+            CIsm = bootci(1000, @mean, moving_no_increase_lick_fraction(:,1:length(this_time_span)));
+            meansm=mean(moving_no_increase_lick_fraction(:,1:length(this_time_span)),1);
+            CIsm(1,:)=meansm-CIsm(1,:);
+            CIsm(2,:)=CIsm(2,:)-meansm;
+
+            [hlsm, hpsm] = boundedline(this_time_span',mean(moving_no_increase_lick_fraction(:,1:length(this_time_span)),1)', CIsm', 'cmap',[158/255 31/255 99/255]);
+        end
+    end
+
+    if ~isempty(moving_spontaneous_lick_fraction)
+        if size(moving_spontaneous_lick_fraction,1)>2
+            CIsm = bootci(1000, @mean, moving_spontaneous_lick_fraction);
+            meansm=mean(moving_spontaneous_lick_fraction,1);
+            CIsm(1,:)=meansm-CIsm(1,:);
+            CIsm(2,:)=CIsm(2,:)-meansm;
+
+            [hlsm, hpsm] = boundedline(this_time_span',mean(moving_spontaneous_lick_fraction,1)', CIsm', 'cmap',[0 114/255 178/255]);
+        end
+    end
+
+    %     for ii=1:size(spontaneous_delta_prediction,1)
+    %         plot(this_time_span',spontaneous_delta_prediction(ii,:),  'Color',[150/255 150/255 150/255])
+    %     end
+    if ~isempty(no_increase_lick_fraction)
+        plot(this_time_span',mean(moving_no_increase_lick_fraction(:,1:length(this_time_span)),1)', 'Color',[158/255 31/255 99/255]);
+    end
+
+    if ~isempty(spontaneous_lick_fraction)
+        plot(this_time_span',mean(moving_spontaneous_lick_fraction,1)', 'Color',[0 114/255 178/255]);
+    end
+
+    text(10,0.75,'No change','Color',[158/255 31/255 99/255])
+    text(10,0.85,'Spontaneous','Color',[0 114/255 178/255])
+
+    ylim([0 1.1])
+    xlim([-7 15])
+    title(['Lick fraction for spontaneous prediction shifts between trials'])
+    xlabel('Time(sec)')
+    ylabel('Lick fraction')
+
+
+
+
+    %Plot the spontaneous between lick fraction traces
+    figNo=figNo+1;
+    try
+        close(figNo)
+    catch
+    end
+
+    hFig = figure(figNo);
+
+    set(hFig, 'units','normalized','position',[.1 .1 .4 .4])
+
+    hold on
+
+    y_shift=0;
+    for ii_tr=1:size(no_increase_lick_fraction,1)
+        plot(this_time_span,no_increase_lick_fraction(ii_tr,:)+y_shift,'-','Color',[158/255 31/255 99/255])
+        y_shift=y_shift+1.2;
+    end
+
+    y_shift=y_shift+2;
+    for ii_tr=1:size(spontaneous_lick_fraction,1)
+        plot(this_time_span,spontaneous_lick_fraction(ii_tr,:)+y_shift,'-','Color',[0 114/255 178/255])
+        y_shift=y_shift+1.2;
+    end
+
+
+    ylim([0 1.1])
+    xlim([-7 15])
+    title(['Lick fraction for spontaneous prediction shifts between trials'])
+    xlabel('Time(sec)')
+    ylabel('Lick Fraction')
+end
+
+handles_out3.this_time_span_spon=this_time_span;
+handles_out3.no_increase_lick_fraction=no_increase_lick_fraction;
+handles_out3.moving_no_increase_lick_fraction=moving_no_increase_lick_fraction;
+handles_out3.moving_spontaneous_lick_fraction=moving_spontaneous_lick_fraction;
+handles_out3.spontaneous_lick_fraction=spontaneous_lick_fraction;
 
 %Now calculate the histograms for the fraction of S+ predictions
 %in between, S+ and S- pre odor and odor, experimental and shuffled

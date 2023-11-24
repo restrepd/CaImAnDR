@@ -47,7 +47,7 @@ for fileNo=1:no_files
     pre_per_FileName=handles.FileName_pre_per{fileNo};
     grNo=handles.group(fileNo);
 
-    load([handles.PathName_out pre_per_FileName(1:end-4) handles.suffix_out])
+    load([handles.PathName_out{fileNo} pre_per_FileName(1:end-4) handles.suffix_out])
     for iiMLalgo=handles.MLalgo_to_use
 %         if iiMLalgo==handles.MLalgo_to_use(1)
 %             handles_out2.group_no(grNo).ii_euclid=handles_out2.group_no(grNo).ii_euclid+1;

@@ -4318,6 +4318,387 @@ xlabel('prediction')
 title(['Lick fraction vs. predcition '])
 
 
+
+%mean pred for more windows
+time_periods_vs=[
+    0 2;
+    2 4;
+    4 6];
+
+figureNo = figureNo + 1;
+try
+    close(figureNo)
+catch
+end
+hFig=figure(figureNo);
+
+
+
+for window_no=1:size(time_periods_vs,1)
+
+    RA_lick_stats.window(window_no).ii=0;
+
+    per_mouse_mean_lick_sp_hit=[];
+    per_mouse_mean_lick_sp_miss=[];
+    per_mouse_mean_lick_sm_cr=[];
+    per_mouse_mean_lick_sm_fa=[];
+    all_session_lick_sp_hit=[];
+    all_session_lick_sp_miss=[];
+    all_session_lick_sm_cr=[];
+    all_session_lick_sm_fa=[];
+
+    t_from=time_periods_vs(window_no,1);
+    t_to=time_periods_vs(window_no,2);
+
+    %Get per session and per mouse
+
+    %fa
+
+    for mouseNo=1:length(handles_out2.mouse_names)
+        these_licks=[];
+        for grNo=these_gr_out
+            if ~isempty(per_mouse_pred.group(grNo).mouse(mouseNo).licks_sm_fa)
+                include_mouse=1;
+                for ii_sessions=1:size(per_mouse_pred.group(grNo).mouse(mouseNo).licks_sm_fa,1)
+                    this_lick=mean(per_mouse_pred.group(grNo).mouse(mouseNo).licks_sm_fa(ii_sessions,(time_span>=t_from)&(time_span<=t_to)) );
+                    these_licks=[these_licks this_lick];
+                end
+            end
+        end
+
+        per_mouse_mean_lick_sm_fa(1,mouseNo)=mean(these_licks');
+%         all_session_lick_sm_fa=[all_session_lick_sm_fa these_licks'];
+
+        these_preds=[];
+        for grNo=these_gr_out
+            if ~isempty(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sm_fa)
+                include_mouse=1;
+                for ii_sessions=1:size(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sm_fa,1)
+                    this_pred=mean(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sm_fa(ii_sessions,(time_span>=t_from)&(time_span<=t_to)) );
+                    these_preds=[these_preds this_pred];
+                end
+            end
+        end
+        per_mouse_mean_pred_sm_fa(1,mouseNo)=mean(these_preds);
+%         all_session_pred_sm_fa=[all_session_pred_sm_fa these_preds'];
+    end
+    %
+    %     %Violin plot
+    %     if ~isempty(all_session_lick_sm_fa)
+    %         [mean_out, CIout]=drgViolinPoint(all_session_lick_sm_fa...
+    %             ,edges,bar_offset,rand_offset,'k','k',2);
+    %     end
+    %
+    %     mean_pred.window(window_no).fa_mean_lick_frac=mean_out;
+    %     mean_pred.window(window_no).fa_CI_lick_frac=CIout;
+    %
+    %
+    %     %Violin plot
+    %     if ~isempty(all_session_pred_sm_fa)
+    %         [mean_out, CIout]=drgViolinPoint(all_session_pred_sm_fa...
+    %             ,edges,bar_offset,rand_offset,'k','k',2);
+    %     end
+    %
+    %     mean_pred.window(window_no).fa_mean_pred=mean_out;
+    %     mean_pred.window(window_no).fa_CI_pred=CIout;
+
+    mean_pred.window(window_no).fa_mean_lick_frac=mean(per_mouse_mean_lick_sm_fa);
+    CIpv = bootci(1000, @mean, per_mouse_mean_lick_sm_fa);
+    meanpv=mean(per_mouse_mean_lick_sm_fa);
+    %     CIpv(1,:)=meanpv-CIpv(1,:);
+    %     CIpv(2,:)=CIpv(2,:)-meanpv;
+    mean_pred.window(window_no).fa_CI_lick_frac=CIpv;
+    %     mean_pred.window(window_no).fa_CI_lick_frac(1)=mean(per_mouse_mean_lick_sm_fa)-std(per_mouse_mean_lick_sm_fa);
+    %     mean_pred.window(window_no).fa_CI_lick_frac(2)=mean(per_mouse_mean_lick_sm_fa)+std(per_mouse_mean_lick_sm_fa);
+
+    mean_pred.window(window_no).fa_mean_pred=mean(per_mouse_mean_pred_sm_fa);
+    CIpv = bootci(1000, @mean, per_mouse_mean_pred_sm_fa);
+    meanpv=mean(per_mouse_mean_pred_sm_fa);
+    %     CIpv(1,:)=meanpv-CIpv(1,:);
+    %     CIpv(2,:)=CIpv(2,:)-meanpv;
+    mean_pred.window(window_no).fa_CI_pred=CIpv;
+    %     mean_pred.window(window_no).fa_CI_pred(1)=mean(per_mouse_mean_pred_sm_fa)-std(per_mouse_mean_pred_sm_fa);
+    %     mean_pred.window(window_no).fa_CI_pred(2)=mean(per_mouse_mean_pred_sm_fa)+std(per_mouse_mean_pred_sm_fa);
+
+
+
+
+    %cr
+    for mouseNo=1:length(handles_out2.mouse_names)
+
+        these_licks=[];
+        for grNo=these_gr_out
+            if ~isempty(per_mouse_pred.group(grNo).mouse(mouseNo).licks_sm_cr)
+
+                for ii_sessions=1:size(per_mouse_pred.group(grNo).mouse(mouseNo).licks_sm_cr,1)
+                    this_lick=mean(per_mouse_pred.group(grNo).mouse(mouseNo).licks_sm_cr(ii_sessions,(time_span>=t_from)&(time_span<=t_to)) );
+                    these_licks=[these_licks this_lick];
+                end
+            end
+        end
+        per_mouse_mean_lick_sm_cr(1,mouseNo)=mean(these_licks');
+%         all_session_lick_sm_cr=[all_session_lick_sm_cr these_licks'];
+
+        these_preds=[];
+        for grNo=these_gr_out
+            if ~isempty(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sm_cr)
+
+                for ii_sessions=1:size(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sm_cr,1)
+                    this_pred=mean(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sm_cr(ii_sessions,(time_span>=t_from)&(time_span<=t_to)) );
+                    these_preds=[these_preds this_pred];
+                end
+            end
+        end
+        per_mouse_mean_pred_sm_cr(1,mouseNo)=mean(these_preds);
+%         all_session_pred_sm_cr=[all_session_pred_sm_cr these_preds'];
+
+
+
+    end
+
+    %     %Violin plot
+    %     if ~isempty(all_session_lick_sm_cr)
+    %         [mean_out, CIout]=drgViolinPoint(all_session_lick_sm_cr...
+    %             ,edges,bar_offset,rand_offset,'k','k',2);
+    %     end
+    %
+    %     mean_pred.window(window_no).cr_mean_lick_frac=mean_out;
+    %     mean_pred.window(window_no).cr_CI_lick_frac=CIout;
+    %
+    %     %Violin plot
+    %     if ~isempty(all_session_pred_sm_cr)
+    %         [mean_out, CIout]=drgViolinPoint(all_session_pred_sm_cr...
+    %             ,edges,bar_offset,rand_offset,'k','k',2);
+    %     end
+    %
+    %     mean_pred.window(window_no).cr_mean_pred=mean_out;
+    %     mean_pred.window(window_no).cr_CI_pred=CIout;
+
+    mean_pred.window(window_no).cr_mean_lick_frac=mean(per_mouse_mean_lick_sm_cr);
+    CIpv = bootci(1000, @mean, per_mouse_mean_lick_sm_cr);
+    meanpv=mean(per_mouse_mean_lick_sm_cr);
+    %     CIpv(1,:)=meanpv-CIpv(1,:);
+    %     CIpv(2,:)=CIpv(2,:)-meanpv;
+    mean_pred.window(window_no).cr_CI_lick_frac=CIpv;
+
+
+    mean_pred.window(window_no).cr_mean_pred=mean(per_mouse_mean_pred_sm_cr);
+    CIpv = bootci(1000, @mean, per_mouse_mean_pred_sm_cr);
+    meanpv=mean(per_mouse_mean_pred_sm_cr);
+    %     CIpv(1,:)=meanpv-CIpv(1,:);
+    %     CIpv(2,:)=CIpv(2,:)-meanpv;
+    mean_pred.window(window_no).cr_CI_pred=CIpv;
+
+    %miss
+    for mouseNo=1:length(handles_out2.mouse_names)
+
+
+        these_licks=[];
+        for grNo=these_gr_out
+            if ~isempty(per_mouse_pred.group(grNo).mouse(mouseNo).licks_sp_miss)
+
+                for ii_sessions=1:size(per_mouse_pred.group(grNo).mouse(mouseNo).licks_sp_miss,1)
+                    this_lick=mean(per_mouse_pred.group(grNo).mouse(mouseNo).licks_sp_miss(ii_sessions,(time_span>=t_from)&(time_span<=t_to)) );
+                    these_licks=[these_licks this_lick];
+                end
+            end
+        end
+        per_mouse_mean_lick_sp_miss(1,mouseNo)=mean(these_licks');
+%         all_session_lick_sp_miss=[all_session_lick_sp_miss these_licks'];
+
+
+        these_preds=[];
+        for grNo=these_gr_out
+            if ~isempty(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sp_miss)
+
+                for ii_sessions=1:size(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sp_miss,1)
+                    this_pred=mean(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sp_miss(ii_sessions,(time_span>=t_from)&(time_span<=t_to)) );
+                    these_preds=[these_preds this_pred];
+                end
+            end
+        end
+        per_mouse_mean_pred_sp_miss(1,mouseNo)=mean(these_preds);
+%         all_session_pred_sp_miss=[all_session_pred_sp_miss these_preds'];
+
+    end
+
+    %     %Violin plot
+    %     if ~isempty(all_session_lick_sp_miss)
+    %         [mean_out, CIout]=drgViolinPoint(all_session_lick_sp_miss...
+    %             ,edges,bar_offset,rand_offset,'k','k',2);
+    %     end
+    %
+    %     mean_pred.window(window_no).miss_mean_lick_frac=mean_out;
+    %     mean_pred.window(window_no).miss_CI_lick_frac=CIout;
+    %
+    %
+    %     %Violin plot
+    %     if ~isempty(all_session_pred_sp_miss)
+    %         [mean_out, CIout]=drgViolinPoint(all_session_pred_sp_miss...
+    %             ,edges,bar_offset,rand_offset,'k','k',2);
+    %     end
+    %
+    %     mean_pred.window(window_no).miss_mean_pred=mean_out;
+    %     mean_pred.window(window_no).miss_CI_pred=CIout;
+
+    mean_pred.window(window_no).miss_mean_lick_frac=mean(per_mouse_mean_lick_sp_miss);
+    CIpv = bootci(1000, @mean, per_mouse_mean_lick_sp_miss);
+    meanpv=mean(per_mouse_mean_lick_sp_miss);
+    %     CIpv(1,:)=meanpv-CIpv(1,:);
+    %     CIpv(2,:)=CIpv(2,:)-meanpv;
+    mean_pred.window(window_no).miss_CI_lick_frac=CIpv;
+
+
+
+
+
+    mean_pred.window(window_no).miss_mean_pred=mean(per_mouse_mean_pred_sp_miss);
+    CIpv = bootci(1000, @mean, per_mouse_mean_pred_sp_miss);
+    meanpv=mean(per_mouse_mean_pred_sp_miss);
+    %     CIpv(1,:)=meanpv-CIpv(1,:);
+    %     CIpv(2,:)=CIpv(2,:)-meanpv;
+    mean_pred.window(window_no).miss_CI_pred=CIpv;
+
+
+
+    %hit
+    for mouseNo=1:length(handles_out2.mouse_names)
+
+        these_licks=[];
+        for grNo=these_gr_out
+            if ~isempty(per_mouse_pred.group(grNo).mouse(mouseNo).licks_sp_hit)
+
+                for ii_sessions=1:size(per_mouse_pred.group(grNo).mouse(mouseNo).licks_sp_hit,1)
+                    this_lick=mean(per_mouse_pred.group(grNo).mouse(mouseNo).licks_sp_hit(ii_sessions,(time_span>=t_from)&(time_span<=t_to)) );
+                    these_licks=[these_licks this_lick];
+                end
+            end
+        end
+        per_mouse_mean_lick_sp_hit(1,mouseNo)=mean(these_licks');
+%         all_session_lick_sp_hit=[all_session_lick_sp_hit these_licks'];
+
+
+        these_preds=[];
+        for grNo=these_gr_out
+            if ~isempty(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sp_hit)
+
+                for ii_sessions=1:size(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sp_hit,1)
+                    this_pred=mean(per_mouse_pred.group(grNo).mouse(mouseNo).prediction_sp_hit(ii_sessions,(time_span>=t_from)&(time_span<=t_to)) );
+                    these_preds=[these_preds this_pred];
+                end
+            end
+        end
+        per_mouse_mean_pred_sp_hit(1,mouseNo)=mean(these_preds');
+%         all_session_pred_sp_hit=[all_session_pred_sp_hit these_preds'];
+    end
+
+    %
+    %     %Violin plot
+    %     if ~isempty(all_session_lick_sp_hit)
+    %         [mean_out, CIout]=drgViolinPoint(all_session_lick_sp_hit...
+    %             ,edges,bar_offset,rand_offset,'k','k',2);
+    %     end
+    %
+    %     mean_pred.window(window_no).hit_mean_lick_frac=mean_out;
+    %     mean_pred.window(window_no).hit_CI_lick_frac=CIout;
+
+    mean_pred.window(window_no).hit_mean_lick_frac=mean(per_mouse_mean_lick_sp_hit);
+    CIpv = bootci(1000, @mean, per_mouse_mean_lick_sp_hit);
+    meanpv=mean(per_mouse_mean_lick_sp_hit);
+    %     CIpv(1,:)=meanpv-CIpv(1,:);
+    %     CIpv(2,:)=CIpv(2,:)-meanpv;
+    mean_pred.window(window_no).hit_CI_lick_frac=CIpv;
+
+
+    %     %Violin plot
+    %     if ~isempty(all_session_pred_sp_hit)
+    %         [mean_out, CIout]=drgViolinPoint(all_session_pred_sp_hit...
+    %             ,edges,bar_offset,rand_offset,'k','k',2);
+    %     end
+    %
+    %     mean_pred.window(window_no).hit_mean_pred=mean_out;
+    %     mean_pred.window(window_no).hit_CI_pred=CIout;
+
+    mean_pred.window(window_no).hit_mean_pred=mean(per_mouse_mean_pred_sp_hit);
+    CIpv = bootci(1000, @mean, per_mouse_mean_pred_sp_hit);
+    meanpv=mean(per_mouse_mean_pred_sp_hit);
+    %     CIpv(1,:)=meanpv-CIpv(1,:);
+    %     CIpv(2,:)=CIpv(2,:)-meanpv;
+    mean_pred.window(window_no).hit_CI_pred=CIpv;
+
+
+end
+
+
+
+%Now plot mean predictions for both windows
+figureNo = figureNo + 1;
+try
+    close(figureNo)
+catch
+end
+hFig=figure(figureNo);
+hold on
+
+ax=gca;ax.LineWidth=3;
+set(hFig, 'units','normalized','position',[.2 .2 .3 .3])
+
+hold on
+spx=zeros(1,length(mean_pred.window)*2);
+spy=zeros(1,length(mean_pred.window)*2);
+sp_ii=0;
+
+smx=zeros(1,length(mean_pred.window)*2);
+smy=zeros(1,length(mean_pred.window)*2);
+sm_ii=0;
+
+for window_no=1:length(mean_pred.window)
+    plot([mean_pred.window(window_no).cr_CI_pred(1) mean_pred.window(window_no).cr_CI_pred(2)],[mean_pred.window(window_no).cr_mean_lick_frac mean_pred.window(window_no).cr_mean_lick_frac],'-k','LineWidth',2)
+    plot([mean_pred.window(window_no).cr_mean_pred mean_pred.window(window_no).cr_mean_pred],[mean_pred.window(window_no).cr_CI_lick_frac(1) mean_pred.window(window_no).cr_CI_lick_frac(2)],'-k','LineWidth',2)
+    plot(mean_pred.window(window_no).cr_mean_pred,mean_pred.window(window_no).cr_mean_lick_frac,'ob','MarkerFaceColor','b','MarkerSize',8)
+    sm_ii=sm_ii+1;
+    sm_y(sm_ii)=mean_pred.window(window_no).cr_mean_lick_frac;
+    sm_x(sm_ii)=mean_pred.window(window_no).cr_mean_pred;
+
+    plot([mean_pred.window(window_no).fa_CI_pred(1) mean_pred.window(window_no).fa_CI_pred(2)],[mean_pred.window(window_no).fa_mean_lick_frac mean_pred.window(window_no).fa_mean_lick_frac],'-k','LineWidth',2)
+    plot([mean_pred.window(window_no).fa_mean_pred mean_pred.window(window_no).fa_mean_pred],[mean_pred.window(window_no).fa_CI_lick_frac(1) mean_pred.window(window_no).fa_CI_lick_frac(2)],'-k','LineWidth',2)
+    plot(mean_pred.window(window_no).fa_mean_pred,mean_pred.window(window_no).fa_mean_lick_frac,'om','MarkerFaceColor','m','MarkerSize',8)
+    sm_ii=sm_ii+1;
+    sm_y(sm_ii)=mean_pred.window(window_no).fa_mean_lick_frac;
+    sm_x(sm_ii)=mean_pred.window(window_no).fa_mean_pred;
+
+    plot([mean_pred.window(window_no).hit_CI_pred(1) mean_pred.window(window_no).hit_CI_pred(2)],[mean_pred.window(window_no).hit_mean_lick_frac mean_pred.window(window_no).hit_mean_lick_frac],'-k','LineWidth',2)
+    plot([mean_pred.window(window_no).hit_mean_pred mean_pred.window(window_no).hit_mean_pred],[mean_pred.window(window_no).hit_CI_lick_frac(1) mean_pred.window(window_no).hit_CI_lick_frac(2)],'-k','LineWidth',2)
+    plot(mean_pred.window(window_no).hit_mean_pred,mean_pred.window(window_no).hit_mean_lick_frac,'or','MarkerFaceColor','r','MarkerSize',8)
+    sp_ii=sp_ii+1;
+    sp_y(sp_ii)=mean_pred.window(window_no).hit_mean_lick_frac;
+    sp_x(sp_ii)=mean_pred.window(window_no).hit_mean_pred;
+
+    plot([mean_pred.window(window_no).miss_CI_pred(1) mean_pred.window(window_no).miss_CI_pred(2)],[mean_pred.window(window_no).miss_mean_lick_frac mean_pred.window(window_no).miss_mean_lick_frac],'-k','LineWidth',2)
+    plot([mean_pred.window(window_no).miss_mean_pred mean_pred.window(window_no).miss_mean_pred],[mean_pred.window(window_no).miss_CI_lick_frac(1) mean_pred.window(window_no).miss_CI_lick_frac(2)],'-k','LineWidth',2)
+    plot(mean_pred.window(window_no).miss_mean_pred,mean_pred.window(window_no).miss_mean_lick_frac,'oc','MarkerFaceColor','c','MarkerSize',8)
+    sp_ii=sp_ii+1;
+    sp_y(sp_ii)=mean_pred.window(window_no).miss_mean_lick_frac;
+    sp_x(sp_ii)=mean_pred.window(window_no).miss_mean_pred;
+end
+
+p=polyfit(sp_x,sp_y,1);
+x1=[0:0.05:0.9];
+f1 = polyval(p,x1);
+plot(x1,f1,'-k','LineWidth',2)
+
+p=polyfit(sm_y,sm_x,2);
+y1=[-0.02:0.01:0.15];
+f1 = polyval(p,y1);
+plot(f1,y1,'-k','LineWidth',2)
+
+ylim([-0.05 0.5])
+xlim([0 0.9])
+ylabel('lick fraction')
+xlabel('prediction')
+title(['Lick fraction vs. stimulus predcition mouse averages'])
+
+
 %How about the licks/predictions for every 0.5 sec period
 dt_sample=0.5;
 

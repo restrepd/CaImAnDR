@@ -40,7 +40,8 @@ end
 %     suffix_out='_dec.mat';
 % end
 
-suffix_out='_spont2.mat';
+% suffix_out='_spont2.mat'; %This was used for the original data analysis for the first version of Current Biology
+suffix_out='_spont3.mat'; %This was used for the original data analysis for the revised Current Biology manuscript
 
 if isfield(handles,'first_file')
     first_file=handles.first_file;
@@ -134,6 +135,11 @@ if all_files_present==1
     ii_mouse_nc=0;
     these_mice_nc=[];
 
+    between_moving_spontaneous_lick_fraction=[];
+    ii_mouse_splf=0;
+    between_moving_no_increase_lick_fraction=[];
+    ii_mouse_nclf=0;
+
     corr_spont_prediction_sp=[];
     corr_spont_prediction_sm=[];
     these_mice_csp=[];
@@ -182,6 +188,17 @@ if all_files_present==1
     frac_pred_nc_onset=[];
     ii_mouse_fnc=0;
     these_mice_fnc=[];
+
+
+    frac_lf_spon_baseline=[];
+    frac_lf_spon_onset=[];
+    ii_mouse_lfspon=0;
+    these_mice_lfspon=[];
+
+    frac_lf_nc_baseline=[];
+    frac_lf_nc_onset=[];
+    ii_mouse_lfnc=0;
+    these_mice_lfnc=[];
 
     resample_time_span=[-7:0.05:15];
     for fileNo=first_file:length(handles.FileName_pre_per)
@@ -252,6 +269,40 @@ if all_files_present==1
                         these_mice_nc(ii_mouse_nc)=mouseNo_per_file(fileNo);
                     end
 
+                    if size(handles_out.handles_out3.moving_spontaneous_lick_fraction,1)>0
+                        if size(handles_out.handles_out3.moving_spontaneous_lick_fraction,1)==1
+                            this_in_timecourse=handles_out.handles_out3.moving_spontaneous_lick_fraction;
+                        else
+                            this_in_timecourse=mean(handles_out.handles_out3.moving_spontaneous_lick_fraction);
+                        end
+                        this_out_timecourse=drgCaImAnTimeResample(this_time_span,this_in_timecourse,resample_time_span);
+                        between_moving_spontaneous_lick_fraction=[between_moving_spontaneous_lick_fraction this_out_timecourse'];
+                        ii_mouse_splf=ii_mouse_splf+1;
+                        these_mice_splf(ii_mouse_splf)=mouseNo_per_file(fileNo);
+
+                        frac_lf_spon_baseline=[frac_lf_spon_baseline mean(this_in_timecourse((this_time_span>=-2)&(this_time_span<-0.5)))];
+                        frac_lf_spon_onset=[frac_lf_spon_onset mean(this_in_timecourse((this_time_span>=0)&(this_time_span<2)))];
+                        ii_mouse_lfspon=ii_mouse_lfspon+1;
+                        these_mice_lfspon(ii_mouse_lfspon)=mouseNo_per_file(fileNo);
+                    end
+
+                    if size(handles_out.handles_out3.moving_no_increase_lick_fraction,1)>0
+                        if size(handles_out.handles_out3.moving_no_increase_lick_fraction,1)==1
+                            this_in_timecourse=handles_out.handles_out3.moving_no_increase_lick_fraction;
+                        else
+                            this_in_timecourse=mean(handles_out.handles_out3.moving_no_increase_lick_fraction);
+                        end
+
+                        this_out_timecourse=drgCaImAnTimeResample(this_time_span,this_in_timecourse,resample_time_span);
+                        between_moving_no_increase_lick_fraction=[between_moving_no_increase_lick_fraction this_out_timecourse'];
+                        ii_mouse_nclf=ii_mouse_nclf+1;
+                        these_mice_nc(ii_mouse_nclf)=mouseNo_per_file(fileNo);
+
+                        frac_lf_nc_baseline=[frac_lf_nc_baseline mean(this_in_timecourse((this_time_span>=-2)&(this_time_span<-0.5)))];
+                        frac_lf_nc_onset=[frac_lf_nc_onset mean(this_in_timecourse((this_time_span>=0)&(this_time_span<2)))];
+                        ii_mouse_lfnc=ii_mouse_lfnc+1;
+                        these_mice_lfnc(ii_mouse_lfnc)=mouseNo_per_file(fileNo);
+                    end
 
                 end
 
@@ -383,6 +434,8 @@ if all_files_present==1
                     ii_mouse_fnc=ii_mouse_fnc+1;
                     these_mice_fnc(ii_mouse_fnc)=mouseNo_per_file(fileNo);
                 end
+
+           
 
             end
             pffft=1;
@@ -551,6 +604,62 @@ if all_files_present==1
     title(['Label prediction between trials'])
     xlabel('Time(sec)')
     ylabel('Label prediction')
+
+
+
+    %Plot the lick fraction between trials
+    figNo=figNo+1;
+    try
+        close(figNo)
+    catch
+    end
+
+    hFig = figure(figNo);
+
+    set(hFig, 'units','normalized','position',[.1 .1 .3 .3])
+
+    hold on
+
+
+    if ~isempty(between_moving_no_increase_lick_fraction')
+        CIsm = bootci(1000, @mean, between_moving_no_increase_lick_fraction');
+        meansm=mean(between_moving_no_increase_lick_fraction',1);
+        CIsm(1,:)=meansm-CIsm(1,:);
+        CIsm(2,:)=CIsm(2,:)-meansm;
+
+        [hlsm, hpsm] = boundedline(resample_time_span',mean(between_moving_no_increase_lick_fraction,2)', CIsm', 'cmap',[158/255 31/255 99/255]);
+    end
+
+    if ~isempty(between_moving_spontaneous_lick_fraction')
+        CIsm = bootci(1000, @mean, between_moving_spontaneous_lick_fraction');
+        meansm=mean(between_moving_spontaneous_lick_fraction',1);
+        CIsm(1,:)=meansm-CIsm(1,:);
+        CIsm(2,:)=CIsm(2,:)-meansm;
+
+        [hlsm, hpsm] = boundedline(resample_time_span',mean(between_moving_spontaneous_lick_fraction,2)', CIsm', 'cmap',[0 114/255 178/255]);
+    end
+
+    %     for ii=1:size(spontaneous_delta_prediction,1)
+    %         plot(this_time_span',spontaneous_delta_prediction(ii,:),  'Color',[150/255 150/255 150/255])
+    %     end
+    if ~isempty(between_moving_spontaneous_lick_fraction)
+        plot(resample_time_span',mean(between_moving_spontaneous_lick_fraction,2)', 'Color',[158/255 31/255 99/255]);
+    end
+
+    if ~isempty(between_moving_spontaneous_lick_fraction)
+        plot(resample_time_span',mean(between_moving_spontaneous_lick_fraction,2)', 'Color',[0 114/255 178/255]);
+    end
+
+    text(10,0.75,'No change','Color',[158/255 31/255 99/255])
+    text(10,0.85,'Spontaneous','Color',[0 114/255 178/255])
+
+    ylim([0 1.1])
+    this_ylim=ylim;
+    plot([0 0],[this_ylim],'-k')
+    xlim([-7 15])
+    title(['Lick fraction between trials'])
+    xlabel('Time(sec)')
+    ylabel('Lick fraction')
 
 
     %Plot the correlation for spontaneous S+ prediction vs. S+ and S-
@@ -1158,6 +1267,151 @@ if all_files_present==1
     %Do the ranksum/t-test
     fprintf(1, ['\n\nRanksum or t-test p values for prediction for between trials\n'])
     fprintf(fileID, ['\n\nRanksum or t-test p values for prediction for between trials\n']);
+
+    [output_data] = drgMutiRanksumorTtest(input_data, fileID,0);
+
+    %Now plot a bar graph comparing lick fraction between trials
+%         frac_lf_spon_baseline=[];
+%     frac_lf_spon_onset=[];
+%     ii_mouse_lfspon=0;
+%     these_mice_lfspon=[];
+% 
+%     frac_lf_nc_baseline=[];
+%     frac_lf_nc_onset=[];
+%     ii_mouse_lfnc=0;
+%     these_mice_lfnc=[];
+
+    id_ii=0;
+    input_data=[];
+
+    glm_spm=[];
+    glm_ii=0;
+
+    edges=[0:0.05:1];
+    rand_offset=0.4;
+
+    figNo=figNo+1;
+    try
+        close(figNo)
+    catch
+    end
+
+    hFig = figure(figNo);
+
+    set(hFig, 'units','normalized','position',[.05 .1 .3 .3])
+
+    hold on
+
+    bar_offset=0;
+
+    %S- baseline
+    bar(bar_offset,mean(frac_lf_nc_baseline),'LineWidth', 3,'EdgeColor','none','FaceColor',[158/255 31/255 99/255])
+    %Violin plot
+    [mean_out, CIout]=drgViolinPoint(frac_lf_nc_baseline...
+        ,edges,bar_offset,rand_offset,'k','k',3);
+
+    bar_offset=bar_offset+1;
+    bar(bar_offset,mean(frac_lf_spon_baseline),'LineWidth', 3,'EdgeColor','none','FaceColor',[0 114/255 178/255])
+    %Violin plot
+    [mean_out, CIout]=drgViolinPoint(frac_lf_spon_baseline...
+        ,edges,bar_offset,rand_offset,'k','k',3);
+
+    id_ii=id_ii+1;
+    input_data(id_ii).data=frac_lf_nc_baseline;
+    input_data(id_ii).description=['No change base'];
+
+    id_ii=id_ii+1;
+    input_data(id_ii).data=frac_lf_spon_baseline;
+    input_data(id_ii).description=['Spontaneous base'];
+
+    for mouseNo=1:max(these_mice_lfspon)
+
+        plot([bar_offset-1 bar_offset],[mean(frac_lf_nc_baseline(these_mice_lfnc==mouseNo)) mean(frac_lf_spon_baseline(these_mice_lfspon==mouseNo))],'-','Color',[150/255 150/255 150/255],'LineWidth',2 )
+
+        glm_spm.data(glm_ii+1:glm_ii+sum(these_mice_lfnc==mouseNo))=frac_lf_nc_baseline(these_mice_lfnc==mouseNo);
+        glm_spm.spm(glm_ii+1:glm_ii+sum(these_mice_lfnc==mouseNo))=zeros(1,sum(these_mice_lfnc==mouseNo));
+        glm_spm.epoch(glm_ii+1:glm_ii+sum(these_mice_lfnc==mouseNo))=zeros(1,sum(these_mice_lfnc==mouseNo));
+        glm_spm.mice(glm_ii+1:glm_ii+sum(these_mice_lfnc==mouseNo))=mouseNo*ones(1,sum(these_mice_lfnc==mouseNo));
+        glm_ii=glm_ii+sum(these_mice_lfnc==mouseNo);
+
+        glm_spm.data(glm_ii+1:glm_ii+sum(these_mice_lfspon==mouseNo))=frac_lf_spon_baseline(these_mice_lfspon==mouseNo);
+        glm_spm.spm(glm_ii+1:glm_ii+sum(these_mice_lfspon==mouseNo))=ones(1,sum(these_mice_lfspon==mouseNo));
+        glm_spm.epoch(glm_ii+1:glm_ii+sum(these_mice_lfspon==mouseNo))=zeros(1,sum(these_mice_lfspon==mouseNo));
+        glm_spm.mice(glm_ii+1:glm_ii+sum(these_mice_lfspon==mouseNo))=mouseNo*ones(1,sum(these_mice_lfspon==mouseNo));
+        glm_ii=glm_ii+sum(these_mice_lfspon==mouseNo);
+
+    end
+
+    bar_offset=bar_offset+2;
+
+    bar(bar_offset,mean(frac_lf_nc_onset),'LineWidth', 3,'EdgeColor','none','FaceColor',[158/255 31/255 99/255])
+    %Violin plot
+    [mean_out, CIout]=drgViolinPoint(frac_lf_nc_onset...
+        ,edges,bar_offset,rand_offset,'k','k',3);
+
+    bar_offset=bar_offset+1;
+    bar(bar_offset,mean(frac_lf_spon_onset),'LineWidth', 3,'EdgeColor','none','FaceColor',[0 114/255 178/255])
+    %Violin plot
+    [mean_out, CIout]=drgViolinPoint(frac_lf_spon_onset...
+        ,edges,bar_offset,rand_offset,'k','k',3);
+
+    id_ii=id_ii+1;
+    input_data(id_ii).data=frac_lf_nc_onset;
+    input_data(id_ii).description=['No change onset'];
+
+    id_ii=id_ii+1;
+    input_data(id_ii).data=frac_lf_spon_onset;
+    input_data(id_ii).description=['Spontaneous onset'];
+ 
+    for mouseNo=1:max(these_mice_fspm)
+
+        plot([bar_offset-1 bar_offset],[mean(frac_lf_nc_onset(these_mice_fnc==mouseNo)) mean(frac_lf_spon_onset(these_mice_fspon==mouseNo))],'-','Color',[0/255 0/255 0/255],'LineWidth',2 )
+
+        glm_spm.data(glm_ii+1:glm_ii+sum(these_mice_lfnc==mouseNo))=frac_lf_nc_onset(these_mice_lfnc==mouseNo);
+        glm_spm.spm(glm_ii+1:glm_ii+sum(these_mice_lfnc==mouseNo))=zeros(1,sum(these_mice_lfnc==mouseNo));
+        glm_spm.epoch(glm_ii+1:glm_ii+sum(these_mice_lfnc==mouseNo))=ones(1,sum(these_mice_lfnc==mouseNo));
+        glm_spm.mice(glm_ii+1:glm_ii+sum(these_mice_lfnc==mouseNo))=mouseNo*ones(1,sum(these_mice_lfnc==mouseNo));
+        glm_ii=glm_ii+sum(these_mice_lfnc==mouseNo);
+
+        glm_spm.data(glm_ii+1:glm_ii+sum(these_mice_lfspon==mouseNo))=frac_lf_spon_onset(these_mice_lfspon==mouseNo);
+        glm_spm.spm(glm_ii+1:glm_ii+sum(these_mice_lfspon==mouseNo))=ones(1,sum(these_mice_lfspon==mouseNo));
+        glm_spm.epoch(glm_ii+1:glm_ii+sum(these_mice_lfspon==mouseNo))=ones(1,sum(these_mice_lfspon==mouseNo));
+        glm_spm.mice(glm_ii+1:glm_ii+sum(these_mice_lfspon==mouseNo))=mouseNo*ones(1,sum(these_mice_lfspon==mouseNo));
+        glm_ii=glm_ii+sum(these_mice_lfspon==mouseNo);
+    end
+
+
+    xticks([0 1 3 4])
+    xticklabels({'base NC', 'base SP', 'onset NC', 'onset SP'})
+
+    ylabel('Lick fraction')
+
+
+
+    title(['Lick fraction for between trials'])
+
+
+    %Perform the glm
+    fprintf(1, ['\nglm for lick fraction between trials\n'])
+    fprintf(fileID, ['\nglm lick fraction between trials\n']);
+
+    tbl = table(glm_spm.data',glm_spm.spm',glm_spm.epoch',glm_spm.mice',...
+        'VariableNames',{'prediction','spont_vs_no_change','time_interval','mice'});
+    mdl = fitglm(tbl,'prediction~spont_vs_no_change+mice+time_interval+spont_vs_no_change*time_interval'...
+        ,'CategoricalVars',[2,3,4])
+
+
+    txt = evalc('mdl');
+    txt=regexp(txt,'<strong>','split');
+    txt=cell2mat(txt);
+    txt=regexp(txt,'</strong>','split');
+    txt=cell2mat(txt);
+
+    fprintf(fileID,'%s\n', txt);
+
+    %Do the ranksum/t-test
+    fprintf(1, ['\n\nRanksum or t-test p values for lick fraction for between trials\n'])
+    fprintf(fileID, ['\n\nRanksum or t-test p values for lick fraction for between trials\n']);
 
     [output_data] = drgMutiRanksumorTtest(input_data, fileID,0);
 

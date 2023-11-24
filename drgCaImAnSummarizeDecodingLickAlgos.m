@@ -1,4 +1,4 @@
-%drgCaImAnSummarizeDecodingAlgos
+%drgCaImAnSummarizeDecodingLickAlgos
 %
 %This program takes the output from
 %drgCaImAn_analyze_batch_pre_per_to_decode_per_mouse_v2.m
@@ -13,8 +13,8 @@
 clear all
 close all
 
-choiceBatchPathName='/Users/restrepd/Documents/Projects/SFTP/Fabio/algos/';
-fileID = fopen([choiceBatchPathName 'drgCaImAnSummarizeDecodingAlgos.txt'],'w');
+choiceBatchPathName='F:\SFTP\Ming Ma\Grin678and9_spm_noneg\';
+fileID = fopen([choiceBatchPathName 'drgCaImAnSummarizeDecodingLickAlgos.txt'],'w');
 
 ii_pcorr=3; %proficient
 ii_window=2; %odor window
@@ -32,19 +32,19 @@ figureNo=0;
 
 all_handles=[];
 
-load('/Users/restrepd/Documents/Projects/SFTP/Fabio/algos/drgCaImAn_LDAfsdz_choices_spm_noneg_algo_Grin678and9_GLMDR.mat')
+load('F:\SFTP\Ming Ma\Grin678and9_spm_noneg\drgCaImAn_lickdec_choices_spm_noneg_algo6_Grin678and9_09062023.mat')
 all_handles(2).handles_out2=handles_out2;
 
-load('/Users/restrepd/Documents/Projects/SFTP/Fabio/algos/drgCaImAn_LDAfsdz_choices_spm_noneg_algo_Grin678and9_SVDRM.mat')
+load('F:\SFTP\Ming Ma\Grin678and9_spm_noneg\drgCaImAn_lickdec_choices_spm_noneg_algo2_Grin678and9_09062023.mat')
 all_handles(1).handles_out2=handles_out2;
 
-load('/Users/restrepd/Documents/Projects/SFTP/Fabio/algos/drgCaImAn_LDAfsdz_choices_spm_noneg_algo_Grin678and9_DTDR.mat')
+load('F:\SFTP\Ming Ma\Grin678and9_spm_noneg\drgCaImAn_lickdec_choices_spm_noneg_algo5_Grin678and9_09062023.mat')
 all_handles(4).handles_out2=handles_out2;
 
-load('/Users/restrepd/Documents/Projects/SFTP/Fabio/algos/drgCaImAn_LDAfsdz_choices_spm_noneg_algo_Grin678and9_ANRDR')
+load('F:\SFTP\Ming Ma\Grin678and9_spm_noneg\drgCaImAn_lickdec_choices_spm_noneg_Grin678and9_09062023.mat')
 all_handles(5).handles_out2=handles_out2;
 
-load('/Users/restrepd/Documents/Projects/SFTP/Fabio/algos/drgCaImAn_LDAfsdz_choices_spm_noneg_algo_Grin678and9_LDADR.mat')
+load('F:\SFTP\Ming Ma\Grin678and9_spm_noneg\drgCaImAn_lickdec_choices_spm_noneg_algo1_Grin678and9_09062023.mat')
 all_handles(3).handles_out2=handles_out2;
 
 
@@ -88,7 +88,7 @@ for grNo=these_groups_out
         these_mean_per_mouse_sh_accs=[];
         these_mice=[];
         for ii_mouse=1:4
-           these_accs=[these_accs  all_handles(grNo).handles_out2.all_accs.perCorr(ii_pcorr).decode_window(ii_window).mouse(ii_mouse).per_mouse_accuracy_sh];
+           these_accs=[these_accs;  all_handles(grNo).handles_out2.all_accs.perCorr(ii_pcorr).decode_window(ii_window).mouse(ii_mouse).per_mouse_accuracy_sh];
            these_mice=[these_mice ii_mouse*ones(1,length(all_handles(grNo).handles_out2.all_accs.perCorr(ii_pcorr).decode_window(ii_window).mouse(ii_mouse).per_mouse_accuracy_sh))];
            these_mean_per_mouse_sh_accs=[these_mean_per_mouse_sh_accs  mean(all_handles(grNo).handles_out2.all_accs.perCorr(ii_pcorr).decode_window(ii_window).mouse(ii_mouse).per_mouse_accuracy_sh)];
         end
@@ -119,7 +119,7 @@ for grNo=these_groups_out
         these_mean_per_mouse_accs=[];
         these_mice=[];
         for ii_mouse=1:4
-           these_accs=[these_accs  all_handles(grNo).handles_out2.all_accs.perCorr(ii_pcorr).decode_window(ii_window).mouse(ii_mouse).per_mouse_accuracy];
+           these_accs=[these_accs;  all_handles(grNo).handles_out2.all_accs.perCorr(ii_pcorr).decode_window(ii_window).mouse(ii_mouse).per_mouse_accuracy];
            these_mice=[these_mice ii_mouse*ones(1,length(all_handles(grNo).handles_out2.all_accs.perCorr(ii_pcorr).decode_window(ii_window).mouse(ii_mouse).per_mouse_accuracy))];
            these_mean_per_mouse_accs=[these_mean_per_mouse_accs  mean(all_handles(grNo).handles_out2.all_accs.perCorr(ii_pcorr).decode_window(ii_window).mouse(ii_mouse).per_mouse_accuracy)];
         end
@@ -155,7 +155,7 @@ xticklabels({'SVM','GLM','LDA','BDT','NN'})
 % xtickangle(45)
 title(['Decoding accuracy'])
 ylabel('Accuracy')
-ylim([0.4 1.1])
+ylim([0.45 0.75])
 xlim([-1 14])
 
 
@@ -190,5 +190,7 @@ fprintf(fileID, ['\n\nRanksum or t-test p values for decoding accuracy\n']);
 [output_data] = drgMutiRanksumorTtest(input_acc_data, fileID,0);
 
 fclose(fileID)
+
+pffft=1;
 
 

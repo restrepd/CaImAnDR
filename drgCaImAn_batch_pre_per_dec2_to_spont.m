@@ -30,7 +30,7 @@ end
 %     suffix_out='_dec.mat';
 % end
 
-suffix_out='_spont2.mat';
+suffix_out='_spont3.mat';
 
 if isfield(handles,'first_file')
     first_file=handles.first_file;
