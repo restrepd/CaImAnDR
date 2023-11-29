@@ -1,4 +1,4 @@
-function handles_out=drgCaImAn_pval_batch(handles_choices)
+function handles_out=drgCaImAn_pval_batchv2(handles_choices)
 %This program performs a survey of ROI responsiveness to S+ and S-
 % and divergent responses to S+ and S-
 %
@@ -67,14 +67,21 @@ figureNo=0;
 
 pre_t=[-3 -1.5];
 odor_t=[-1 5.5]; %0 5.5 yields a large number of positive traces
-use_pFDR=4; %0=use t-test or ranksum with p<p_value_sig, 1=use pFDR, 2=use bootstrapping, 3= glm, 4= glm with pFDR
+use_pFDR=handles.use_pFDR; 
+%0=use t-test or ranksum with p<p_value_sig
+%1=use pFDR
+%2=use bootstrapping CI diference
+%3= glm
+%4= glm with pFDR
+%5=bootstrap mean differences
+
 % pre_t_dprime=[-1.5 6.5];
 
 handles_out.pre_t=pre_t;
 handles_out.odor_t=odor_t;
 handles_out.use_pFDR=use_pFDR;
 
-handles_in.min_tr_div=12;
+handles_in.min_tr_div=12; %Please note that these parameters are not used until the data are analyzed by drgCaImAn_analyze_pval_batch.m
 handles_in.min_tr_resp=6;
 
 switch use_pFDR
@@ -88,20 +95,29 @@ switch use_pFDR
         handles_in.p_value_sig=p_value_sig;
 
     case 2
-        %bootstrap
+        %bootstrap CI
         handles_in.pre_t=[-3 -2];
         handles_in.dt_required=2;
         handles_in.t_start=-2.5;
         handles_in.t_end=7.5;
         handles_in.pre_start=-7;
         handles_in.pre_end=-1.5;
-    case {3, 4}
+    case {3,4}
         %glm
         %choices for case 3
         handles_in.t_start=-1;
         handles_in.t_end=4.5;
         handles_in.pre_t_start=-4;
         handles_in.pre_t_end=-1.5;
+    case 5
+        %bootstrap the mean
+        handles_in.t_start=-1;
+        handles_in.t_end=4.5;
+        handles_in.min_bins=4; %The difference is significant if the number of significant time mins is higher than this number
+        handles_in.dt_per_bin=0.5;
+        handles_in.pre_t_start=-4;
+        handles_in.pre_t_end=-1.5;
+
 end
 
 %Choices for simulations and how files are grouped
@@ -235,7 +251,7 @@ if all_files_present==1
 
         handles_choices.do_dPCA=do_dPCA; %dPCA is not performed, all the function does is to process the pre_per data to use in the dPCA code below
         handles_choices.dPCA_input=dPCA_input; %1 processes the pre_per file, 2 simulates Romo, 3 simulates go-no go
-        handles_choices.convert_z=2; %This ensures that the components are the same before odor on
+        handles_choices.convert_z=handles.convert_z; %This ensures that the components are the same before odor on
 
         all_handles(fileNo).handles_out=drgCaImAn_get_dFF_per_trial(handles_choices);
 
@@ -598,6 +614,31 @@ if all_files_present==1
                         handles_out.file(fileNo).output_data_odor.sig_div_glm(ii_p)=0;
                     end
                 end
+            case 5
+                for ii_p=1:handles_out.file(fileNo).no_neurons
+
+                    min_ii=ii_p;
+
+                    %get the dF/F
+                    dFFsplus=zeros(length(time_span),trialNum(min_ii,1));
+                    dFFsplus(:,:)=firingRates(min_ii,1,:,1:trialNum(min_ii,1));
+                    dFFsminus=zeros(length(time_span),trialNum(min_ii,2));
+                    dFFsminus(:,:)=firingRates(min_ii,2,:,1:trialNum(min_ii,2));
+
+
+                    handles_in.time_span=time_span;
+                    handles_in.dFFsplus=dFFsplus;
+                    handles_in.dFFsminus=dFFsminus;
+
+ 
+                    [handles_out.file(fileNo).output_data_odor.sig_div(ii_p),handles_out.file(fileNo).output_data_odor.div_t(ii_p)...
+                        ,handles_out.file(fileNo).output_data_odor.total_trials(ii_p)]=drgCaImAn_bootstrap_mean_dif_dFF_div(handles_in);
+           
+                    fprintf(1, ['Divergence bootstrapped mean difference for file No ' num2str(fileNo) ' neuron no ' num2str(ii_p) ' significance= ' num2str(handles_out.file(fileNo).output_data_odor.sig_div(ii_p)) '\n']);
+                    
+
+                end
+              
         end
         first_fig=1;
 
@@ -642,6 +683,10 @@ if all_files_present==1
                     if handles_out.file(fileNo).output_data_odor.sig_div_glm(ii_p)==1
                         sig_p=1;
                     end
+                case 5
+                    if handles_out.file(fileNo).output_data_odor.sig_div(ii_p)==1
+                        sig_p=1;
+                    end
             end
             for ii_fl=1:length(files_to_show)
                 if files_to_show(ii_fl)==fileNo
@@ -651,7 +696,33 @@ if all_files_present==1
                 end
             end
             if sig_p==1
+
+
+
+                %S-
+                if size(dFFsminus,2)>=3
+                    CIpvsm = bootci(1000, @mean, dFFsminus');
+                else
+                    CIpvsm =zeros(2,size(dFFsminus,1));
+                end
+                meanpvsm=mean(dFFsminus',1);
+                CIpvsm(1,:)=meanpvsm-CIpvsm(1,:);
+                CIpvsm(2,:)=CIpvsm(2,:)-meanpvsm;
+
+                %S+
+                if size(dFFsplus,2)>=3
+                    CIpvsp = bootci(1000, @mean, dFFsplus');
+                else
+                    CIpvsp =zeros(2,size(dFFsplus,1));
+                end
+                meanpvsp=mean(dFFsplus',1);
+                CIpvsp(1,:)=meanpvsp-CIpvsp(1,:);
+                CIpvsp(2,:)=CIpvsp(2,:)-meanpvsp;
+              
+
                 if show_figures==1
+
+
 
                     try
                         close(first_fig)
@@ -664,28 +735,9 @@ if all_files_present==1
 
 
                     hold on
-                end
-
-
-
-
-                %S-
-                CIpvsm = bootci(1000, @mean, dFFsminus');
-                meanpvsm=mean(dFFsminus',1);
-                CIpvsm(1,:)=meanpvsm-CIpvsm(1,:);
-                CIpvsm(2,:)=CIpvsm(2,:)-meanpvsm;
-
-                if show_figures==1
+              
                     [hlpvl, hppvl] = boundedline(time_span,mean(dFFsminus'), CIpvsm','cmap',[158/255 31/255 99/255]);
-                end
-
-                %S+
-                CIpvsp = bootci(1000, @mean, dFFsplus');
-                meanpvsp=mean(dFFsplus',1);
-                CIpvsp(1,:)=meanpvsp-CIpvsp(1,:);
-                CIpvsp(2,:)=CIpvsp(2,:)-meanpvsp;
-
-                if show_figures==1
+              
                     [hlpvl, hppvl] = boundedline(time_span, mean(dFFsplus'), CIpvsp','cmap',[0 114/255 178/255]);
 
 
@@ -697,16 +749,16 @@ if all_files_present==1
                         plot(time_span',dFFsplus(:,trNo)','Color',[0 164/255 228/255],'LineWidth',0.5);
                     end
 
-                    plot(time_span',mean(dFFsminus')','Color',[158/255 31/255 99/255],'LineWidth',1.5);
-                    plot(time_span',mean(dFFsplus')','Color',[0 114/255 178/255],'LineWidth',1.5);
+                    plot(time_span',mean(dFFsminus')','Color',[178/255 51/255 119/255],'LineWidth',2);
+                    plot(time_span',mean(dFFsplus')','Color',[0 134/255 198/255],'LineWidth',2);
 
                     this_ylim=ylim;
                     for ii_te=1:length(timeEvents)
                         plot([timeEvents(ii_te) timeEvents(ii_te)],this_ylim,'-k')
                     end
-
-                    text(-5,this_ylim(1)+0.85*(this_ylim(2)-this_ylim(1)),'S+','Color',[0 114/255 178/255],'FontSize',16)
-                    text(-5,this_ylim(1)+0.75*(this_ylim(2)-this_ylim(1)),'S-','Color',[158/255 31/255 99/255],'FontSize',16)
+% 
+%                     text(-5,this_ylim(1)+0.85*(this_ylim(2)-this_ylim(1)),'S+','Color',[0 114/255 178/255],'FontSize',16)
+%                     text(-5,this_ylim(1)+0.75*(this_ylim(2)-this_ylim(1)),'S-','Color',[158/255 31/255 99/255],'FontSize',16)
 
                     xlim([-7 15])
 
@@ -719,14 +771,14 @@ if all_files_present==1
                         title(['dFF odor n= ' num2str(min_ii), ' fileNo= ' num2str(fileNo) ' pCorr= ' num2str(pCorr_per_file(fileNo))])
                     end
 
-                    for ii_fl=1:length(files_to_show)
-                        if files_to_show(ii_fl)==fileNo
-                            if ROIs_to_show(ii_fl)==ii_p
+%                     for ii_fl=1:length(files_to_show)
+%                         if files_to_show(ii_fl)==fileNo
+%                             if ROIs_to_show(ii_fl)==ii_p
                                 savefig([handles.choiceBatchPathName 'figures\odor_f' num2str(fileNo) 'n' num2str(min_ii)])
-                            end
-                        end
-                    end
-                   
+%                             end
+%                         end
+%                     end
+%                    
 
                     %                         switch handles.save_all_figs
                     %                             case 1
@@ -956,15 +1008,50 @@ if all_files_present==1
                     end
                 end
 
+            case 5
+ 
+                for ii_p=1:handles_out.file(fileNo).no_neurons
+
+                    min_ii=ii_p;
+
+                    %get the dF/F
+                    dFFsplus=zeros(length(time_span),trialNum(min_ii,1));
+                    dFFsplus(:,:)=firingRates(min_ii,1,:,1:trialNum(min_ii,1));
+
+
+
+                    handles_in.time_span=time_span;
+                    handles_in.dFF=dFFsplus;
+                    
+
+
+                    [handles_out.file(fileNo).output_data_odor_Sp.sig_resp(ii_p)...
+                        ,handles_out.file(fileNo).output_data_odor_Sp.total_trials(ii_p)]=drgCaImAn_bootstrap_mean_resp_dFF(handles_in);
+                    fprintf(1, ['Responsiveness bootstrapped mean for S+ for file No ' num2str(fileNo) ' neuron no ' num2str(ii_p) ' = ' num2str(handles_out.file(fileNo).output_data_odor_Sp.sig_resp(ii_p)) '\n']);
+ 
+
+                end
+         
+
         end
         %Plot the timecourse if min_p<pFDR
 
         %         [min_p min_ii]=min(handles_out.file(fileNo).output_data_odor_Sp.p);
 
         for ii_p=1:handles_out.file(fileNo).no_neurons
-            this_p=handles_out.file(fileNo).output_data_odor_Sp.p(ii_p);
+            switch use_pFDR
+                case 5
+                    this_sig=handles_out.file(fileNo).output_data_odor_Sp.sig_resp(ii_p);
+                otherwise
+                    this_p=handles_out.file(fileNo).output_data_odor_Sp.p(ii_p);
+                    if this_p<handles_out.file(fileNo).output_data_odor_Sp.pFDR
+                        this_sig=1;
+                    else
+                        this_sig=0;
+                    end
+            end
             min_ii=ii_p;
-            if this_p<handles_out.file(fileNo).output_data_odor_Sp.pFDR
+            if this_sig==1
                 %         if min_p<handles_out.file(fileNo).output_data_odor_Sp.pFDR
                 %get the dF/F
                 dFFsplus=zeros(length(time_span),trialNum(min_ii,1));
@@ -1149,6 +1236,33 @@ if all_files_present==1
                 no_odor_responses=sum(odor_responses);
                 handles_out.output_data_SporSm=[handles_out.output_data_SporSm no_odor_responses];
 
+            case 5
+                for ii_p=1:handles_out.file(fileNo).no_neurons
+
+                    min_ii=ii_p;
+
+                    %get the dF/F
+                    dFFsminus=zeros(length(time_span),trialNum(min_ii,2));
+                    dFFsminus(:,:)=firingRates(min_ii,2,:,1:trialNum(min_ii,2));
+
+
+                    handles_in.time_span=time_span;
+                    handles_in.dFF=dFFsminus;
+
+
+
+                    [handles_out.file(fileNo).output_data_odor_Sm.sig_resp(ii_p)...
+                        ,handles_out.file(fileNo).output_data_odor_Sm.total_trials(ii_p)]=drgCaImAn_bootstrap_mean_resp_dFF(handles_in);
+                    fprintf(1, ['Responsiveness bootstrapped mean for S+ for file No ' num2str(fileNo) ' neuron no ' num2str(ii_p) ' = ' num2str(handles_out.file(fileNo).output_data_odor_Sp.sig_resp(ii_p)) '\n']);
+
+
+                end
+
+                odor_responses=logical(handles_out.file(fileNo).output_data_odor_Sp.sig_resp)|...
+                    logical(handles_out.file(fileNo).output_data_odor_Sm.sig_resp);
+                no_odor_responses=sum(odor_responses);
+                handles_out.output_data_SporSm=[handles_out.output_data_SporSm no_odor_responses];
+
         end
 
 
@@ -1156,11 +1270,19 @@ if all_files_present==1
         %Plot the timecourse for p<pFDR for the
         %S- response
         for ii_p=1:handles_out.file(fileNo).no_neurons
-            this_p=handles_out.file(fileNo).output_data_odor_Sm.p(ii_p);
+             switch use_pFDR
+                case 5
+                    this_sig=handles_out.file(fileNo).output_data_odor_Sm.sig_resp(ii_p);
+                otherwise
+                    this_p=handles_out.file(fileNo).output_data_odor_Sm.p(ii_p);
+                    if this_p<handles_out.file(fileNo).output_data_odor_Sm.pFDR
+                        this_sig=1;
+                    else
+                        this_sig=0;
+                    end
+            end
             min_ii=ii_p;
-            %Show the figure only if min_p<pFDR
-            if this_p<handles_out.file(fileNo).output_data_odor_Sm.pFDR
-
+            if this_sig==1
 
                 %get the dF/F
 
@@ -2099,397 +2221,397 @@ if all_files_present==1
     end
 
 
-    %Now generate the summary figures for the divergent responses
-
-    if handles_out.all_spresp_ii_dFF+handles_out.all_smresp_ii_dFF>5
-        %Calculate the crosscorrelations
-        %     croscorr_traces=abs(corrcoef(handles_out.all_div_dFFspm)); %please note that I am using the absolute value
-        all_spandmresp_dFFspm=[handles_out.all_spresp_dFFspm handles_out.all_smresp_dFFspm];
-        all_spandmresp_iidFF=[1:handles_out.all_spresp_ii_dFF 1:handles_out.all_smresp_ii_dFF];
-        all_spandmresp_sporsm=[ones(1,handles_out.all_spresp_ii_dFF) zeros(1,handles_out.all_smresp_ii_dFF)];
-        croscorr_traces=corrcoef(all_spandmresp_dFFspm);
-
-        %Set autocorrelations to zero
-        for ii=1:size(croscorr_traces,1)
-            croscorr_traces(ii,ii)=0;
-        end
-        Z = linkage(croscorr_traces,'complete','correlation');
-        no_clusters=2; %This is set for Fabio's analysis
-        clusters = cluster(Z,'Maxclust',no_clusters);
-        figureNo=figureNo+1;
-        try
-            close(figureNo)
-        catch
-        end
-
-        hFig = figure(figureNo);
-        %Do cutoff for 4 clusters
-        cutoff = median([Z(end-(no_clusters-1),3) Z(end-(no_clusters-2),3)]);
-        [H,T,outperm]=dendrogram(Z,0,'Orientation','left','ColorThreshold',cutoff);
-        set(H,'LineWidth',2)
-        hFig=figure(figureNo);
-        set(hFig, 'units','normalized','position',[.05 .1 .14 .8])
-
-        %re-sort the matrix
-        for ii=1:size(croscorr_traces,1)
-            for jj=1:size(croscorr_traces,1)
-                perm_croscorr_traces(ii,jj)=croscorr_traces(outperm(ii),outperm(jj));
-            end
-        end
-
-
-
-        figureNo=figureNo+1;
-        try
-            close(figureNo)
-        catch
-        end
-
-        hFig = figure(figureNo);
-
-        set(hFig, 'units','normalized','position',[.15 .1 .6 .8])
-        hold on
-        pcolor(perm_croscorr_traces)
-        colormap fire
-        shading flat
-
-        caxis([-1    1])
-        title(['Cross correlations for all ROIs'])
-        xlim([1 handles_out.all_spresp_ii_dFF+handles_out.all_smresp_ii_dFF])
-        ylim([1 handles_out.all_spresp_ii_dFF+handles_out.all_smresp_ii_dFF])
-
-        %Plot rainbow
-        figureNo=figureNo+1;
-        try
-            close(figureNo)
-        catch
-        end
-
-        hFig = figure(figureNo);
-
-        set(hFig, 'units','normalized','position',[.49 .1 .05 .3])
-
-
-        prain=[0:0.6/99:0.6];
-        pcolor(repmat([1:10],100,1)',repmat(prain,10,1),repmat(prain,10,1))
-        %             colormap jet
-        colormap fire
-        shading interp
-        ax=gca;
-        set(ax,'XTickLabel','')
-
-        %Plot timecourses for all ROIs for S+ and S-
-
-        figureNo=figureNo+1;
-        try
-            close(figureNo)
-        catch
-        end
-
-        hFig = figure(figureNo);
-
-        set(hFig, 'units','normalized','position',[.05 .1 .3 .8])
-        hold on
-
-
-
-        sorted_handles_out.all_spmresp_ii_dFF=0;
-        sorted_handles_out.all_spmresp_sporsm=[];
-        sorted_handles_out.all_sporsm_dFFspm=[];
-        sorted_handles_out.clusters=[];
-        for ii=1:length(all_spandmresp_iidFF)
-            this_ii_dFF=all_spandmresp_iidFF(outperm(ii));
-            this_sporsm=all_spandmresp_sporsm(outperm(ii));
-            sorted_handles_out.all_spmresp_ii_dFF=sorted_handles_out.all_spmresp_ii_dFF+1;
-            if this_sporsm==0
-                %This is S-
-                sorted_handles_out.all_sporsm_dFFspm(sorted_handles_out.all_spmresp_ii_dFF,:)=handles_out.all_smresp_dFFsminus(this_ii_dFF,:);
-            else
-                %This is S+
-                sorted_handles_out.all_sporsm_dFFspm(sorted_handles_out.all_spmresp_ii_dFF,:)=handles_out.all_spresp_dFFsplus(this_ii_dFF,:);
-            end
-            sorted_handles_out.clusters(sorted_handles_out.all_spmresp_ii_dFF)=clusters(outperm(ii));
-        end
-
-        %pcolor does not show the first row
-        pseudo_dFFspm=zeros(size(sorted_handles_out.all_sporsm_dFFspm,1)+1,size(sorted_handles_out.all_sporsm_dFFspm,2));
-        pseudo_dFFspm(1:end-1,:)=sorted_handles_out.all_sporsm_dFFspm;
-
-        time_span_mat=repmat(time_span,sorted_handles_out.all_spmresp_ii_dFF+1,1);
-        ROI_mat=repmat(1:sorted_handles_out.all_spmresp_ii_dFF+1,length(time_span),1)';
-
-        pcolor(time_span_mat,ROI_mat,pseudo_dFFspm)
-
-
-        %         time_span_mat=repmat(time_span,sorted_handles_out.all_spmresp_ii_dFF,1);
-        %         ROI_mat=repmat(1:sorted_handles_out.all_spmresp_ii_dFF,length(time_span),1)';
-        %
-        %         pcolor(time_span_mat,ROI_mat,sorted_handles_out.all_sporsm_dFFspm)
-
-        colormap fire
-        shading flat
-
-        caxis([prctile(sorted_handles_out.all_sporsm_dFFspm(:),1) prctile(sorted_handles_out.all_sporsm_dFFspm(:),99)])
-
-        for ii_te=1:length(timeEvents)
-            plot([timeEvents(ii_te) timeEvents(ii_te)],[0 sorted_handles_out.all_spmresp_ii_dFF],'-r')
-        end
-
-        xlim([-7 15])
-        ylim([1 ii])
-        title(['Timecourses for S+ and S- with significant odor changes, all ROIs'])
-        xlabel('Time (sec)')
-        ylabel('ROI number')
-
-
-
-        %Plot the average timecourses per cluster
-        for clus=1:max(clusters)
-            figureNo = figureNo + 1;
-            try
-                close(figureNo)
-            catch
-            end
-            hFig=figure(figureNo);
-
-            ax=gca;ax.LineWidth=3;
-            set(hFig, 'units','normalized','position',[.3 .2 .3 .3])
-
-
-            hold on
-
-            %get the dF/F
-
-
-            try
-
-
-                this_cluster_dFF=[];
-                ii_included=0;
-                for ii=1:length(sorted_handles_out.clusters)
-                    if sorted_handles_out.clusters(ii)==clus
-                        ii_included=ii_included+1;
-                        this_cluster_dFF(ii_included,:)=sorted_handles_out.all_sporsm_dFFspm(ii,:);
-                    end
-                end
-
-
-                CIpv = bootci(1000, @mean, this_cluster_dFF);
-                meanpv=mean(this_cluster_dFF,1);
-                CIpv(1,:)=meanpv-CIpv(1,:);
-                CIpv(2,:)=CIpv(2,:)-meanpv;
-
-
-                [hlpvl, hppvl] = boundedline(time_span,mean(this_cluster_dFF), CIpv','cmap',[0 0 0]);
-
-
-
-            catch
-            end
-
-            this_ylim=ylim;
-            for ii_te=1:length(timeEvents)
-                plot([timeEvents(ii_te) timeEvents(ii_te)],this_ylim,'-k')
-            end
-
-            xlim([-7 15])
-
-
-            xlabel('Time(sec)')
-            ylabel('dFF')
-
-
-            title(['dFF for cluster no ' num2str(clus)])
-
-        end
-
-
-        %         %Now plot the timecourses per group
-        %         for grNo=1:3
-        %
-        %             switch grNo
-        %                 case 1
-        %                     ROIs_included=(handles_out.all_div_dFFspm_pcorr>=45)&(handles_out.all_div_dFFspm_pcorr<=65);
-        %                 case 2
-        %                     ROIs_included=(handles_out.all_div_dFFspm_pcorr>65)&(handles_out.all_div_dFFspm_pcorr<80);
-        %                 case 3
-        %                     ROIs_included=(handles_out.all_div_dFFspm_pcorr>=80);
-        %             end
-        %
-        %             if sum(ROIs_included)>0
-        %
-        %                 %S+
-        %                 figureNo=figureNo+1;
-        %                 try
-        %                     close(figureNo)
-        %                 catch
-        %                 end
-        %
-        %                 hFig = figure(figureNo);
-        %
-        %                 set(hFig, 'units','normalized','position',[.05 .1 .3 .8])
-        %                 hold on
-        %
-        %
-        %
-        %                 sorted_handles_out.all_div_dFFsplus=[];
-        %                 ii_included=0;
-        %                 for ii=1:handles_out.all_div_ii_dFF
-        %                     if ROIs_included(ii)
-        %                         ii_included=ii_included+1;
-        %                         sorted_handles_out.all_div_dFFsplus(ii_included,:)=handles_out.all_div_dFFsplus(outperm(ii),:);
-        %                     end
-        %                 end
-        %
-        %                 time_span_mat=repmat(time_span,ii_included,1);
-        %                 ROI_mat=repmat(1:ii_included,length(time_span),1)';
-        %
-        %                 pcolor(time_span_mat,ROI_mat,sorted_handles_out.all_div_dFFsplus)
-        %                 colormap fire
-        %                 shading flat
-        %
-        %                 caxis([prctile(handles_out.all_div_dFFspm(:),1) prctile(handles_out.all_div_dFFspm(:),99)])
-        %
-        %                 for ii_te=1:length(timeEvents)
-        %                     plot([timeEvents(ii_te) timeEvents(ii_te)],[0 handles_out.all_div_ii_dFF],'-r')
-        %                 end
-        %
-        %                 xlim([-7 15])
-        %                 ylim([1 ii_included])
-        %                 title(['S+ ' per_names{grNo+1}])
-        %                 xlabel('Time (sec)')
-        %                 ylabel('ROI number')
-        %
-        %                 %S-
-        %                 figureNo=figureNo+1;
-        %                 try
-        %                     close(figureNo)
-        %                 catch
-        %                 end
-        %
-        %                 hFig = figure(figureNo);
-        %
-        %                 set(hFig, 'units','normalized','position',[.05 .1 .3 .8])
-        %                 hold on
-        %
-        %
-        %
-        %                 sorted_handles_out.all_div_dFFsminus=[];
-        %                 ii_included=0;
-        %                 for ii=1:handles_out.all_div_ii_dFF
-        %                     if ROIs_included(ii)
-        %                         ii_included=ii_included+1;
-        %                         sorted_handles_out.all_div_dFFsminus(ii_included,:)=handles_out.all_div_dFFsminus(outperm(ii),:);
-        %                     end
-        %                 end
-        %
-        %                 time_span_mat=repmat(time_span,ii_included,1);
-        %                 ROI_mat=repmat(1:ii_included,length(time_span),1)';
-        %
-        %                 pcolor(time_span_mat,ROI_mat,sorted_handles_out.all_div_dFFsminus)
-        %                 colormap fire
-        %                 shading flat
-        %
-        %                 caxis([prctile(handles_out.all_div_dFFspm(:),1) prctile(handles_out.all_div_dFFspm(:),99)])
-        %
-        %                 for ii_te=1:length(timeEvents)
-        %                     plot([timeEvents(ii_te) timeEvents(ii_te)],[0 handles_out.all_div_ii_dFF],'-r')
-        %                 end
-        %
-        %                 xlim([-7 15])
-        %                 ylim([1 ii_included])
-        %                 title(['S- ' per_names{grNo+1}])
-        %                 xlabel('Time (sec)')
-        %                 ylabel('ROI number')
-        %             end
-        %         end
-        %
-        %         %Plot rainbow
-        %         figureNo=figureNo+1;
-        %         try
-        %             close(figureNo)
-        %         catch
-        %         end
-        %
-        %         hFig = figure(figureNo);
-        %
-        %         set(hFig, 'units','normalized','position',[.49 .1 .05 .3])
-        %
-        %
-        %         prain=[prctile(handles_out.all_div_dFFspm(:),1):(prctile(handles_out.all_div_dFFspm(:),99)-prctile(handles_out.all_div_dFFspm(:),1))/99:prctile(handles_out.all_div_dFFspm(:),99)];
-        %         pcolor(repmat([1:10],100,1)',repmat(prain,10,1),repmat(prain,10,1))
-        %         %             colormap jet
-        %         colormap fire
-        %         shading interp
-        %         ax=gca;
-        %         set(ax,'XTickLabel','')
-        %
-        %         %Generate a histogram for the magnitude of the responses
-        %
-        %         %     handles_out.all_div_t=[];
-        %         %     handles_out.all_div_delta_dFFsplus=[];
-        %         %     handles_out.all_div_delta_dFFsminus=[];
-        %
-        %         figureNo=figureNo+1;
-        %         try
-        %             close(figureNo)
-        %         catch
-        %         end
-        %
-        %         hFig = figure(figureNo);
-        %
-        %         set(hFig, 'units','normalized','position',[.2 .2 .4 .3])
-        %
-        %         edges=-0.5:0.5:4;
-        %         histogram(handles_out.all_div_delta_dFFsplus,edges,'FaceColor',[0 114/255 178/255])
-        %         hold on
-        %         histogram(handles_out.all_div_delta_dFFsminus,edges,'FaceColor',[158/255 31/255 99/255])
-        %
-        %         ylabel('No of ROIs')
-        %         xlabel('Delta zdFF')
-        %         title('Histogram for Delta zdFF')
-        %
-        %         this_ylim=ylim;
-        %
-        %         text(2.5,this_ylim(1)+0.85*(this_ylim(2)-this_ylim(1)),'S+','Color',[0 114/255 178/255],'FontSize',16)
-        %         text(2.5,this_ylim(1)+0.75*(this_ylim(2)-this_ylim(1)),'S-','Color',[158/255 31/255 99/255],'FontSize',16)
-        %
-        %         figureNo=figureNo+1;
-        %         try
-        %             close(figureNo)
-        %         catch
-        %         end
-        %
-        %         hFig = figure(figureNo);
-        %
-        %         set(hFig, 'units','normalized','position',[.2 .2 .3 .3])
-        %
-        %         plot(handles_out.all_div_delta_dFFsminus,handles_out.all_div_delta_dFFsplus,'ok')
-        %
-        %         ylabel('S+')
-        %         xlabel('S-')
-        %         title('Delta zdFF')
-        %
-        %         %Divergence time
-        %         figureNo=figureNo+1;
-        %         try
-        %             close(figureNo)
-        %         catch
-        %         end
-        %
-        %         hFig = figure(figureNo);
-        %
-        %         set(hFig, 'units','normalized','position',[.2 .2 .4 .3])
-        %
-        %         edges=[-1.75:0.5:5.25];
-        %         histogram(handles_out.all_div_t(~isnan(handles_out.all_div_t)),edges)
-        %
-        %         ylabel('No of ROIs')
-        %         xlabel('Divegence time')
-        %         title('Histogram for divergence time')
-
-
-    end
+%     %Now generate the summary figures for the divergent responses
+% 
+%     if handles_out.all_spresp_ii_dFF+handles_out.all_smresp_ii_dFF>5
+%         %Calculate the crosscorrelations
+%         %     croscorr_traces=abs(corrcoef(handles_out.all_div_dFFspm)); %please note that I am using the absolute value
+%         all_spandmresp_dFFspm=[handles_out.all_spresp_dFFspm handles_out.all_smresp_dFFspm];
+%         all_spandmresp_iidFF=[1:handles_out.all_spresp_ii_dFF 1:handles_out.all_smresp_ii_dFF];
+%         all_spandmresp_sporsm=[ones(1,handles_out.all_spresp_ii_dFF) zeros(1,handles_out.all_smresp_ii_dFF)];
+%         croscorr_traces=corrcoef(all_spandmresp_dFFspm);
+% 
+%         %Set autocorrelations to zero
+%         for ii=1:size(croscorr_traces,1)
+%             croscorr_traces(ii,ii)=0;
+%         end
+%         Z = linkage(croscorr_traces,'complete','correlation');
+%         no_clusters=2; %This is set for Fabio's analysis
+%         clusters = cluster(Z,'Maxclust',no_clusters);
+%         figureNo=figureNo+1;
+%         try
+%             close(figureNo)
+%         catch
+%         end
+% 
+%         hFig = figure(figureNo);
+%         %Do cutoff for 4 clusters
+%         cutoff = median([Z(end-(no_clusters-1),3) Z(end-(no_clusters-2),3)]);
+%         [H,T,outperm]=dendrogram(Z,0,'Orientation','left','ColorThreshold',cutoff);
+%         set(H,'LineWidth',2)
+%         hFig=figure(figureNo);
+%         set(hFig, 'units','normalized','position',[.05 .1 .14 .8])
+% 
+%         %re-sort the matrix
+%         for ii=1:size(croscorr_traces,1)
+%             for jj=1:size(croscorr_traces,1)
+%                 perm_croscorr_traces(ii,jj)=croscorr_traces(outperm(ii),outperm(jj));
+%             end
+%         end
+% 
+% 
+% 
+%         figureNo=figureNo+1;
+%         try
+%             close(figureNo)
+%         catch
+%         end
+% 
+%         hFig = figure(figureNo);
+% 
+%         set(hFig, 'units','normalized','position',[.15 .1 .6 .8])
+%         hold on
+%         pcolor(perm_croscorr_traces)
+%         colormap fire
+%         shading flat
+% 
+%         caxis([-1    1])
+%         title(['Cross correlations for all ROIs'])
+%         xlim([1 handles_out.all_spresp_ii_dFF+handles_out.all_smresp_ii_dFF])
+%         ylim([1 handles_out.all_spresp_ii_dFF+handles_out.all_smresp_ii_dFF])
+% 
+%         %Plot rainbow
+%         figureNo=figureNo+1;
+%         try
+%             close(figureNo)
+%         catch
+%         end
+% 
+%         hFig = figure(figureNo);
+% 
+%         set(hFig, 'units','normalized','position',[.49 .1 .05 .3])
+% 
+% 
+%         prain=[0:0.6/99:0.6];
+%         pcolor(repmat([1:10],100,1)',repmat(prain,10,1),repmat(prain,10,1))
+%         %             colormap jet
+%         colormap fire
+%         shading interp
+%         ax=gca;
+%         set(ax,'XTickLabel','')
+% 
+%         %Plot timecourses for all ROIs for S+ and S-
+% 
+%         figureNo=figureNo+1;
+%         try
+%             close(figureNo)
+%         catch
+%         end
+% 
+%         hFig = figure(figureNo);
+% 
+%         set(hFig, 'units','normalized','position',[.05 .1 .3 .8])
+%         hold on
+% 
+% 
+% 
+%         sorted_handles_out.all_spmresp_ii_dFF=0;
+%         sorted_handles_out.all_spmresp_sporsm=[];
+%         sorted_handles_out.all_sporsm_dFFspm=[];
+%         sorted_handles_out.clusters=[];
+%         for ii=1:length(all_spandmresp_iidFF)
+%             this_ii_dFF=all_spandmresp_iidFF(outperm(ii));
+%             this_sporsm=all_spandmresp_sporsm(outperm(ii));
+%             sorted_handles_out.all_spmresp_ii_dFF=sorted_handles_out.all_spmresp_ii_dFF+1;
+%             if this_sporsm==0
+%                 %This is S-
+%                 sorted_handles_out.all_sporsm_dFFspm(sorted_handles_out.all_spmresp_ii_dFF,:)=handles_out.all_smresp_dFFsminus(this_ii_dFF,:);
+%             else
+%                 %This is S+
+%                 sorted_handles_out.all_sporsm_dFFspm(sorted_handles_out.all_spmresp_ii_dFF,:)=handles_out.all_spresp_dFFsplus(this_ii_dFF,:);
+%             end
+%             sorted_handles_out.clusters(sorted_handles_out.all_spmresp_ii_dFF)=clusters(outperm(ii));
+%         end
+% 
+%         %pcolor does not show the first row
+%         pseudo_dFFspm=zeros(size(sorted_handles_out.all_sporsm_dFFspm,1)+1,size(sorted_handles_out.all_sporsm_dFFspm,2));
+%         pseudo_dFFspm(1:end-1,:)=sorted_handles_out.all_sporsm_dFFspm;
+% 
+%         time_span_mat=repmat(time_span,sorted_handles_out.all_spmresp_ii_dFF+1,1);
+%         ROI_mat=repmat(1:sorted_handles_out.all_spmresp_ii_dFF+1,length(time_span),1)';
+% 
+%         pcolor(time_span_mat,ROI_mat,pseudo_dFFspm)
+% 
+% 
+%         %         time_span_mat=repmat(time_span,sorted_handles_out.all_spmresp_ii_dFF,1);
+%         %         ROI_mat=repmat(1:sorted_handles_out.all_spmresp_ii_dFF,length(time_span),1)';
+%         %
+%         %         pcolor(time_span_mat,ROI_mat,sorted_handles_out.all_sporsm_dFFspm)
+% 
+%         colormap fire
+%         shading flat
+% 
+%         caxis([prctile(sorted_handles_out.all_sporsm_dFFspm(:),1) prctile(sorted_handles_out.all_sporsm_dFFspm(:),99)])
+% 
+%         for ii_te=1:length(timeEvents)
+%             plot([timeEvents(ii_te) timeEvents(ii_te)],[0 sorted_handles_out.all_spmresp_ii_dFF],'-r')
+%         end
+% 
+%         xlim([-7 15])
+%         ylim([1 ii])
+%         title(['Timecourses for S+ and S- with significant odor changes, all ROIs'])
+%         xlabel('Time (sec)')
+%         ylabel('ROI number')
+% 
+% 
+% 
+%         %Plot the average timecourses per cluster
+%         for clus=1:max(clusters)
+%             figureNo = figureNo + 1;
+%             try
+%                 close(figureNo)
+%             catch
+%             end
+%             hFig=figure(figureNo);
+% 
+%             ax=gca;ax.LineWidth=3;
+%             set(hFig, 'units','normalized','position',[.3 .2 .3 .3])
+% 
+% 
+%             hold on
+% 
+%             %get the dF/F
+% 
+% 
+%             try
+% 
+% 
+%                 this_cluster_dFF=[];
+%                 ii_included=0;
+%                 for ii=1:length(sorted_handles_out.clusters)
+%                     if sorted_handles_out.clusters(ii)==clus
+%                         ii_included=ii_included+1;
+%                         this_cluster_dFF(ii_included,:)=sorted_handles_out.all_sporsm_dFFspm(ii,:);
+%                     end
+%                 end
+% 
+% 
+%                 CIpv = bootci(1000, @mean, this_cluster_dFF);
+%                 meanpv=mean(this_cluster_dFF,1);
+%                 CIpv(1,:)=meanpv-CIpv(1,:);
+%                 CIpv(2,:)=CIpv(2,:)-meanpv;
+% 
+% 
+%                 [hlpvl, hppvl] = boundedline(time_span,mean(this_cluster_dFF), CIpv','cmap',[0 0 0]);
+% 
+% 
+% 
+%             catch
+%             end
+% 
+%             this_ylim=ylim;
+%             for ii_te=1:length(timeEvents)
+%                 plot([timeEvents(ii_te) timeEvents(ii_te)],this_ylim,'-k')
+%             end
+% 
+%             xlim([-7 15])
+% 
+% 
+%             xlabel('Time(sec)')
+%             ylabel('dFF')
+% 
+% 
+%             title(['dFF for cluster no ' num2str(clus)])
+% 
+%         end
+% 
+% 
+%         %         %Now plot the timecourses per group
+%         %         for grNo=1:3
+%         %
+%         %             switch grNo
+%         %                 case 1
+%         %                     ROIs_included=(handles_out.all_div_dFFspm_pcorr>=45)&(handles_out.all_div_dFFspm_pcorr<=65);
+%         %                 case 2
+%         %                     ROIs_included=(handles_out.all_div_dFFspm_pcorr>65)&(handles_out.all_div_dFFspm_pcorr<80);
+%         %                 case 3
+%         %                     ROIs_included=(handles_out.all_div_dFFspm_pcorr>=80);
+%         %             end
+%         %
+%         %             if sum(ROIs_included)>0
+%         %
+%         %                 %S+
+%         %                 figureNo=figureNo+1;
+%         %                 try
+%         %                     close(figureNo)
+%         %                 catch
+%         %                 end
+%         %
+%         %                 hFig = figure(figureNo);
+%         %
+%         %                 set(hFig, 'units','normalized','position',[.05 .1 .3 .8])
+%         %                 hold on
+%         %
+%         %
+%         %
+%         %                 sorted_handles_out.all_div_dFFsplus=[];
+%         %                 ii_included=0;
+%         %                 for ii=1:handles_out.all_div_ii_dFF
+%         %                     if ROIs_included(ii)
+%         %                         ii_included=ii_included+1;
+%         %                         sorted_handles_out.all_div_dFFsplus(ii_included,:)=handles_out.all_div_dFFsplus(outperm(ii),:);
+%         %                     end
+%         %                 end
+%         %
+%         %                 time_span_mat=repmat(time_span,ii_included,1);
+%         %                 ROI_mat=repmat(1:ii_included,length(time_span),1)';
+%         %
+%         %                 pcolor(time_span_mat,ROI_mat,sorted_handles_out.all_div_dFFsplus)
+%         %                 colormap fire
+%         %                 shading flat
+%         %
+%         %                 caxis([prctile(handles_out.all_div_dFFspm(:),1) prctile(handles_out.all_div_dFFspm(:),99)])
+%         %
+%         %                 for ii_te=1:length(timeEvents)
+%         %                     plot([timeEvents(ii_te) timeEvents(ii_te)],[0 handles_out.all_div_ii_dFF],'-r')
+%         %                 end
+%         %
+%         %                 xlim([-7 15])
+%         %                 ylim([1 ii_included])
+%         %                 title(['S+ ' per_names{grNo+1}])
+%         %                 xlabel('Time (sec)')
+%         %                 ylabel('ROI number')
+%         %
+%         %                 %S-
+%         %                 figureNo=figureNo+1;
+%         %                 try
+%         %                     close(figureNo)
+%         %                 catch
+%         %                 end
+%         %
+%         %                 hFig = figure(figureNo);
+%         %
+%         %                 set(hFig, 'units','normalized','position',[.05 .1 .3 .8])
+%         %                 hold on
+%         %
+%         %
+%         %
+%         %                 sorted_handles_out.all_div_dFFsminus=[];
+%         %                 ii_included=0;
+%         %                 for ii=1:handles_out.all_div_ii_dFF
+%         %                     if ROIs_included(ii)
+%         %                         ii_included=ii_included+1;
+%         %                         sorted_handles_out.all_div_dFFsminus(ii_included,:)=handles_out.all_div_dFFsminus(outperm(ii),:);
+%         %                     end
+%         %                 end
+%         %
+%         %                 time_span_mat=repmat(time_span,ii_included,1);
+%         %                 ROI_mat=repmat(1:ii_included,length(time_span),1)';
+%         %
+%         %                 pcolor(time_span_mat,ROI_mat,sorted_handles_out.all_div_dFFsminus)
+%         %                 colormap fire
+%         %                 shading flat
+%         %
+%         %                 caxis([prctile(handles_out.all_div_dFFspm(:),1) prctile(handles_out.all_div_dFFspm(:),99)])
+%         %
+%         %                 for ii_te=1:length(timeEvents)
+%         %                     plot([timeEvents(ii_te) timeEvents(ii_te)],[0 handles_out.all_div_ii_dFF],'-r')
+%         %                 end
+%         %
+%         %                 xlim([-7 15])
+%         %                 ylim([1 ii_included])
+%         %                 title(['S- ' per_names{grNo+1}])
+%         %                 xlabel('Time (sec)')
+%         %                 ylabel('ROI number')
+%         %             end
+%         %         end
+%         %
+%         %         %Plot rainbow
+%         %         figureNo=figureNo+1;
+%         %         try
+%         %             close(figureNo)
+%         %         catch
+%         %         end
+%         %
+%         %         hFig = figure(figureNo);
+%         %
+%         %         set(hFig, 'units','normalized','position',[.49 .1 .05 .3])
+%         %
+%         %
+%         %         prain=[prctile(handles_out.all_div_dFFspm(:),1):(prctile(handles_out.all_div_dFFspm(:),99)-prctile(handles_out.all_div_dFFspm(:),1))/99:prctile(handles_out.all_div_dFFspm(:),99)];
+%         %         pcolor(repmat([1:10],100,1)',repmat(prain,10,1),repmat(prain,10,1))
+%         %         %             colormap jet
+%         %         colormap fire
+%         %         shading interp
+%         %         ax=gca;
+%         %         set(ax,'XTickLabel','')
+%         %
+%         %         %Generate a histogram for the magnitude of the responses
+%         %
+%         %         %     handles_out.all_div_t=[];
+%         %         %     handles_out.all_div_delta_dFFsplus=[];
+%         %         %     handles_out.all_div_delta_dFFsminus=[];
+%         %
+%         %         figureNo=figureNo+1;
+%         %         try
+%         %             close(figureNo)
+%         %         catch
+%         %         end
+%         %
+%         %         hFig = figure(figureNo);
+%         %
+%         %         set(hFig, 'units','normalized','position',[.2 .2 .4 .3])
+%         %
+%         %         edges=-0.5:0.5:4;
+%         %         histogram(handles_out.all_div_delta_dFFsplus,edges,'FaceColor',[0 114/255 178/255])
+%         %         hold on
+%         %         histogram(handles_out.all_div_delta_dFFsminus,edges,'FaceColor',[158/255 31/255 99/255])
+%         %
+%         %         ylabel('No of ROIs')
+%         %         xlabel('Delta zdFF')
+%         %         title('Histogram for Delta zdFF')
+%         %
+%         %         this_ylim=ylim;
+%         %
+%         %         text(2.5,this_ylim(1)+0.85*(this_ylim(2)-this_ylim(1)),'S+','Color',[0 114/255 178/255],'FontSize',16)
+%         %         text(2.5,this_ylim(1)+0.75*(this_ylim(2)-this_ylim(1)),'S-','Color',[158/255 31/255 99/255],'FontSize',16)
+%         %
+%         %         figureNo=figureNo+1;
+%         %         try
+%         %             close(figureNo)
+%         %         catch
+%         %         end
+%         %
+%         %         hFig = figure(figureNo);
+%         %
+%         %         set(hFig, 'units','normalized','position',[.2 .2 .3 .3])
+%         %
+%         %         plot(handles_out.all_div_delta_dFFsminus,handles_out.all_div_delta_dFFsplus,'ok')
+%         %
+%         %         ylabel('S+')
+%         %         xlabel('S-')
+%         %         title('Delta zdFF')
+%         %
+%         %         %Divergence time
+%         %         figureNo=figureNo+1;
+%         %         try
+%         %             close(figureNo)
+%         %         catch
+%         %         end
+%         %
+%         %         hFig = figure(figureNo);
+%         %
+%         %         set(hFig, 'units','normalized','position',[.2 .2 .4 .3])
+%         %
+%         %         edges=[-1.75:0.5:5.25];
+%         %         histogram(handles_out.all_div_t(~isnan(handles_out.all_div_t)),edges)
+%         %
+%         %         ylabel('No of ROIs')
+%         %         xlabel('Divegence time')
+%         %         title('Histogram for divergence time')
+% 
+% 
+%     end
     %Uncomment this if you want to browse through the figures
     %     tic
     %     for figNo=1:figureNo
@@ -2501,10 +2623,12 @@ if all_files_present==1
     pffft=1;
 
     switch use_pFDR
-        case {0, 1}
-            save([choiceBatchPathName choiceFileName(1:end-4) '.mat'],'handles','handles_out','handles_choices','handles_in','-v7.3')
         case 4
             save([choiceBatchPathName choiceFileName(1:end-4) 'glm.mat'],'handles','handles_out','handles_choices','handles_in','-v7.3')
+        case 5
+            save([choiceBatchPathName choiceFileName(1:end-4) 'boot.mat'],'handles','handles_out','handles_choices','handles_in','-v7.3') 
+        otherwise
+            save([choiceBatchPathName choiceFileName(1:end-4) '.mat'],'handles','handles_out','handles_choices','handles_in','-v7.3')
     end
 end
 

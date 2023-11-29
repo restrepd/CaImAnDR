@@ -43,7 +43,7 @@ use_pFDR=4; %0=use t-test or ranksum with p<p_value_sig, 1=use pFDR, 2=use boots
 
 pre_t_dprime=[-1.5 6.5];
 
-handles_in.min_tr_div=12;
+handles_in.min_tr_div=12; %Please note that these parameters are not used until the data are analyzed by drgCaImAn_analyze_pval_batch.m
 handles_in.min_tr_resp=6;
 
 switch use_pFDR

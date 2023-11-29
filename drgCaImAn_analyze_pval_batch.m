@@ -3,17 +3,17 @@
 %Displays the data generated with drgCaImAn_pval_batch
 clear all
 close all
-
+ 
 
 [outFileName,outhPathName] = uigetfile({'drgCaImAn_pval_choices*.mat'},'Select the .mat file with drgCaImAn_pval_batch');
 load([outhPathName outFileName])
-
+ 
 if ~isfield(handles_out,'use_pFDR')
     handles_out.use_pFDR=0;
 end
 time_span=handles_out.time_span;
 
-which_task=1; %0=spm, 1=passive Ming
+which_task=0; %0=spm, 1=passive Ming
 if which_task==1
     perCorr=50*ones(1,size(handles_out.perCorr,2));
     handles_out.perCorr=perCorr;
@@ -180,11 +180,26 @@ for grNo=groups
                 these_per_div=[];
                 for fileNo=1:length(files_included)
                     if files_included(fileNo)==1
-                        this_per_div=100*sum(handles_out.file(fileNo).output_data_odor.sig_div_glm)/length(handles_out.file(1).output_data_odor.sig_div_glm);
+                      this_per_div=100*sum(handles_out.file(fileNo).output_data_odor.sig_div_glm)/length(handles_out.file(fileNo).output_data_odor.sig_div_glm);
 
                         these_per_div=[these_per_div this_per_div];
 
                         total_ROIs_per_group_per_mouse(grNo,mouseNo)=total_ROIs_per_group_per_mouse(grNo,mouseNo)+sum(handles_out.file(fileNo).output_data_odor.sig_div_glm);
+
+                    end
+                end
+                if ~isempty(these_per_div)
+                    these_odor=[these_odor mean(these_per_div)];
+                end
+            case {5}
+                these_per_div=[];
+                for fileNo=1:length(files_included)
+                    if files_included(fileNo)==1
+                        this_per_div=100*sum(handles_out.file(fileNo).output_data_odor.sig_div)/length(handles_out.file(fileNo).output_data_odor.sig_div);
+
+                        these_per_div=[these_per_div this_per_div];
+
+                        total_ROIs_per_group_per_mouse(grNo,mouseNo)=total_ROIs_per_group_per_mouse(grNo,mouseNo)+sum(handles_out.file(fileNo).output_data_odor.sig_div);
 
                     end
                 end
@@ -345,7 +360,20 @@ for grNo=groups
                 these_per_resp=[];
                 for fileNo=1:length(files_included)
                     if files_included(fileNo)==1
-                        this_per_resp=100*sum(handles_out.file(fileNo).output_data_odor_Sp.sig_resp_glm)/length(handles_out.file(1).output_data_odor_Sp.sig_resp_glm);
+                        this_per_resp=100*sum(handles_out.file(fileNo).output_data_odor_Sp.sig_resp_glm)/length(handles_out.file(fileNo).output_data_odor_Sp.sig_resp_glm);
+
+                        these_per_resp=[these_per_resp this_per_resp];
+
+                    end
+                end
+                if ~isempty(these_per_resp)
+                    these_odor=[these_odor mean(these_per_resp)];
+                end
+            case {5}
+                these_per_resp=[];
+                for fileNo=1:length(files_included)
+                    if files_included(fileNo)==1
+                        this_per_resp=100*sum(handles_out.file(fileNo).output_data_odor_Sp.sig_resp)/length(handles_out.file(fileNo).output_data_odor_Sp.sig_resp);
 
                         these_per_resp=[these_per_resp this_per_resp];
 
@@ -511,6 +539,19 @@ for grNo=groups
                     for fileNo=1:length(files_included)
                         if files_included(fileNo)==1
                             this_per_resp=100*sum(handles_out.file(fileNo).output_data_odor_Sm.sig_resp_glm)/length(handles_out.file(1).output_data_odor_Sm.sig_resp_glm);
+
+                            these_per_resp=[these_per_resp this_per_resp];
+
+                        end
+                    end
+                    if ~isempty(these_per_resp)
+                        these_odor=[these_odor mean(these_per_resp)];
+                    end
+                case {5}
+                    these_per_resp=[];
+                    for fileNo=1:length(files_included)
+                        if files_included(fileNo)==1
+                            this_per_resp=100*sum(handles_out.file(fileNo).output_data_odor_Sm.sig_resp)/length(handles_out.file(fileNo).output_data_odor_Sm.sig_resp);
 
                             these_per_resp=[these_per_resp this_per_resp];
 
@@ -1232,7 +1273,7 @@ if handles_out.all_div_ii_dFF>5
             title(['Histogram for divergence time for ' per_names{grNo+1}])
         end
     end
-
+ 
     %Quantify changes in dFF
     pffft=1;
 

@@ -1,4 +1,4 @@
-function [sig_div,div_t]=drgCaImAn_bootstrap_dFF_div(handles_in)
+function [sig_div,div_t,total_trials]=drgCaImAn_bootstrap_dFF_div(handles_in)
 
 %First time for divergence
 all_done=0;
@@ -12,6 +12,8 @@ dFFsminus=handles_in.dFFsminus;
 dFFsplus=handles_in.dFFsplus;
 delta_dFF_for_sig=0.3; %0.3 works well
 safety_factor=1; %1.5 with delta_dFF_for_sig=0 too lenient
+
+total_trials=size(dFFsminus,2)+size(dFFsplus,2);
 
 show_figures=0;
 
