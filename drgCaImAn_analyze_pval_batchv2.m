@@ -1,13 +1,13 @@
 
-%drgCaImAn_analyze_pval_batch.m
+%drgCaImAn_analyze_pval_batch2.m
 %Displays the data generated with drgCaImAn_pval_batch
 clear all
 close all
- 
+
 
 [outFileName,outhPathName] = uigetfile({'drgCaImAn_pval_choices*.mat'},'Select the .mat file with drgCaImAn_pval_batch');
 load([outhPathName outFileName])
- 
+
 if ~isfield(handles_out,'use_pFDR')
     handles_out.use_pFDR=0;
 end
@@ -22,20 +22,20 @@ end
 s=rng;
 
 do_std=0;
-no_clusters=3;
+no_clusters=2;
 
-fr_per_names{1}='Fwd <40%';
-fr_per_names{2}='Fwd 40-65%';
-fr_per_names{3}='Fwd 65-80%';
-fr_per_names{4}='Fwd >=80%';
-fr_per_names{5}='Rev <40%';
-fr_per_names{6}='Rev 40-65%';
-fr_per_names{7}='Rev 65-80%';
-fr_per_names{8}='Rev >=80%';
+fr_per_names{1}='Fwd <40';
+fr_per_names{2}='Fwd 40-65';
+fr_per_names{3}='Fwd 65-80';
+fr_per_names{4}='Fwd >=80';
+fr_per_names{5}='Rev <40';
+fr_per_names{6}='Rev 40-65';
+fr_per_names{7}='Rev 65-80';
+fr_per_names{8}='Rev >=80';
 
-per_names{2}='40-65%';
-per_names{3}='65-80%';
-per_names{4}='>=80%';
+per_names{2}='40-65';
+per_names{3}='65-80';
+per_names{4}='>=80';
 
 naive_pro{1}='Learning';
 naive_pro{3}='Proficient';
@@ -62,6 +62,23 @@ else
     min_tr_div=12;
     min_tr_resp=6;
 end
+
+%Pairing of clusters
+cluster_pairing.group(1).clus(1)=2;
+cluster_pairing.group(1).clus(2)=1;
+% cluster_pairing.group(1).clus(3)=2;
+
+cluster_pairing.group(3).clus(1)=1;
+cluster_pairing.group(3).clus(2)=2;
+% cluster_pairing.group(3).clus(3)=3;
+
+clus_per_peak_ii=[1 2]; %Note I am using only one peak per cluster
+time_window_clus=[1 1.2];
+
+peak_ii_legends{1}='cluster 1';
+peak_ii_legends{2}='cluster 2';
+% peak_ii_legends{3}='cluster 2';
+% peak_ii_legends{4}='cluster 3';
 
 fileID = fopen([outhPathName 'drgCaImAn_analyze_pval_batch.txt'],'w');
 
@@ -112,7 +129,7 @@ switch handles.group_algo
         %Fabio
         groups=unique(handles.group);
 end
- 
+
 
 total_ROIs_per_group_per_mouse=zeros(max(groups),max((handles_out.mouseNo)));
 for grNo=groups
@@ -137,7 +154,7 @@ for grNo=groups
             %Fabio
             files_included_gr=(handles.group==grNo)&(handles_out.mouseNo==mouseNo)&files_included_glm;
     end
-    
+
     for mouseNo=unique(handles_out.mouseNo)
 
         switch handles.group_algo
@@ -155,7 +172,7 @@ for grNo=groups
                 %Fabio
                 files_included=(handles.group==grNo)&(handles_out.mouseNo==mouseNo)&files_included_glm;
         end
- 
+
         switch handles_out.use_pFDR
             case {0,1}
                 if sum(files_included)>0
@@ -180,7 +197,7 @@ for grNo=groups
                 these_per_div=[];
                 for fileNo=1:length(files_included)
                     if files_included(fileNo)==1
-                      this_per_div=100*sum(handles_out.file(fileNo).output_data_odor.sig_div_glm)/length(handles_out.file(fileNo).output_data_odor.sig_div_glm);
+                        this_per_div=100*sum(handles_out.file(fileNo).output_data_odor.sig_div_glm)/length(handles_out.file(fileNo).output_data_odor.sig_div_glm);
 
                         these_per_div=[these_per_div this_per_div];
 
@@ -208,7 +225,7 @@ for grNo=groups
                 end
         end
 
-    end 
+    end
 
     if ~isempty(these_odor)
         %             bar_offset=bar_offset+1;
@@ -272,14 +289,14 @@ title('Percent divergent ROIs per mouse')
 
 % %Perform the glm
 % fprintf(1, ['\nglm for percent divergent per mouse\n'])
-% 
-% 
+%
+%
 % tbl = table(glm_sig.data',glm_sig.grNo',...
 %     'VariableNames',{'percent_divergent','percent_correct'});
 % mdl = fitglm(tbl,'percent_divergent~percent_correct'...
 %     ,'CategoricalVars',[2])
-% 
-% 
+%
+%
 % txt = evalc('mdl');
 % txt=regexp(txt,'<strong>','split');
 % txt=cell2mat(txt);
@@ -410,9 +427,9 @@ for grNo=groups
 
         switch handles.group_algo
             case 1
-                input_sig_data(id_sig_ii).description=['Odor ' fr_per_names{grNo}];
+                input_sig_data(id_sig_ii).description=naive_pro{grNo};
             case 2
-                input_sig_data(id_sig_ii).description=['Odor ' handles.group_names{grNo}];
+                input_sig_data(id_sig_ii).description=naive_pro{grNo};
         end
     end
 
@@ -448,14 +465,14 @@ title('Percent ROIs responding to S+ per mouse')
 
 % %Perform the glm
 % fprintf(1, ['\nglm for percent responsive to S+ per mouse\n'])
-% 
-% 
+%
+%
 % tbl = table(glm_sig.data',glm_sig.grNo',...
 %     'VariableNames',{'percent_divergent','percent_correct'});
 % mdl = fitglm(tbl,'percent_divergent~percent_correct'...
 %     ,'CategoricalVars',[2])
-% 
-% 
+%
+%
 % txt = evalc('mdl');
 % txt=regexp(txt,'<strong>','split');
 % txt=cell2mat(txt);
@@ -590,12 +607,12 @@ for grNo=groups
     input_sig_data(id_sig_ii).data=these_odor;
 
 
-    
+
     switch handles.group_algo
         case 1
-            input_sig_data(id_sig_ii).description=['Odor ' fr_per_names{grNo}];
+            input_sig_data(id_sig_ii).description=naive_pro{grNo};
         case 2
-            input_sig_data(id_sig_ii).description=['Odor ' handles.group_names{grNo}];
+            input_sig_data(id_sig_ii).description=naive_pro{grNo};
     end
 
     bar_offset=bar_offset+1;
@@ -630,14 +647,14 @@ title('Percent ROIs responding to S-')
 
 % %Perform the glm
 % fprintf(1, ['\nglm for percent responsive to S-\n'])
-% 
-% 
+%
+%
 % tbl = table(glm_sig.data',glm_sig.grNo',...
 %     'VariableNames',{'percent_divergent','percent_correct'});
 % mdl = fitglm(tbl,'percent_divergent~percent_correct'...
 %     ,'CategoricalVars',[2])
-% 
-% 
+%
+%
 % txt = evalc('mdl');
 % txt=regexp(txt,'<strong>','split');
 % txt=cell2mat(txt);
@@ -651,257 +668,257 @@ if which_task==0
 end
 
 pffft=1;
- 
+
 
 
 %Now generate the summary figures for the divergent responses
 
 if handles_out.all_div_ii_dFF>5
-%     
-%     %Calculate the crosscorrelations
-%     croscorr_traces=corrcoef(handles_out.all_div_dFFspm);
-% 
-%     Z = linkage(croscorr_traces,'complete','correlation');
-% 
-%     clusters = cluster(Z,'Maxclust',no_clusters);
-%     figureNo=figureNo+1;
-%     try
-%         close(figureNo)
-%     catch
-%     end
-% 
-%     hFig = figure(figureNo);
-%     %Do cutoff for 4 clusters
-%     cutoff = median([Z(end-(no_clusters-1),3) Z(end-(no_clusters-2),3)]);
-%     [H,T,outperm]=dendrogram(Z,0,'Orientation','left','ColorThreshold',cutoff);
-%     set(H,'LineWidth',2)
-%     hFig=figure(figureNo);
-%     set(hFig, 'units','normalized','position',[.05 .1 .14 .8])
-% 
-%     %re-sort the matrix
-%     for ii=1:size(croscorr_traces,1)
-%         for jj=1:size(croscorr_traces,1)
-%             perm_croscorr_traces(ii,jj)=croscorr_traces(outperm(ii),outperm(jj));
-%         end
-%     end
-% 
-% 
-% 
-%     figureNo=figureNo+1;
-%     try
-%         close(figureNo)
-%     catch
-%     end
-% 
-%     hFig = figure(figureNo);
-% 
-%     set(hFig, 'units','normalized','position',[.15 .1 .6 .8])
-%     hold on
-%     pcolor(perm_croscorr_traces)
-%     colormap fire
-%     shading flat
-% 
-%     caxis([-1  1])
-%     title(['Cross correlations for all ROIs'])
-%     xlim([1 handles_out.all_div_ii_dFF])
-%     ylim([1 handles_out.all_div_ii_dFF])
-% 
-%     %Plot rainbow
-%     figureNo=figureNo+1;
-%     try
-%         close(figureNo)
-%     catch
-%     end
-% 
-%     hFig = figure(figureNo);
-% 
-%     set(hFig, 'units','normalized','position',[.49 .1 .03 .3])
-% 
-% 
-%     prain=[-1:2/99:1];
-%     pcolor(repmat([1:10],100,1)',repmat(prain,10,1),repmat(prain,10,1))
-%     %             colormap jet
-%     colormap fire
-%     shading interp
-%     ax=gca;
-%     set(ax,'XTickLabel','')
-% 
-%     %Plot timecourses for all ROIs
-%  
-% 
-%     %S+
-%     figureNo=figureNo+1;
-%     try
-%         close(figureNo)
-%     catch
-%     end
-% 
-%     hFig = figure(figureNo);
-% 
-%     set(hFig, 'units','normalized','position',[.05 .1 .18 .8])
-%     hold on
-% 
-% 
-% 
-%     sorted_handles_out.all_div_dFFsplus=[];
-%     for ii=1:handles_out.all_div_ii_dFF
-%         sorted_handles_out.all_div_dFFsplus(ii,:)=handles_out.all_div_dFFsplus(outperm(ii),:);
-%     end
-% 
-%     time_span_mat=repmat(time_span,ii,1);
-%     ROI_mat=repmat(1:ii,length(time_span),1)';
-% 
-%     pcolor(time_span_mat,ROI_mat,sorted_handles_out.all_div_dFFsplus)
-%     colormap fire
-%     shading flat
-% 
-%     caxis([prctile(handles_out.all_div_dFFspm(:),1) prctile(handles_out.all_div_dFFspm(:),99)])
-% 
-%     for ii_te=1:length(timeEvents)
-%         plot([timeEvents(ii_te) timeEvents(ii_te)],[0 handles_out.all_div_ii_dFF],'-r')
-%     end
-% 
-%     xlim([-7 15])
-%     ylim([1 ii])
-%     title(['S+ for all ROIs'])
-%     xlabel('Time (sec)')
-%     ylabel('ROI number')
-% 
-%     %S-
-%     figureNo=figureNo+1;
-%     try
-%         close(figureNo)
-%     catch
-%     end
-% 
-%     hFig = figure(figureNo);
-% 
-%     set(hFig, 'units','normalized','position',[.05 .1 .18 .8])
-%     hold on
-% 
-% 
-%     sorted_handles_out.all_div_dFFsminus=[];
-%     for ii=1:handles_out.all_div_ii_dFF
-%         sorted_handles_out.all_div_dFFsminus(ii,:)=handles_out.all_div_dFFsminus(outperm(ii),:);
-%     end
-% 
-%     time_span_mat=repmat(time_span,ii,1);
-%     ROI_mat=repmat(1:ii,length(time_span),1)';
-% 
-%     pcolor(time_span_mat,ROI_mat,sorted_handles_out.all_div_dFFsminus)
-%     colormap fire
-%     shading flat
-% 
-%     caxis([prctile(handles_out.all_div_dFFspm(:),1) prctile(handles_out.all_div_dFFspm(:),99)])
-% 
-%     for ii_te=1:length(timeEvents)
-%         plot([timeEvents(ii_te) timeEvents(ii_te)],[0 handles_out.all_div_ii_dFF],'-r')
-%     end
-% 
-%     xlim([-7 15])
-%     ylim([1 ii])
-%     title(['S- for all ROIs'])
-%     xlabel('Time (sec)')
-%     ylabel('ROI number')
-% 
-%     %Plot the average timecourses per cluster
-%     for clus=1:max(clusters)
-%         figureNo = figureNo + 1;
-%         try
-%             close(figureNo)
-%         catch
-%         end
-%         hFig=figure(figureNo);
-% 
-%         ax=gca;ax.LineWidth=3;
-%         set(hFig, 'units','normalized','position',[.3 .2 .3 .3])
-% 
-% 
-%         hold on
-% 
-%         %get the dF/F
-% 
-% 
-%         try
-% 
-%             %S-
-%             this_cluster_dFFsminus=[];
-%             ii_included=0;
-%             for ii=1:handles_out.all_div_ii_dFF
-%                 if clusters(ii)==clus
-%                     ii_included=ii_included+1;
-%                     this_cluster_dFFsminus(ii_included,:)=handles_out.all_div_dFFsminus(ii,:);
-%                 end
-%             end
-% 
-% 
-%             CIpv = bootci(1000, @mean, this_cluster_dFFsminus);
-%             meanpv=mean(this_cluster_dFFsminus,1);
-%             CIpv(1,:)=meanpv-CIpv(1,:);
-%             CIpv(2,:)=CIpv(2,:)-meanpv;
-% 
-% 
-%             [hlpvl, hppvl] = boundedline(time_span,mean(this_cluster_dFFsminus), CIpv','cmap',[158/255 31/255 99/255]);
-% 
-%             %S+
-%             this_cluster_dFFsplus=[];
-%             ii_included=0;
-%             for ii=1:handles_out.all_div_ii_dFF
-%                 if clusters(ii)==clus
-%                     ii_included=ii_included+1;
-%                     this_cluster_dFFsplus(ii_included,:)=handles_out.all_div_dFFsplus(ii,:);
-%                 end
-%             end
-% 
-%             CIpv = bootci(1000, @mean, this_cluster_dFFsplus);
-%             meanpv=mean(this_cluster_dFFsplus,1);
-%             CIpv(1,:)=meanpv-CIpv(1,:);
-%             CIpv(2,:)=CIpv(2,:)-meanpv;
-% 
-% 
-%             [hlpvl, hppvl] = boundedline(time_span, mean(this_cluster_dFFsplus), CIpv','cmap',[0 114/255 178/255]);
-% 
-% 
-%             plot(time_span',mean(this_cluster_dFFsminus)','Color',[158/255 31/255 99/255],'LineWidth',1.5);
-%             plot(time_span',mean(this_cluster_dFFsplus)','Color',[0 114/255 178/255],'LineWidth',1.5);
-% 
-% 
-% 
-%         catch
-%         end
-% 
-%         ylim([-0.5 1.5])
-%         xlim([-7 15])
-%         this_ylim=ylim;
-%         
-%         %FV
-%          fvhl=plot([-1.5 0],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-'...
-%              ,'MarkerEdgeColor',[0.9 0.9 0.9],'MarkerFaceColor',[0.9 0.9 0.9],'LineWidth',5);
-%         plot([-1.5 -1.5],[this_ylim],'-','Color',[0.5 0.5 0.5])
-% 
-%         %Odor on markers
-%         plot([0 0],this_ylim,'-k')
-%         odorhl=plot([0 mean(delta_odor)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-k','LineWidth',5);
-%         plot([mean(delta_odor) mean(delta_odor)],this_ylim,'-k')
-% 
-%         %Reinforcement markers
-%         plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on)],this_ylim,'-r')
-%         reinfhl=plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on+delta_reinf)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-r','LineWidth',5);
-%         plot([mean(delta_odor_on_reinf_on+delta_reinf) mean(delta_odor_on_reinf_on+delta_reinf)],this_ylim,'-r')
-% 
-% 
-%         xlabel('Time(sec)')
-%         ylabel('dFF')
-% 
-% 
-%         title(['dFF divergent for cluster no ' num2str(clus)])
-% 
-%     end
+    %
+    %     %Calculate the crosscorrelations
+    %     croscorr_traces=corrcoef(handles_out.all_div_dFFspm);
+    %
+    %     Z = linkage(croscorr_traces,'complete','correlation');
+    %
+    %     clusters = cluster(Z,'Maxclust',no_clusters);
+    %     figureNo=figureNo+1;
+    %     try
+    %         close(figureNo)
+    %     catch
+    %     end
+    %
+    %     hFig = figure(figureNo);
+    %     %Do cutoff for 4 clusters
+    %     cutoff = median([Z(end-(no_clusters-1),3) Z(end-(no_clusters-2),3)]);
+    %     [H,T,outperm]=dendrogram(Z,0,'Orientation','left','ColorThreshold',cutoff);
+    %     set(H,'LineWidth',2)
+    %     hFig=figure(figureNo);
+    %     set(hFig, 'units','normalized','position',[.05 .1 .14 .8])
+    %
+    %     %re-sort the matrix
+    %     for ii=1:size(croscorr_traces,1)
+    %         for jj=1:size(croscorr_traces,1)
+    %             perm_croscorr_traces(ii,jj)=croscorr_traces(outperm(ii),outperm(jj));
+    %         end
+    %     end
+    %
+    %
+    %
+    %     figureNo=figureNo+1;
+    %     try
+    %         close(figureNo)
+    %     catch
+    %     end
+    %
+    %     hFig = figure(figureNo);
+    %
+    %     set(hFig, 'units','normalized','position',[.15 .1 .6 .8])
+    %     hold on
+    %     pcolor(perm_croscorr_traces)
+    %     colormap fire
+    %     shading flat
+    %
+    %     caxis([-1  1])
+    %     title(['Cross correlations for all ROIs'])
+    %     xlim([1 handles_out.all_div_ii_dFF])
+    %     ylim([1 handles_out.all_div_ii_dFF])
+    %
+    %     %Plot rainbow
+    %     figureNo=figureNo+1;
+    %     try
+    %         close(figureNo)
+    %     catch
+    %     end
+    %
+    %     hFig = figure(figureNo);
+    %
+    %     set(hFig, 'units','normalized','position',[.49 .1 .03 .3])
+    %
+    %
+    %     prain=[-1:2/99:1];
+    %     pcolor(repmat([1:10],100,1)',repmat(prain,10,1),repmat(prain,10,1))
+    %     %             colormap jet
+    %     colormap fire
+    %     shading interp
+    %     ax=gca;
+    %     set(ax,'XTickLabel','')
+    %
+    %     %Plot timecourses for all ROIs
+    %
+    %
+    %     %S+
+    %     figureNo=figureNo+1;
+    %     try
+    %         close(figureNo)
+    %     catch
+    %     end
+    %
+    %     hFig = figure(figureNo);
+    %
+    %     set(hFig, 'units','normalized','position',[.05 .1 .18 .8])
+    %     hold on
+    %
+    %
+    %
+    %     sorted_handles_out.all_div_dFFsplus=[];
+    %     for ii=1:handles_out.all_div_ii_dFF
+    %         sorted_handles_out.all_div_dFFsplus(ii,:)=handles_out.all_div_dFFsplus(outperm(ii),:);
+    %     end
+    %
+    %     time_span_mat=repmat(time_span,ii,1);
+    %     ROI_mat=repmat(1:ii,length(time_span),1)';
+    %
+    %     pcolor(time_span_mat,ROI_mat,sorted_handles_out.all_div_dFFsplus)
+    %     colormap fire
+    %     shading flat
+    %
+    %     caxis([prctile(handles_out.all_div_dFFspm(:),1) prctile(handles_out.all_div_dFFspm(:),99)])
+    %
+    %     for ii_te=1:length(timeEvents)
+    %         plot([timeEvents(ii_te) timeEvents(ii_te)],[0 handles_out.all_div_ii_dFF],'-r')
+    %     end
+    %
+    %     xlim([-7 15])
+    %     ylim([1 ii])
+    %     title(['S+ for all ROIs'])
+    %     xlabel('Time (sec)')
+    %     ylabel('ROI number')
+    %
+    %     %S-
+    %     figureNo=figureNo+1;
+    %     try
+    %         close(figureNo)
+    %     catch
+    %     end
+    %
+    %     hFig = figure(figureNo);
+    %
+    %     set(hFig, 'units','normalized','position',[.05 .1 .18 .8])
+    %     hold on
+    %
+    %
+    %     sorted_handles_out.all_div_dFFsminus=[];
+    %     for ii=1:handles_out.all_div_ii_dFF
+    %         sorted_handles_out.all_div_dFFsminus(ii,:)=handles_out.all_div_dFFsminus(outperm(ii),:);
+    %     end
+    %
+    %     time_span_mat=repmat(time_span,ii,1);
+    %     ROI_mat=repmat(1:ii,length(time_span),1)';
+    %
+    %     pcolor(time_span_mat,ROI_mat,sorted_handles_out.all_div_dFFsminus)
+    %     colormap fire
+    %     shading flat
+    %
+    %     caxis([prctile(handles_out.all_div_dFFspm(:),1) prctile(handles_out.all_div_dFFspm(:),99)])
+    %
+    %     for ii_te=1:length(timeEvents)
+    %         plot([timeEvents(ii_te) timeEvents(ii_te)],[0 handles_out.all_div_ii_dFF],'-r')
+    %     end
+    %
+    %     xlim([-7 15])
+    %     ylim([1 ii])
+    %     title(['S- for all ROIs'])
+    %     xlabel('Time (sec)')
+    %     ylabel('ROI number')
+    %
+    %     %Plot the average timecourses per cluster
+    %     for clus=1:max(clusters)
+    %         figureNo = figureNo + 1;
+    %         try
+    %             close(figureNo)
+    %         catch
+    %         end
+    %         hFig=figure(figureNo);
+    %
+    %         ax=gca;ax.LineWidth=3;
+    %         set(hFig, 'units','normalized','position',[.3 .2 .3 .3])
+    %
+    %
+    %         hold on
+    %
+    %         %get the dF/F
+    %
+    %
+    %         try
+    %
+    %             %S-
+    %             this_cluster_dFFsminus=[];
+    %             ii_included=0;
+    %             for ii=1:handles_out.all_div_ii_dFF
+    %                 if clusters(ii)==clus
+    %                     ii_included=ii_included+1;
+    %                     this_cluster_dFFsminus(ii_included,:)=handles_out.all_div_dFFsminus(ii,:);
+    %                 end
+    %             end
+    %
+    %
+    %             CIpv = bootci(1000, @mean, this_cluster_dFFsminus);
+    %             meanpv=mean(this_cluster_dFFsminus,1);
+    %             CIpv(1,:)=meanpv-CIpv(1,:);
+    %             CIpv(2,:)=CIpv(2,:)-meanpv;
+    %
+    %
+    %             [hlpvl, hppvl] = boundedline(time_span,mean(this_cluster_dFFsminus), CIpv','cmap',[158/255 31/255 99/255]);
+    %
+    %             %S+
+    %             this_cluster_dFFsplus=[];
+    %             ii_included=0;
+    %             for ii=1:handles_out.all_div_ii_dFF
+    %                 if clusters(ii)==clus
+    %                     ii_included=ii_included+1;
+    %                     this_cluster_dFFsplus(ii_included,:)=handles_out.all_div_dFFsplus(ii,:);
+    %                 end
+    %             end
+    %
+    %             CIpv = bootci(1000, @mean, this_cluster_dFFsplus);
+    %             meanpv=mean(this_cluster_dFFsplus,1);
+    %             CIpv(1,:)=meanpv-CIpv(1,:);
+    %             CIpv(2,:)=CIpv(2,:)-meanpv;
+    %
+    %
+    %             [hlpvl, hppvl] = boundedline(time_span, mean(this_cluster_dFFsplus), CIpv','cmap',[0 114/255 178/255]);
+    %
+    %
+    %             plot(time_span',mean(this_cluster_dFFsminus)','Color',[158/255 31/255 99/255],'LineWidth',1.5);
+    %             plot(time_span',mean(this_cluster_dFFsplus)','Color',[0 114/255 178/255],'LineWidth',1.5);
+    %
+    %
+    %
+    %         catch
+    %         end
+    %
+    %         ylim([-0.5 1.5])
+    %         xlim([-7 15])
+    %         this_ylim=ylim;
+    %
+    %         %FV
+    %          fvhl=plot([-1.5 0],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-'...
+    %              ,'MarkerEdgeColor',[0.9 0.9 0.9],'MarkerFaceColor',[0.9 0.9 0.9],'LineWidth',5);
+    %         plot([-1.5 -1.5],[this_ylim],'-','Color',[0.5 0.5 0.5])
+    %
+    %         %Odor on markers
+    %         plot([0 0],this_ylim,'-k')
+    %         odorhl=plot([0 mean(delta_odor)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-k','LineWidth',5);
+    %         plot([mean(delta_odor) mean(delta_odor)],this_ylim,'-k')
+    %
+    %         %Reinforcement markers
+    %         plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on)],this_ylim,'-r')
+    %         reinfhl=plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on+delta_reinf)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-r','LineWidth',5);
+    %         plot([mean(delta_odor_on_reinf_on+delta_reinf) mean(delta_odor_on_reinf_on+delta_reinf)],this_ylim,'-r')
+    %
+    %
+    %         xlabel('Time(sec)')
+    %         ylabel('dFF')
+    %
+    %
+    %         title(['dFF divergent for cluster no ' num2str(clus)])
+    %
+    %     end
 
 
     %Now plot the timecourses per group
     divergence_times_per_group=[];
-    dFF_timecourse_per_clus=[]
+    dFF_timecourse_per_clus=[];
     for grNo=[1 3]
 
         switch grNo
@@ -935,8 +952,8 @@ if handles_out.all_div_ii_dFF>5
             these_all_div_t(1,:)=handles_out.all_div_t(1,logical(ROIs_included));
 
 
-%             croscorr_traces=corrcoef(these_all_div_dFFspm);
-             croscorr_traces=corrcoef(these_all_div_dFFsminus);
+            %             croscorr_traces=corrcoef(these_all_div_dFFspm);
+            croscorr_traces=corrcoef(these_all_div_dFFsminus);
 
             Z = linkage(croscorr_traces,'complete','correlation');
 
@@ -1060,8 +1077,14 @@ if handles_out.all_div_ii_dFF>5
             xlabel('Time (sec)')
             ylabel('ROI number')
 
+
+
             %Plot the average timecourses per cluster
             for clus=1:max(clusters)
+                %Report the number of ROIs per cluster
+                fprintf(1, ['\nFor '  per_names{grNo+1} ' cluster No ' num2str(clus) ' has ' num2str(sum(clusters==clus)) ' ROIs\n'])
+
+                %Plot the average of this cluster
                 figureNo = figureNo + 1;
                 try
                     close(figureNo)
@@ -1089,7 +1112,7 @@ if handles_out.all_div_ii_dFF>5
                             this_cluster_dFFsminus(ii_included,:)=these_all_div_dFFsminus(:,ii)';
                         end
                     end
-                    
+
                     dFF_timecourse_per_clus.group(grNo).cluster(clus).sminus_timecourses=this_cluster_dFFsminus;
 
                     if do_std==0
@@ -1173,14 +1196,14 @@ if handles_out.all_div_ii_dFF>5
 
             %Plot the relationship between delta dFFs with a different
             %color per cluster
-%             these_all_delta_dFFsplus=zeros(1,sum(ROIs_included));
-%             these_all_delta_dFFsplus(1,:)=handles_out.all_div_delta_dFFsplus(1,logical(ROIs_included));
-% 
-%             these_all_delta_dFFsminus=zeros(1,sum(ROIs_included));
-%             these_all_delta_dFFsminus(1,:)=handles_out.all_div_delta_dFFsminus(1,logical(ROIs_included));
-% 
-%             these_all_div_t=zeros(1,sum(ROIs_included));
-%             these_all_div_t(1,:)=handles_out.all_div_t(1,logical(ROIs_included));
+            %             these_all_delta_dFFsplus=zeros(1,sum(ROIs_included));
+            %             these_all_delta_dFFsplus(1,:)=handles_out.all_div_delta_dFFsplus(1,logical(ROIs_included));
+            %
+            %             these_all_delta_dFFsminus=zeros(1,sum(ROIs_included));
+            %             these_all_delta_dFFsminus(1,:)=handles_out.all_div_delta_dFFsminus(1,logical(ROIs_included));
+            %
+            %             these_all_div_t=zeros(1,sum(ROIs_included));
+            %             these_all_div_t(1,:)=handles_out.all_div_t(1,logical(ROIs_included));
 
             figureNo=figureNo+1;
             try
@@ -1214,6 +1237,8 @@ if handles_out.all_div_ii_dFF>5
                 this_ii=find(clusters==clus,1,'first');
                 cluster_colors(clus,:)=X_color(this_ii,:);
             end
+
+            these_cluster_colors=cluster_colors
 
             for clus=1:max(clusters)
 
@@ -1251,49 +1276,35 @@ if handles_out.all_div_ii_dFF>5
 
 
             %Divergence time
-            figureNo=figureNo+1;
-            try
-                close(figureNo)
-            catch
-            end
-
-            hFig = figure(figureNo);
-
-            set(hFig, 'units','normalized','position',[.2 .2 .4 .3])
-
-            edges=[-1.5:0.5:6.5];
-
-            histogram(these_all_div_t,edges,'Normalization','probability')
+%             figureNo=figureNo+1;
+%             try
+%                 close(figureNo)
+%             catch
+%             end
+% 
+%             hFig = figure(figureNo);
+% 
+%             set(hFig, 'units','normalized','position',[.2 .2 .4 .3])
+% 
+%             edges=[-1.5:0.5:6.5];
+% 
+%             histogram(these_all_div_t,edges,'Normalization','probability')
             divergence_times_per_group.group(grNo).div_t=these_all_div_t;
 
-            xlim([-3 7])
-            %             ylim([0 120])
-            ylabel('No of ROIs')
-            xlabel('Divergence time')
-            title(['Histogram for divergence time for ' per_names{grNo+1}])
+%             xlim([-3 7])
+%             %             ylim([0 120])
+%             ylabel('No of ROIs')
+%             xlabel('Divergence time')
+%             title(['Histogram for divergence time for ' per_names{grNo+1}])
         end
     end
- 
+
     %Quantify changes in dFF
     pffft=1;
 
-    cluster_pairing.group(1).clus(1)=1;
-    cluster_pairing.group(1).clus(2)=2;
-    cluster_pairing.group(1).clus(3)=2;
 
-    cluster_pairing.group(3).clus(1)=2;
-    cluster_pairing.group(3).clus(2)=1;
-    cluster_pairing.group(3).clus(3)=2;
 
-    clus_per_clus_ii=[1 1 2 3];
-    time_window_clus=[1.5 10 1.3 0];
-
-    clus_ii_legends{1}='cluster 1 peak 1';
-    clus_ii_legends{2}='cluster 1 peak 2';
-    clus_ii_legends{3}='cluster 2';
-    clus_ii_legends{4}='cluster 3';
-
-    for clus_ii=1:4
+    for peak_ii=1:length(clus_per_peak_ii)
 
         figureNo=figureNo+1;
         try
@@ -1307,21 +1318,21 @@ if handles_out.all_div_ii_dFF>5
 
         hold on
 
-        clus=clus_per_clus_ii(clus_ii);
-        
-        this_time_window=[time_window_clus(clus_ii)-0.5 time_window_clus(clus_ii)+0.5];
+        clus=clus_per_peak_ii(peak_ii);
+
+        this_time_window=[time_window_clus(peak_ii)-0.5 time_window_clus(peak_ii)+0.5];
 
         glm_clus=[];
-        glm_clus_ii=0;
+        glm_peak_ii=0;
         input_clus_data=[];
-        id_clus_ii=0;
+        id_peak_ii=0;
         bar_offset=0;
 
         edges=[-1:0.05:5];
         rand_offset=0.4;
 
         for grNo =[1 3]
- 
+
             actual_clus=cluster_pairing.group(grNo).clus(clus);
 
             %do S-
@@ -1335,14 +1346,14 @@ if handles_out.all_div_ii_dFF>5
             [mean_out, CIout]=drgViolinPoint(these_dFF_minus...
                 ,edges,bar_offset,rand_offset,'k','k',1);
 
-            glm_clus.data(glm_clus_ii+1:glm_clus_ii+length(these_dFF_minus))=these_dFF_minus;
-            glm_clus.pcorr(glm_clus_ii+1:glm_clus_ii+length(these_dFF_minus))=grNo*ones(1,length(these_dFF_minus));
-            glm_clus.spm(glm_clus_ii+1:glm_clus_ii+length(these_dFF_minus))=0*ones(1,length(these_dFF_minus));
-            glm_clus_ii=glm_clus_ii+length(these_dFF_minus);
+            glm_clus.data(glm_peak_ii+1:glm_peak_ii+length(these_dFF_minus))=these_dFF_minus;
+            glm_clus.pcorr(glm_peak_ii+1:glm_peak_ii+length(these_dFF_minus))=grNo*ones(1,length(these_dFF_minus));
+            glm_clus.spm(glm_peak_ii+1:glm_peak_ii+length(these_dFF_minus))=0*ones(1,length(these_dFF_minus));
+            glm_peak_ii=glm_peak_ii+length(these_dFF_minus);
 
-            id_clus_ii=id_clus_ii+1;
-            input_clus_data(id_clus_ii).data=these_dFF_minus;
-            input_clus_data(id_clus_ii).description=[naive_pro{grNo} ' S-'];
+            id_peak_ii=id_peak_ii+1;
+            input_clus_data(id_peak_ii).data=these_dFF_minus;
+            input_clus_data(id_peak_ii).description=[naive_pro{grNo} ' S-'];
 
             %do S+
             these_dFF_plus=mean(dFF_timecourse_per_clus.group(grNo).cluster(actual_clus).splus_timecourses...
@@ -1357,28 +1368,28 @@ if handles_out.all_div_ii_dFF>5
 
             bar_offset=bar_offset+1;
 
-            glm_clus.data(glm_clus_ii+1:glm_clus_ii+length(these_dFF_plus))=these_dFF_plus;
-            glm_clus.pcorr(glm_clus_ii+1:glm_clus_ii+length(these_dFF_plus))=grNo*ones(1,length(these_dFF_plus));
-            glm_clus.spm(glm_clus_ii+1:glm_clus_ii+length(these_dFF_plus))=1*ones(1,length(these_dFF_plus));
-            glm_clus_ii=glm_clus_ii+length(these_dFF_plus);
+            glm_clus.data(glm_peak_ii+1:glm_peak_ii+length(these_dFF_plus))=these_dFF_plus;
+            glm_clus.pcorr(glm_peak_ii+1:glm_peak_ii+length(these_dFF_plus))=grNo*ones(1,length(these_dFF_plus));
+            glm_clus.spm(glm_peak_ii+1:glm_peak_ii+length(these_dFF_plus))=1*ones(1,length(these_dFF_plus));
+            glm_peak_ii=glm_peak_ii+length(these_dFF_plus);
 
-            id_clus_ii=id_clus_ii+1;
-            input_clus_data(id_clus_ii).data=these_dFF_plus;
-            input_clus_data(id_clus_ii).description=[naive_pro{grNo} ' S+'];
+            id_peak_ii=id_peak_ii+1;
+            input_clus_data(id_peak_ii).data=these_dFF_plus;
+            input_clus_data(id_peak_ii).description=[naive_pro{grNo} ' S+'];
         end
 
         xticks([1 2 4 5])
         xticklabels({'S-','S+','S-','S+'})
-      
+
         ylabel('zdFF')
 
-        title(['zdFF for ' clus_ii_legends{clus_ii}])
+        title(['zdFF for ' peak_ii_legends{peak_ii}])
 
 
 
         %Perform the glm for this cluster
-        fprintf(1, ['\nglm for zdFF for '  clus_ii_legends{clus_ii} '\n'])
-        fprintf(fileID, ['\nglm for zdFF for '  clus_ii_legends{clus_ii} '\n']);
+        fprintf(1, ['\nglm for zdFF for '  peak_ii_legends{peak_ii} '\n'])
+        fprintf(fileID, ['\nglm for zdFF for '  peak_ii_legends{peak_ii} '\n']);
 
         tbl = table(glm_clus.data',glm_clus.pcorr',glm_clus.spm',...
             'VariableNames',{'zdFF','p_correct','spm'});
@@ -1396,13 +1407,13 @@ if handles_out.all_div_ii_dFF>5
 
 
         %Do the ranksum/t-test
-        fprintf(1, ['\n\nRanksum or t-test p values for zdFF for ' clus_ii_legends{clus_ii} '\n'])
-        fprintf(fileID, ['\n\nRanksum or t-test p values for zdFF for ' clus_ii_legends{clus_ii} '\n']);
+        fprintf(1, ['\n\nRanksum or t-test p values for zdFF for ' peak_ii_legends{peak_ii} '\n'])
+        fprintf(fileID, ['\n\nRanksum or t-test p values for zdFF for ' peak_ii_legends{peak_ii} '\n']);
 
         [output_data] = drgMutiRanksumorTtest(input_clus_data, fileID,0);
 
     end
-
+ 
     %Divergence time
     figureNo=figureNo+1;
     try
@@ -1453,7 +1464,7 @@ if handles_out.all_div_ii_dFF>5
     title(['Divergence time cumulative probability'])
 
 
-     %Divergence time histogram
+    %Divergence time histogram
     figureNo=figureNo+1;
     try
         close(figureNo)
@@ -1603,397 +1614,397 @@ if handles_out.all_div_ii_dFF>5
 
 end
 
- 
-%Now generate the summary figures for the divergent responses
-
-if handles_out.all_spresp_ii_dFF+handles_out.all_smresp_ii_dFF>5
-    %Calculate the crosscorrelations
-    %     croscorr_traces=abs(corrcoef(handles_out.all_div_dFFspm)); %please note that I am using the absolute value
-    all_spandmresp_dFFspm=[handles_out.all_spresp_dFFspm handles_out.all_smresp_dFFspm];
-    all_spandmresp_iidFF=[1:handles_out.all_spresp_ii_dFF 1:handles_out.all_smresp_ii_dFF];
-    all_spandmresp_sporsm=[ones(1,handles_out.all_spresp_ii_dFF) zeros(1,handles_out.all_smresp_ii_dFF)];
-    croscorr_traces=corrcoef(all_spandmresp_dFFspm);
-
-    %Set autocorrelations to zero
-%     for ii=1:size(croscorr_traces,1)
-%         croscorr_traces(ii,ii)=0;
+%  
+% %Now generate the summary figures for the divergent responses
+% 
+% if handles_out.all_spresp_ii_dFF+handles_out.all_smresp_ii_dFF>5
+%     %Calculate the crosscorrelations
+%     %     croscorr_traces=abs(corrcoef(handles_out.all_div_dFFspm)); %please note that I am using the absolute value
+%     all_spandmresp_dFFspm=[handles_out.all_spresp_dFFspm handles_out.all_smresp_dFFspm];
+%     all_spandmresp_iidFF=[1:handles_out.all_spresp_ii_dFF 1:handles_out.all_smresp_ii_dFF];
+%     all_spandmresp_sporsm=[ones(1,handles_out.all_spresp_ii_dFF) zeros(1,handles_out.all_smresp_ii_dFF)];
+%     croscorr_traces=corrcoef(all_spandmresp_dFFspm);
+% 
+%     %Set autocorrelations to zero
+% %     for ii=1:size(croscorr_traces,1)
+% %         croscorr_traces(ii,ii)=0;
+% %     end
+%     Z = linkage(croscorr_traces,'complete','correlation');
+%     no_clusters=2; %Note that this is different
+%     clusters = cluster(Z,'Maxclust',no_clusters);
+%     figureNo=figureNo+1;
+%     try
+%         close(figureNo)
+%     catch
 %     end
-    Z = linkage(croscorr_traces,'complete','correlation');
-    no_clusters=2; %Note that this is different
-    clusters = cluster(Z,'Maxclust',no_clusters);
-    figureNo=figureNo+1;
-    try
-        close(figureNo)
-    catch
-    end
-
-    hFig = figure(figureNo);
-    %Do cutoff for 4 clusters
-    cutoff = median([Z(end-(no_clusters-1),3) Z(end-(no_clusters-2),3)]);
-    [H,T,outperm]=dendrogram(Z,0,'Orientation','left','ColorThreshold',cutoff);
-    set(H,'LineWidth',2)
-    hFig=figure(figureNo);
-    set(hFig, 'units','normalized','position',[.05 .1 .14 .8])
-
-    %re-sort the matrix
-    for ii=1:size(croscorr_traces,1)
-        for jj=1:size(croscorr_traces,1)
-            perm_croscorr_traces(ii,jj)=croscorr_traces(outperm(ii),outperm(jj));
-        end
-    end
-
-
-
-    figureNo=figureNo+1;
-    try
-        close(figureNo)
-    catch
-    end
-
-    hFig = figure(figureNo);
-
-    set(hFig, 'units','normalized','position',[.15 .1 .6 .8])
-    hold on
-    pcolor(perm_croscorr_traces)
-    colormap fire
-    shading flat
-
-    caxis([-1    1])
-    title(['Cross correlations for all ROIs'])
-    xlim([1 handles_out.all_spresp_ii_dFF+handles_out.all_smresp_ii_dFF])
-    ylim([1 handles_out.all_spresp_ii_dFF+handles_out.all_smresp_ii_dFF])
-
-    %Plot rainbow for cross correlation
-    figureNo=figureNo+1;
-    try
-        close(figureNo)
-    catch
-    end
-
-    hFig = figure(figureNo);
-
-    set(hFig, 'units','normalized','position',[.49 .1 .05 .3])
-
-
-    prain=[-1:2/99:1];
-    pcolor(repmat([1:10],100,1)',repmat(prain,10,1),repmat(prain,10,1))
-    %             colormap jet
-    colormap fire
-    shading interp
-    ax=gca;
-    set(ax,'XTickLabel','')
-
-    %Plot timecourses for all ROIs for S+ and S-
-
-    figureNo=figureNo+1;
-    try
-        close(figureNo)
-    catch
-    end
-
-    hFig = figure(figureNo);
-
-     set(hFig, 'units','normalized','position',[.05 .1 .18 .8])
-    hold on
-
-
-
-    sorted_handles_out.all_spmresp_ii_dFF=0;
-    sorted_handles_out.all_spmresp_sporsm=[];
-    sorted_handles_out.all_sporsm_dFFspm=[];
-    sorted_handles_out.clusters=[];
-    for ii=1:length(all_spandmresp_iidFF)
-        this_ii_dFF=all_spandmresp_iidFF(outperm(ii));
-        this_sporsm=all_spandmresp_sporsm(outperm(ii));
-        sorted_handles_out.all_spmresp_ii_dFF=sorted_handles_out.all_spmresp_ii_dFF+1;
-        if this_sporsm==0
-            %This is S-
-            sorted_handles_out.all_sporsm_dFFspm(sorted_handles_out.all_spmresp_ii_dFF,:)=handles_out.all_smresp_dFFsminus(this_ii_dFF,:);
-        else
-            %This is S+
-            sorted_handles_out.all_sporsm_dFFspm(sorted_handles_out.all_spmresp_ii_dFF,:)=handles_out.all_spresp_dFFsplus(this_ii_dFF,:);
-        end
-        sorted_handles_out.clusters(sorted_handles_out.all_spmresp_ii_dFF)=clusters(outperm(ii));
-    end
-
-    %pcolor does not show the first row
-    pseudo_dFFspm=zeros(size(sorted_handles_out.all_sporsm_dFFspm,1)+1,size(sorted_handles_out.all_sporsm_dFFspm,2));
-    pseudo_dFFspm(1:end-1,:)=sorted_handles_out.all_sporsm_dFFspm;
-
-    time_span_mat=repmat(time_span,sorted_handles_out.all_spmresp_ii_dFF+1,1);
-    ROI_mat=repmat(1:sorted_handles_out.all_spmresp_ii_dFF+1,length(time_span),1)';
-
-    pcolor(time_span_mat,ROI_mat,pseudo_dFFspm)
-
-
-    %         time_span_mat=repmat(time_span,sorted_handles_out.all_spmresp_ii_dFF,1);
-    %         ROI_mat=repmat(1:sorted_handles_out.all_spmresp_ii_dFF,length(time_span),1)';
-    %
-    %         pcolor(time_span_mat,ROI_mat,sorted_handles_out.all_sporsm_dFFspm)
-
-    colormap fire
-    shading flat
-
-    caxis([prctile(sorted_handles_out.all_sporsm_dFFspm(:),1) prctile(sorted_handles_out.all_sporsm_dFFspm(:),99)])
-
-    for ii_te=1:length(timeEvents)
-        plot([timeEvents(ii_te) timeEvents(ii_te)],[0 sorted_handles_out.all_spmresp_ii_dFF],'-r')
-    end
-
-    xlim([-7 15])
-    ylim([1 ii])
-    title(['Timecourses for significant dFF changes, all ROIs'])
-    xlabel('Time (sec)')
-    ylabel('ROI number')
-
-
-
-    %Plot the average timecourses per cluster
-    for clus=1:max(clusters)
-        figureNo = figureNo + 1;
-        try
-            close(figureNo)
-        catch
-        end
-        hFig=figure(figureNo);
-
-        ax=gca;ax.LineWidth=3;
-        set(hFig, 'units','normalized','position',[.3 .2 .3 .3])
-
-
-        hold on
-
-        %get the dF/F
-
-
-        try
-
-
-            this_cluster_dFF=[];
-            ii_included=0;
-            for ii=1:length(sorted_handles_out.clusters)
-                if sorted_handles_out.clusters(ii)==clus
-                    ii_included=ii_included+1;
-                    this_cluster_dFF(ii_included,:)=sorted_handles_out.all_sporsm_dFFspm(ii,:);
-                end
-            end
-
-
-            CIpv = bootci(1000, @mean, this_cluster_dFF);
-            meanpv=mean(this_cluster_dFF,1);
-            CIpv(1,:)=meanpv-CIpv(1,:);
-            CIpv(2,:)=CIpv(2,:)-meanpv;
-
-
-            [hlpvl, hppvl] = boundedline(time_span,mean(this_cluster_dFF), CIpv','cmap',[0 0 0]);
-
-
-
-        catch
-        end
-
-        this_ylim=ylim;
-        for ii_te=1:length(timeEvents)
-            plot([timeEvents(ii_te) timeEvents(ii_te)],this_ylim,'-k')
-        end
-
-        xlim([-7 15])
-
-
-        xlabel('Time(sec)')
-        ylabel('dFF')
-
-
-        title(['dFF for cluster no ' num2str(clus)])
-
-    end
-
-
-    %         %Now plot the timecourses per group
-    %         for grNo=1:3
-    %
-    %             switch grNo
-    %                 case 1
-    %                     ROIs_included=(handles_out.all_div_dFFspm_pcorr>=45)&(handles_out.all_div_dFFspm_pcorr<=65);
-    %                 case 2
-    %                     ROIs_included=(handles_out.all_div_dFFspm_pcorr>65)&(handles_out.all_div_dFFspm_pcorr<80);
-    %                 case 3
-    %                     ROIs_included=(handles_out.all_div_dFFspm_pcorr>=80);
-    %             end
-    %
-    %             if sum(ROIs_included)>0
-    %
-    %                 %S+
-    %                 figureNo=figureNo+1;
-    %                 try
-    %                     close(figureNo)
-    %                 catch
-    %                 end
-    %
-    %                 hFig = figure(figureNo);
-    %
-    %                 set(hFig, 'units','normalized','position',[.05 .1 .3 .8])
-    %                 hold on
-    %
-    %
-    %
-    %                 sorted_handles_out.all_div_dFFsplus=[];
-    %                 ii_included=0;
-    %                 for ii=1:handles_out.all_div_ii_dFF
-    %                     if ROIs_included(ii)
-    %                         ii_included=ii_included+1;
-    %                         sorted_handles_out.all_div_dFFsplus(ii_included,:)=handles_out.all_div_dFFsplus(outperm(ii),:);
-    %                     end
-    %                 end
-    %
-    %                 time_span_mat=repmat(time_span,ii_included,1);
-    %                 ROI_mat=repmat(1:ii_included,length(time_span),1)';
-    %
-    %                 pcolor(time_span_mat,ROI_mat,sorted_handles_out.all_div_dFFsplus)
-    %                 colormap fire
-    %                 shading flat
-    %
-    %                 caxis([prctile(handles_out.all_div_dFFspm(:),1) prctile(handles_out.all_div_dFFspm(:),99)])
-    %
-    %                 for ii_te=1:length(timeEvents)
-    %                     plot([timeEvents(ii_te) timeEvents(ii_te)],[0 handles_out.all_div_ii_dFF],'-r')
-    %                 end
-    %
-    %                 xlim([-7 15])
-    %                 ylim([1 ii_included])
-    %                 title(['S+ ' per_names{grNo+1}])
-    %                 xlabel('Time (sec)')
-    %                 ylabel('ROI number')
-    %
-    %                 %S-
-    %                 figureNo=figureNo+1;
-    %                 try
-    %                     close(figureNo)
-    %                 catch
-    %                 end
-    %
-    %                 hFig = figure(figureNo);
-    %
-    %                 set(hFig, 'units','normalized','position',[.05 .1 .3 .8])
-    %                 hold on
-    %
-    %
-    %
-    %                 sorted_handles_out.all_div_dFFsminus=[];
-    %                 ii_included=0;
-    %                 for ii=1:handles_out.all_div_ii_dFF
-    %                     if ROIs_included(ii)
-    %                         ii_included=ii_included+1;
-    %                         sorted_handles_out.all_div_dFFsminus(ii_included,:)=handles_out.all_div_dFFsminus(outperm(ii),:);
-    %                     end
-    %                 end
-    %
-    %                 time_span_mat=repmat(time_span,ii_included,1);
-    %                 ROI_mat=repmat(1:ii_included,length(time_span),1)';
-    %
-    %                 pcolor(time_span_mat,ROI_mat,sorted_handles_out.all_div_dFFsminus)
-    %                 colormap fire
-    %                 shading flat
-    %
-    %                 caxis([prctile(handles_out.all_div_dFFspm(:),1) prctile(handles_out.all_div_dFFspm(:),99)])
-    %
-    %                 for ii_te=1:length(timeEvents)
-    %                     plot([timeEvents(ii_te) timeEvents(ii_te)],[0 handles_out.all_div_ii_dFF],'-r')
-    %                 end
-    %
-    %                 xlim([-7 15])
-    %                 ylim([1 ii_included])
-    %                 title(['S- ' per_names{grNo+1}])
-    %                 xlabel('Time (sec)')
-    %                 ylabel('ROI number')
-    %             end
-    %         end
-    %
-    %         %Plot rainbow
-    %         figureNo=figureNo+1;
-    %         try
-    %             close(figureNo)
-    %         catch
-    %         end
-    %
-    %         hFig = figure(figureNo);
-    %
-    %         set(hFig, 'units','normalized','position',[.49 .1 .05 .3])
-    %
-    %
-    %         prain=[prctile(handles_out.all_div_dFFspm(:),1):(prctile(handles_out.all_div_dFFspm(:),99)-prctile(handles_out.all_div_dFFspm(:),1))/99:prctile(handles_out.all_div_dFFspm(:),99)];
-    %         pcolor(repmat([1:10],100,1)',repmat(prain,10,1),repmat(prain,10,1))
-    %         %             colormap jet
-    %         colormap fire
-    %         shading interp
-    %         ax=gca;
-    %         set(ax,'XTickLabel','')
-    %
-    %         %Generate a histogram for the magnitude of the responses
-    %
-    %         %     handles_out.all_div_t=[];
-    %         %     handles_out.all_div_delta_dFFsplus=[];
-    %         %     handles_out.all_div_delta_dFFsminus=[];
-    %
-    %         figureNo=figureNo+1;
-    %         try
-    %             close(figureNo)
-    %         catch
-    %         end
-    %
-    %         hFig = figure(figureNo);
-    %
-    %         set(hFig, 'units','normalized','position',[.2 .2 .4 .3])
-    %
-    %         edges=-0.5:0.5:4;
-    %         histogram(handles_out.all_div_delta_dFFsplus,edges,'FaceColor',[0 114/255 178/255])
-    %         hold on
-    %         histogram(handles_out.all_div_delta_dFFsminus,edges,'FaceColor',[158/255 31/255 99/255])
-    %
-    %         ylabel('No of ROIs')
-    %         xlabel('Delta zdFF')
-    %         title('Histogram for Delta zdFF')
-    %
-    %         this_ylim=ylim;
-    %
-    %         text(2.5,this_ylim(1)+0.85*(this_ylim(2)-this_ylim(1)),'S+','Color',[0 114/255 178/255],'FontSize',16)
-    %         text(2.5,this_ylim(1)+0.75*(this_ylim(2)-this_ylim(1)),'S-','Color',[158/255 31/255 99/255],'FontSize',16)
-    %
-    %         figureNo=figureNo+1;
-    %         try
-    %             close(figureNo)
-    %         catch
-    %         end
-    %
-    %         hFig = figure(figureNo);
-    %
-    %         set(hFig, 'units','normalized','position',[.2 .2 .3 .3])
-    %
-    %         plot(handles_out.all_div_delta_dFFsminus,handles_out.all_div_delta_dFFsplus,'ok')
-    %
-    %         ylabel('S+')
-    %         xlabel('S-')
-    %         title('Delta zdFF')
-    %
-    %         %Divergence time
-    %         figureNo=figureNo+1;
-    %         try
-    %             close(figureNo)
-    %         catch
-    %         end
-    %
-    %         hFig = figure(figureNo);
-    %
-    %         set(hFig, 'units','normalized','position',[.2 .2 .4 .3])
-    %
-    %         edges=[-1.75:0.5:5.25];
-    %         histogram(handles_out.all_div_t(~isnan(handles_out.all_div_t)),edges)
-    %
-    %         ylabel('No of ROIs')
-    %         xlabel('Divegence time')
-    %         title('Histogram for divergence time')
-
-end
+% 
+%     hFig = figure(figureNo);
+%     %Do cutoff for 4 clusters
+%     cutoff = median([Z(end-(no_clusters-1),3) Z(end-(no_clusters-2),3)]);
+%     [H,T,outperm]=dendrogram(Z,0,'Orientation','left','ColorThreshold',cutoff);
+%     set(H,'LineWidth',2)
+%     hFig=figure(figureNo);
+%     set(hFig, 'units','normalized','position',[.05 .1 .14 .8])
+% 
+%     %re-sort the matrix
+%     for ii=1:size(croscorr_traces,1)
+%         for jj=1:size(croscorr_traces,1)
+%             perm_croscorr_traces(ii,jj)=croscorr_traces(outperm(ii),outperm(jj));
+%         end
+%     end
+% 
+% 
+% 
+%     figureNo=figureNo+1;
+%     try
+%         close(figureNo)
+%     catch
+%     end
+% 
+%     hFig = figure(figureNo);
+% 
+%     set(hFig, 'units','normalized','position',[.15 .1 .6 .8])
+%     hold on
+%     pcolor(perm_croscorr_traces)
+%     colormap fire
+%     shading flat
+% 
+%     caxis([-1    1])
+%     title(['Cross correlations for all ROIs'])
+%     xlim([1 handles_out.all_spresp_ii_dFF+handles_out.all_smresp_ii_dFF])
+%     ylim([1 handles_out.all_spresp_ii_dFF+handles_out.all_smresp_ii_dFF])
+% 
+%     %Plot rainbow for cross correlation
+%     figureNo=figureNo+1;
+%     try
+%         close(figureNo)
+%     catch
+%     end
+% 
+%     hFig = figure(figureNo);
+% 
+%     set(hFig, 'units','normalized','position',[.49 .1 .05 .3])
+% 
+% 
+%     prain=[-1:2/99:1];
+%     pcolor(repmat([1:10],100,1)',repmat(prain,10,1),repmat(prain,10,1))
+%     %             colormap jet
+%     colormap fire
+%     shading interp
+%     ax=gca;
+%     set(ax,'XTickLabel','')
+% 
+%     %Plot timecourses for all ROIs for S+ and S-
+% 
+%     figureNo=figureNo+1;
+%     try
+%         close(figureNo)
+%     catch
+%     end
+% 
+%     hFig = figure(figureNo);
+% 
+%      set(hFig, 'units','normalized','position',[.05 .1 .18 .8])
+%     hold on
+% 
+% 
+% 
+%     sorted_handles_out.all_spmresp_ii_dFF=0;
+%     sorted_handles_out.all_spmresp_sporsm=[];
+%     sorted_handles_out.all_sporsm_dFFspm=[];
+%     sorted_handles_out.clusters=[];
+%     for ii=1:length(all_spandmresp_iidFF)
+%         this_ii_dFF=all_spandmresp_iidFF(outperm(ii));
+%         this_sporsm=all_spandmresp_sporsm(outperm(ii));
+%         sorted_handles_out.all_spmresp_ii_dFF=sorted_handles_out.all_spmresp_ii_dFF+1;
+%         if this_sporsm==0
+%             %This is S-
+%             sorted_handles_out.all_sporsm_dFFspm(sorted_handles_out.all_spmresp_ii_dFF,:)=handles_out.all_smresp_dFFsminus(this_ii_dFF,:);
+%         else
+%             %This is S+
+%             sorted_handles_out.all_sporsm_dFFspm(sorted_handles_out.all_spmresp_ii_dFF,:)=handles_out.all_spresp_dFFsplus(this_ii_dFF,:);
+%         end
+%         sorted_handles_out.clusters(sorted_handles_out.all_spmresp_ii_dFF)=clusters(outperm(ii));
+%     end
+% 
+%     %pcolor does not show the first row
+%     pseudo_dFFspm=zeros(size(sorted_handles_out.all_sporsm_dFFspm,1)+1,size(sorted_handles_out.all_sporsm_dFFspm,2));
+%     pseudo_dFFspm(1:end-1,:)=sorted_handles_out.all_sporsm_dFFspm;
+% 
+%     time_span_mat=repmat(time_span,sorted_handles_out.all_spmresp_ii_dFF+1,1);
+%     ROI_mat=repmat(1:sorted_handles_out.all_spmresp_ii_dFF+1,length(time_span),1)';
+% 
+%     pcolor(time_span_mat,ROI_mat,pseudo_dFFspm)
+% 
+% 
+%     %         time_span_mat=repmat(time_span,sorted_handles_out.all_spmresp_ii_dFF,1);
+%     %         ROI_mat=repmat(1:sorted_handles_out.all_spmresp_ii_dFF,length(time_span),1)';
+%     %
+%     %         pcolor(time_span_mat,ROI_mat,sorted_handles_out.all_sporsm_dFFspm)
+% 
+%     colormap fire
+%     shading flat
+% 
+%     caxis([prctile(sorted_handles_out.all_sporsm_dFFspm(:),1) prctile(sorted_handles_out.all_sporsm_dFFspm(:),99)])
+% 
+%     for ii_te=1:length(timeEvents)
+%         plot([timeEvents(ii_te) timeEvents(ii_te)],[0 sorted_handles_out.all_spmresp_ii_dFF],'-r')
+%     end
+% 
+%     xlim([-7 15])
+%     ylim([1 ii])
+%     title(['Timecourses for significant dFF changes, all ROIs'])
+%     xlabel('Time (sec)')
+%     ylabel('ROI number')
+% 
+% 
+% 
+%     %Plot the average timecourses per cluster
+%     for clus=1:max(clusters)
+%         figureNo = figureNo + 1;
+%         try
+%             close(figureNo)
+%         catch
+%         end
+%         hFig=figure(figureNo);
+% 
+%         ax=gca;ax.LineWidth=3;
+%         set(hFig, 'units','normalized','position',[.3 .2 .3 .3])
+% 
+% 
+%         hold on
+% 
+%         %get the dF/F
+% 
+% 
+%         try
+% 
+% 
+%             this_cluster_dFF=[];
+%             ii_included=0;
+%             for ii=1:length(sorted_handles_out.clusters)
+%                 if sorted_handles_out.clusters(ii)==clus
+%                     ii_included=ii_included+1;
+%                     this_cluster_dFF(ii_included,:)=sorted_handles_out.all_sporsm_dFFspm(ii,:);
+%                 end
+%             end
+% 
+% 
+%             CIpv = bootci(1000, @mean, this_cluster_dFF);
+%             meanpv=mean(this_cluster_dFF,1);
+%             CIpv(1,:)=meanpv-CIpv(1,:);
+%             CIpv(2,:)=CIpv(2,:)-meanpv;
+% 
+% 
+%             [hlpvl, hppvl] = boundedline(time_span,mean(this_cluster_dFF), CIpv','cmap',[0 0 0]);
+% 
+% 
+% 
+%         catch
+%         end
+% 
+%         this_ylim=ylim;
+%         for ii_te=1:length(timeEvents)
+%             plot([timeEvents(ii_te) timeEvents(ii_te)],this_ylim,'-k')
+%         end
+% 
+%         xlim([-7 15])
+% 
+% 
+%         xlabel('Time(sec)')
+%         ylabel('dFF')
+% 
+% 
+%         title(['dFF for cluster no ' num2str(clus)])
+% 
+%     end
+% 
+% 
+%     %         %Now plot the timecourses per group
+%     %         for grNo=1:3
+%     %
+%     %             switch grNo
+%     %                 case 1
+%     %                     ROIs_included=(handles_out.all_div_dFFspm_pcorr>=45)&(handles_out.all_div_dFFspm_pcorr<=65);
+%     %                 case 2
+%     %                     ROIs_included=(handles_out.all_div_dFFspm_pcorr>65)&(handles_out.all_div_dFFspm_pcorr<80);
+%     %                 case 3
+%     %                     ROIs_included=(handles_out.all_div_dFFspm_pcorr>=80);
+%     %             end
+%     %
+%     %             if sum(ROIs_included)>0
+%     %
+%     %                 %S+
+%     %                 figureNo=figureNo+1;
+%     %                 try
+%     %                     close(figureNo)
+%     %                 catch
+%     %                 end
+%     %
+%     %                 hFig = figure(figureNo);
+%     %
+%     %                 set(hFig, 'units','normalized','position',[.05 .1 .3 .8])
+%     %                 hold on
+%     %
+%     %
+%     %
+%     %                 sorted_handles_out.all_div_dFFsplus=[];
+%     %                 ii_included=0;
+%     %                 for ii=1:handles_out.all_div_ii_dFF
+%     %                     if ROIs_included(ii)
+%     %                         ii_included=ii_included+1;
+%     %                         sorted_handles_out.all_div_dFFsplus(ii_included,:)=handles_out.all_div_dFFsplus(outperm(ii),:);
+%     %                     end
+%     %                 end
+%     %
+%     %                 time_span_mat=repmat(time_span,ii_included,1);
+%     %                 ROI_mat=repmat(1:ii_included,length(time_span),1)';
+%     %
+%     %                 pcolor(time_span_mat,ROI_mat,sorted_handles_out.all_div_dFFsplus)
+%     %                 colormap fire
+%     %                 shading flat
+%     %
+%     %                 caxis([prctile(handles_out.all_div_dFFspm(:),1) prctile(handles_out.all_div_dFFspm(:),99)])
+%     %
+%     %                 for ii_te=1:length(timeEvents)
+%     %                     plot([timeEvents(ii_te) timeEvents(ii_te)],[0 handles_out.all_div_ii_dFF],'-r')
+%     %                 end
+%     %
+%     %                 xlim([-7 15])
+%     %                 ylim([1 ii_included])
+%     %                 title(['S+ ' per_names{grNo+1}])
+%     %                 xlabel('Time (sec)')
+%     %                 ylabel('ROI number')
+%     %
+%     %                 %S-
+%     %                 figureNo=figureNo+1;
+%     %                 try
+%     %                     close(figureNo)
+%     %                 catch
+%     %                 end
+%     %
+%     %                 hFig = figure(figureNo);
+%     %
+%     %                 set(hFig, 'units','normalized','position',[.05 .1 .3 .8])
+%     %                 hold on
+%     %
+%     %
+%     %
+%     %                 sorted_handles_out.all_div_dFFsminus=[];
+%     %                 ii_included=0;
+%     %                 for ii=1:handles_out.all_div_ii_dFF
+%     %                     if ROIs_included(ii)
+%     %                         ii_included=ii_included+1;
+%     %                         sorted_handles_out.all_div_dFFsminus(ii_included,:)=handles_out.all_div_dFFsminus(outperm(ii),:);
+%     %                     end
+%     %                 end
+%     %
+%     %                 time_span_mat=repmat(time_span,ii_included,1);
+%     %                 ROI_mat=repmat(1:ii_included,length(time_span),1)';
+%     %
+%     %                 pcolor(time_span_mat,ROI_mat,sorted_handles_out.all_div_dFFsminus)
+%     %                 colormap fire
+%     %                 shading flat
+%     %
+%     %                 caxis([prctile(handles_out.all_div_dFFspm(:),1) prctile(handles_out.all_div_dFFspm(:),99)])
+%     %
+%     %                 for ii_te=1:length(timeEvents)
+%     %                     plot([timeEvents(ii_te) timeEvents(ii_te)],[0 handles_out.all_div_ii_dFF],'-r')
+%     %                 end
+%     %
+%     %                 xlim([-7 15])
+%     %                 ylim([1 ii_included])
+%     %                 title(['S- ' per_names{grNo+1}])
+%     %                 xlabel('Time (sec)')
+%     %                 ylabel('ROI number')
+%     %             end
+%     %         end
+%     %
+%     %         %Plot rainbow
+%     %         figureNo=figureNo+1;
+%     %         try
+%     %             close(figureNo)
+%     %         catch
+%     %         end
+%     %
+%     %         hFig = figure(figureNo);
+%     %
+%     %         set(hFig, 'units','normalized','position',[.49 .1 .05 .3])
+%     %
+%     %
+%     %         prain=[prctile(handles_out.all_div_dFFspm(:),1):(prctile(handles_out.all_div_dFFspm(:),99)-prctile(handles_out.all_div_dFFspm(:),1))/99:prctile(handles_out.all_div_dFFspm(:),99)];
+%     %         pcolor(repmat([1:10],100,1)',repmat(prain,10,1),repmat(prain,10,1))
+%     %         %             colormap jet
+%     %         colormap fire
+%     %         shading interp
+%     %         ax=gca;
+%     %         set(ax,'XTickLabel','')
+%     %
+%     %         %Generate a histogram for the magnitude of the responses
+%     %
+%     %         %     handles_out.all_div_t=[];
+%     %         %     handles_out.all_div_delta_dFFsplus=[];
+%     %         %     handles_out.all_div_delta_dFFsminus=[];
+%     %
+%     %         figureNo=figureNo+1;
+%     %         try
+%     %             close(figureNo)
+%     %         catch
+%     %         end
+%     %
+%     %         hFig = figure(figureNo);
+%     %
+%     %         set(hFig, 'units','normalized','position',[.2 .2 .4 .3])
+%     %
+%     %         edges=-0.5:0.5:4;
+%     %         histogram(handles_out.all_div_delta_dFFsplus,edges,'FaceColor',[0 114/255 178/255])
+%     %         hold on
+%     %         histogram(handles_out.all_div_delta_dFFsminus,edges,'FaceColor',[158/255 31/255 99/255])
+%     %
+%     %         ylabel('No of ROIs')
+%     %         xlabel('Delta zdFF')
+%     %         title('Histogram for Delta zdFF')
+%     %
+%     %         this_ylim=ylim;
+%     %
+%     %         text(2.5,this_ylim(1)+0.85*(this_ylim(2)-this_ylim(1)),'S+','Color',[0 114/255 178/255],'FontSize',16)
+%     %         text(2.5,this_ylim(1)+0.75*(this_ylim(2)-this_ylim(1)),'S-','Color',[158/255 31/255 99/255],'FontSize',16)
+%     %
+%     %         figureNo=figureNo+1;
+%     %         try
+%     %             close(figureNo)
+%     %         catch
+%     %         end
+%     %
+%     %         hFig = figure(figureNo);
+%     %
+%     %         set(hFig, 'units','normalized','position',[.2 .2 .3 .3])
+%     %
+%     %         plot(handles_out.all_div_delta_dFFsminus,handles_out.all_div_delta_dFFsplus,'ok')
+%     %
+%     %         ylabel('S+')
+%     %         xlabel('S-')
+%     %         title('Delta zdFF')
+%     %
+%     %         %Divergence time
+%     %         figureNo=figureNo+1;
+%     %         try
+%     %             close(figureNo)
+%     %         catch
+%     %         end
+%     %
+%     %         hFig = figure(figureNo);
+%     %
+%     %         set(hFig, 'units','normalized','position',[.2 .2 .4 .3])
+%     %
+%     %         edges=[-1.75:0.5:5.25];
+%     %         histogram(handles_out.all_div_t(~isnan(handles_out.all_div_t)),edges)
+%     %
+%     %         ylabel('No of ROIs')
+%     %         xlabel('Divegence time')
+%     %         title('Histogram for divergence time')
+% 
+% end
 %Uncomment this if you want to browse through the figures
 %     tic
 %     for figNo=1:figureNo
