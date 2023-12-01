@@ -642,7 +642,7 @@ if all_files_present==1
         end
         first_fig=1;
 
-
+ 
         %Show the figure for divergent dFF in the odor period if p<pFDR
         %Save the dFFSplus and dFFSminus
 

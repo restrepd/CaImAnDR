@@ -367,6 +367,10 @@ handles_out.no_points_before=no_points_before;
 handles_out.no_points_after=no_points_after;
 handles_out.measurements_per_trial=measurements_per_trial;
 handles_out.sp_or_sm=sp_or_sm;
+handles_out.hit_per_trial=hit_per_trial;
+handles_out.miss_per_trial=miss_per_trial;
+handles_out.cr_per_trial=cr_per_trial;
+handles_out.fa_per_trial=fa_per_trial;
 
 
 %This section transfers the data to the dPCA input format
@@ -427,7 +431,7 @@ switch dPCA_input
         % trialNum: N x S x D
         trial_number=zeros(S,D);
         for trNum=1:length(sp_or_sm)
-            s=sp_or_sm(trNum)+1;
+            s=2-sp_or_sm(trNum);
             d=mouse_licked(trNum)+1;
             trial_number(s,d)=trial_number(s,d)+1;
         end
@@ -442,7 +446,7 @@ switch dPCA_input
         % trialNum: N x S x D
         trialNum=zeros(N,S,D);
         for trNum=1:length(sp_or_sm)
-            s=sp_or_sm(trNum)+1;
+            s=2-sp_or_sm(trNum);
             d=mouse_licked(trNum)+1;
             for n=1:N
                 trialNum(n,s,d)=trialNum(n,s,d)+1;

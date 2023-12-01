@@ -953,7 +953,7 @@ if handles_out.all_div_ii_dFF>5
 
 
             %             croscorr_traces=corrcoef(these_all_div_dFFspm);
-            croscorr_traces=corrcoef(these_all_div_dFFsminus);
+            croscorr_traces=corrcoef(these_all_div_dFFsplus);
 
             Z = linkage(croscorr_traces,'complete','correlation');
 
