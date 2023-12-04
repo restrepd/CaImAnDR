@@ -1,4 +1,4 @@
-%drgCaImAn_analyze_pval_batch2.m
+%drgCaImAn_analyze_error_pval_batch.m
 %Displays the data generated with drgCaImAn_pval_batch
 clear all
 close all
@@ -79,7 +79,7 @@ peak_ii_legends{2}='cluster 2';
 % peak_ii_legends{3}='cluster 2';
 % peak_ii_legends{4}='cluster 3';
 
-fileID = fopen([outhPathName 'drgCaImAn_analyze_pval_batch.txt'],'w');
+fileID = fopen([outhPathName 'drgCaImAn_analyze_error_pval_batch.txt'],'w');
 
 % Time events of interest (e.g. stimulus onset/offset, cues etc.)
 % They are marked on the plots with vertical lines
@@ -941,6 +941,30 @@ if handles_out.all_div_ii_dFF>5
             these_all_div_dFFsminus=zeros(size(handles_out.all_div_dFFsminus,2),sum(ROIs_included));
             these_all_div_dFFsminus(:,:)=handles_out.all_div_dFFsminus(logical(ROIs_included),:)';
 
+            these_all_div_dFFhit=zeros(size(handles_out.all_div_dFFsplus,2),sum(ROIs_included));
+            these_all_div_dFFhit(:,:)=handles_out.all_div_dFFhit(logical(ROIs_included),:)';
+
+            these_all_hit=zeros(1,sum(ROIs_included));
+            these_all_hit(:,:)=handles_out.all_hit(1,logical(ROIs_included))';
+
+            these_all_div_dFFmiss=zeros(size(handles_out.all_div_dFFsplus,2),sum(ROIs_included));
+            these_all_div_dFFmiss(:,:)=handles_out.all_div_dFFmiss(logical(ROIs_included),:)';
+
+            these_all_miss=zeros(1,sum(ROIs_included));
+            these_all_miss(:,:)=handles_out.all_miss(1,logical(ROIs_included))';
+
+            these_all_div_dFFcr=zeros(size(handles_out.all_div_dFFsplus,2),sum(ROIs_included));
+            these_all_div_dFFcr(:,:)=handles_out.all_div_dFFcr(logical(ROIs_included),:)';
+
+            these_all_cr=zeros(1,sum(ROIs_included));
+            these_all_cr(:,:)=handles_out.all_cr(1,logical(ROIs_included))';
+
+            these_all_div_dFFfa=zeros(size(handles_out.all_div_dFFfa,2),sum(ROIs_included));
+            these_all_div_dFFfa(:,:)=handles_out.all_div_dFFfa(logical(ROIs_included),:)';
+
+            these_all_fa=zeros(1,sum(ROIs_included));
+            these_all_fa(:,:)=handles_out.all_fa(1,logical(ROIs_included))';
+
             these_all_delta_dFFsplus=zeros(1,sum(ROIs_included));
             these_all_delta_dFFsplus(1,:)=handles_out.all_div_delta_dFFsplus(1,logical(ROIs_included));
 
@@ -1083,7 +1107,7 @@ if handles_out.all_div_ii_dFF>5
                 %Report the number of ROIs per cluster
                 fprintf(1, ['\nFor '  per_names{grNo+1} ' cluster No ' num2str(clus) ' has ' num2str(sum(clusters==clus)) ' ROIs\n'])
 
-                %Plot the average of this cluster
+                %Plot the average of this cluster for S+ and S-
                 figureNo = figureNo + 1;
                 try
                     close(figureNo)
@@ -1164,6 +1188,141 @@ if handles_out.all_div_ii_dFF>5
 
                 catch
                 end
+
+                ylim([-0.5 1.5])
+                xlim([-7 15])
+                this_ylim=ylim;
+
+                %FV
+                fvhl=plot([-1.5 0],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-'...
+                    ,'MarkerEdgeColor',[0.9 0.9 0.9],'MarkerFaceColor',[0.9 0.9 0.9],'LineWidth',5);
+                plot([-1.5 -1.5],[this_ylim],'-','Color',[0.5 0.5 0.5])
+
+                %Odor on markers
+                plot([0 0],this_ylim,'-k')
+                odorhl=plot([0 mean(delta_odor)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-k','LineWidth',5);
+                plot([mean(delta_odor) mean(delta_odor)],this_ylim,'-k')
+
+                %Reinforcement markers
+                plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on)],this_ylim,'-r')
+                reinfhl=plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on+delta_reinf)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-r','LineWidth',5);
+                plot([mean(delta_odor_on_reinf_on+delta_reinf) mean(delta_odor_on_reinf_on+delta_reinf)],this_ylim,'-r')
+
+
+                xlabel('Time(sec)')
+                ylabel('dFF')
+
+
+                title(['dFF divergent for ' per_names{grNo+1} ' cluster no ' num2str(clus)])
+
+                pfft=1;
+                %Plot the average of this cluster for hit, miss cr and fa
+                figureNo = figureNo + 1;
+                try
+                    close(figureNo)
+                catch
+                end
+                hFig=figure(figureNo);
+
+                ax=gca;ax.LineWidth=3;
+                set(hFig, 'units','normalized','position',[.3 .2 .3 .3])
+
+
+                hold on
+
+                %get the dF/F
+
+
+
+
+                %miss
+                this_cluster_dFFmiss=[];
+                ii_included=0;
+                for ii=1:size(these_all_div_dFFmiss,2)
+                    if (clusters(ii)==clus)&(these_all_miss(ii)==1)
+                        ii_included=ii_included+1;
+                        this_cluster_dFFmiss(ii_included,:)=these_all_div_dFFmiss(:,ii)';
+                    end
+                end
+
+                dFF_timecourse_per_clus.group(grNo).cluster(clus).miss_timecourses=this_cluster_dFFmiss;
+
+
+                CIpv = bootci(1000, @mean, this_cluster_dFFmiss);
+                meanpv=mean(this_cluster_dFFmiss,1);
+                CIpv(1,:)=meanpv-CIpv(1,:);
+                CIpv(2,:)=CIpv(2,:)-meanpv;
+
+                [hlpvl, hppvl] = boundedline(time_span,mean(this_cluster_dFFmiss), CIpv','c');
+
+                %fa
+                this_cluster_dFFfa=[];
+                ii_included=0;
+                for ii=1:size(these_all_div_dFFfa,2)
+                    if (clusters(ii)==clus)&(these_all_fa(ii)==1)
+                        ii_included=ii_included+1;
+                        this_cluster_dFFfa(ii_included,:)=these_all_div_dFFfa(:,ii)';
+                    end
+                end
+
+                dFF_timecourse_per_clus.group(grNo).cluster(clus).fa_timecourses=this_cluster_dFFfa;
+
+
+                CIpv = bootci(1000, @mean, this_cluster_dFFfa);
+                meanpv=mean(this_cluster_dFFfa,1);
+                CIpv(1,:)=meanpv-CIpv(1,:);
+                CIpv(2,:)=CIpv(2,:)-meanpv;
+
+                [hlpvl, hppvl] = boundedline(time_span,mean(this_cluster_dFFfa), CIpv','m');
+
+                %cr
+                this_cluster_dFFcr=[];
+                ii_included=0;
+                for ii=1:size(these_all_div_dFFcr,2)
+                    if (clusters(ii)==clus)&(these_all_cr(ii)==1)
+                        ii_included=ii_included+1;
+                        this_cluster_dFFcr(ii_included,:)=these_all_div_dFFcr(:,ii)';
+                    end
+                end
+
+                dFF_timecourse_per_clus.group(grNo).cluster(clus).cr_timecourses=this_cluster_dFFcr;
+
+
+                CIpv = bootci(1000, @mean, this_cluster_dFFcr);
+                meanpv=mean(this_cluster_dFFcr,1);
+                CIpv(1,:)=meanpv-CIpv(1,:);
+                CIpv(2,:)=CIpv(2,:)-meanpv;
+
+                [hlpvl, hppvl] = boundedline(time_span,mean(this_cluster_dFFcr), CIpv','b');
+
+                %hit
+                this_cluster_dFFhit=[];
+                ii_included=0;
+                for ii=1:size(these_all_div_dFFhit,2)
+                    if (clusters(ii)==clus)&(these_all_hit(ii)==1)
+                        ii_included=ii_included+1;
+                        this_cluster_dFFhit(ii_included,:)=these_all_div_dFFhit(:,ii)';
+                    end
+                end
+
+                dFF_timecourse_per_clus.group(grNo).cluster(clus).hit_timecourses=this_cluster_dFFhit;
+
+
+                CIpv = bootci(1000, @mean, this_cluster_dFFhit);
+                meanpv=mean(this_cluster_dFFhit,1);
+                CIpv(1,:)=meanpv-CIpv(1,:);
+                CIpv(2,:)=CIpv(2,:)-meanpv;
+
+                [hlpvl, hppvl] = boundedline(time_span,mean(this_cluster_dFFhit), CIpv','r');
+
+
+                plot(time_span',mean(this_cluster_dFFmiss)','-c','LineWidth',1.5);
+                plot(time_span',mean(this_cluster_dFFfa)','-m','LineWidth',1.5);
+                plot(time_span',mean(this_cluster_dFFcr)','-b','LineWidth',1.5);
+                plot(time_span',mean(this_cluster_dFFhit)','-r','LineWidth',1.5);
+
+
+
 
                 ylim([-0.5 1.5])
                 xlim([-7 15])
@@ -1275,26 +1434,26 @@ if handles_out.all_div_ii_dFF>5
 
 
             %Divergence time
-%             figureNo=figureNo+1;
-%             try
-%                 close(figureNo)
-%             catch
-%             end
-% 
-%             hFig = figure(figureNo);
-% 
-%             set(hFig, 'units','normalized','position',[.2 .2 .4 .3])
-% 
-%             edges=[-1.5:0.5:6.5];
-% 
-%             histogram(these_all_div_t,edges,'Normalization','probability')
+            %             figureNo=figureNo+1;
+            %             try
+            %                 close(figureNo)
+            %             catch
+            %             end
+            %
+            %             hFig = figure(figureNo);
+            %
+            %             set(hFig, 'units','normalized','position',[.2 .2 .4 .3])
+            %
+            %             edges=[-1.5:0.5:6.5];
+            %
+            %             histogram(these_all_div_t,edges,'Normalization','probability')
             divergence_times_per_group.group(grNo).div_t=these_all_div_t;
 
-%             xlim([-3 7])
-%             %             ylim([0 120])
-%             ylabel('No of ROIs')
-%             xlabel('Divergence time')
-%             title(['Histogram for divergence time for ' per_names{grNo+1}])
+            %             xlim([-3 7])
+            %             %             ylim([0 120])
+            %             ylabel('No of ROIs')
+            %             xlabel('Divergence time')
+            %             title(['Histogram for divergence time for ' per_names{grNo+1}])
         end
     end
 
@@ -1304,6 +1463,114 @@ if handles_out.all_div_ii_dFF>5
 
 
     for peak_ii=1:length(clus_per_peak_ii)
+
+        %         figureNo=figureNo+1;
+        %         try
+        %             close(figureNo)
+        %         catch
+        %         end
+        %
+        %         hFig = figure(figureNo);
+        %
+        %         set(hFig, 'units','normalized','position',[.2 .2 .3 .3])
+        %
+        %         hold on
+        %
+        %         clus=clus_per_peak_ii(peak_ii);
+        %
+        %         this_time_window=[time_window_clus(peak_ii)-0.5 time_window_clus(peak_ii)+0.5];
+        %
+        %         glm_clus=[];
+        %         glm_peak_ii=0;
+        %         input_clus_data=[];
+        %         id_peak_ii=0;
+        %         bar_offset=0;
+        %
+        %         edges=[-1:0.05:5];
+        %         rand_offset=0.4;
+
+        %         for grNo =[1 3]
+        %
+        %             actual_clus=cluster_pairing.group(grNo).clus(clus);
+
+        %             %do S-
+        %             these_dFF_minus=mean(dFF_timecourse_per_clus.group(grNo).cluster(actual_clus).sminus_timecourses...
+        %                 (:,(time_span>=this_time_window(1))&(time_span<=this_time_window(2))),2);
+        %
+        %             bar_offset=bar_offset+1;
+        %             bar(bar_offset,mean(these_dFF_minus),'LineWidth', 3,'EdgeColor','none','FaceColor',[238/255 111/255 179/255])
+        %
+        %             %Violin plot
+        %             [mean_out, CIout]=drgViolinPoint(these_dFF_minus...
+        %                 ,edges,bar_offset,rand_offset,'k','k',1);
+        %
+        %             glm_clus.data(glm_peak_ii+1:glm_peak_ii+length(these_dFF_minus))=these_dFF_minus;
+        %             glm_clus.pcorr(glm_peak_ii+1:glm_peak_ii+length(these_dFF_minus))=grNo*ones(1,length(these_dFF_minus));
+        %             glm_clus.spm(glm_peak_ii+1:glm_peak_ii+length(these_dFF_minus))=0*ones(1,length(these_dFF_minus));
+        %             glm_peak_ii=glm_peak_ii+length(these_dFF_minus);
+        %
+        %             id_peak_ii=id_peak_ii+1;
+        %             input_clus_data(id_peak_ii).data=these_dFF_minus;
+        %             input_clus_data(id_peak_ii).description=[naive_pro{grNo} ' S-'];
+        %
+        %             %do S+
+        %             these_dFF_plus=mean(dFF_timecourse_per_clus.group(grNo).cluster(actual_clus).splus_timecourses...
+        %                 (:,(time_span>=this_time_window(1))&(time_span<=this_time_window(2))),2);
+        %
+        %             bar_offset=bar_offset+1;
+        %             bar(bar_offset,mean(these_dFF_plus),'LineWidth', 3,'EdgeColor','none','FaceColor',[80/255 194/255 255/255])
+        %
+        %             %Violin plot
+        %             [mean_out, CIout]=drgViolinPoint(these_dFF_plus...
+        %                 ,edges,bar_offset,rand_offset,'k','k',1);
+        %
+        %             bar_offset=bar_offset+1;
+        %
+        %             glm_clus.data(glm_peak_ii+1:glm_peak_ii+length(these_dFF_plus))=these_dFF_plus;
+        %             glm_clus.pcorr(glm_peak_ii+1:glm_peak_ii+length(these_dFF_plus))=grNo*ones(1,length(these_dFF_plus));
+        %             glm_clus.spm(glm_peak_ii+1:glm_peak_ii+length(these_dFF_plus))=1*ones(1,length(these_dFF_plus));
+        %             glm_peak_ii=glm_peak_ii+length(these_dFF_plus);
+        %
+        %             id_peak_ii=id_peak_ii+1;
+        %             input_clus_data(id_peak_ii).data=these_dFF_plus;
+        %             input_clus_data(id_peak_ii).description=[naive_pro{grNo} ' S+'];
+        %         end
+        %
+        %         xticks([1 2 4 5])
+        %         xticklabels({'S-','S+','S-','S+'})
+        %
+        %         ylabel('zdFF')
+        %
+        %         title(['zdFF for ' peak_ii_legends{peak_ii}])
+        %
+        %
+        %
+        %         %Perform the glm for this cluster
+        %         fprintf(1, ['\nglm for zdFF for '  peak_ii_legends{peak_ii} '\n'])
+        %         fprintf(fileID, ['\nglm for zdFF for '  peak_ii_legends{peak_ii} '\n']);
+        %
+        %         tbl = table(glm_clus.data',glm_clus.pcorr',glm_clus.spm',...
+        %             'VariableNames',{'zdFF','p_correct','spm'});
+        %         mdl = fitglm(tbl,'zdFF~p_correct+spm+p_correct*spm'...
+        %             ,'CategoricalVars',[2,3])
+        %
+        %         txt = evalc('mdl');
+        %         txt=regexp(txt,'<strong>','split');
+        %         txt=cell2mat(txt);
+        %         txt=regexp(txt,'</strong>','split');
+        %         txt=cell2mat(txt);
+        %
+        %         fprintf(fileID,'%s\n', txt);
+        %
+        %
+        %
+        %         %Do the ranksum/t-test
+        %         fprintf(1, ['\n\nRanksum or t-test p values for zdFF for ' peak_ii_legends{peak_ii} '\n'])
+        %         fprintf(fileID, ['\n\nRanksum or t-test p values for zdFF for ' peak_ii_legends{peak_ii} '\n']);
+        %
+        %         [output_data] = drgMutiRanksumorTtest(input_clus_data, fileID,0);
+
+        %Plot bar graph for hit, miss, cr and fa
 
         figureNo=figureNo+1;
         try
@@ -1334,51 +1601,94 @@ if handles_out.all_div_ii_dFF>5
 
             actual_clus=cluster_pairing.group(grNo).clus(clus);
 
-            %do S-
-            these_dFF_minus=mean(dFF_timecourse_per_clus.group(grNo).cluster(actual_clus).sminus_timecourses...
+            %do fa
+            these_dFF_fa=mean(dFF_timecourse_per_clus.group(grNo).cluster(actual_clus).fa_timecourses...
                 (:,(time_span>=this_time_window(1))&(time_span<=this_time_window(2))),2);
 
             bar_offset=bar_offset+1;
-            bar(bar_offset,mean(these_dFF_minus),'LineWidth', 3,'EdgeColor','none','FaceColor',[238/255 111/255 179/255])
+            bar(bar_offset,mean(these_dFF_fa),'LineWidth', 3,'EdgeColor','none','FaceColor','m')
 
             %Violin plot
-            [mean_out, CIout]=drgViolinPoint(these_dFF_minus...
+            [mean_out, CIout]=drgViolinPoint(these_dFF_fa...
                 ,edges,bar_offset,rand_offset,'k','k',1);
 
-            glm_clus.data(glm_peak_ii+1:glm_peak_ii+length(these_dFF_minus))=these_dFF_minus;
-            glm_clus.pcorr(glm_peak_ii+1:glm_peak_ii+length(these_dFF_minus))=grNo*ones(1,length(these_dFF_minus));
-            glm_clus.spm(glm_peak_ii+1:glm_peak_ii+length(these_dFF_minus))=0*ones(1,length(these_dFF_minus));
-            glm_peak_ii=glm_peak_ii+length(these_dFF_minus);
+            glm_clus.data(glm_peak_ii+1:glm_peak_ii+length(these_dFF_fa))=these_dFF_fa;
+            glm_clus.pcorr(glm_peak_ii+1:glm_peak_ii+length(these_dFF_fa))=grNo*ones(1,length(these_dFF_fa));
+            glm_clus.spm(glm_peak_ii+1:glm_peak_ii+length(these_dFF_fa))=0*ones(1,length(these_dFF_fa));
+            glm_peak_ii=glm_peak_ii+length(these_dFF_fa);
 
             id_peak_ii=id_peak_ii+1;
-            input_clus_data(id_peak_ii).data=these_dFF_minus;
-            input_clus_data(id_peak_ii).description=[naive_pro{grNo} ' S-'];
+            input_clus_data(id_peak_ii).data=these_dFF_fa;
+            input_clus_data(id_peak_ii).description=[naive_pro{grNo} ' fa'];
 
-            %do S+
-            these_dFF_plus=mean(dFF_timecourse_per_clus.group(grNo).cluster(actual_clus).splus_timecourses...
+            %do cr
+            these_dFF_cr=mean(dFF_timecourse_per_clus.group(grNo).cluster(actual_clus).fa_timecourses...
                 (:,(time_span>=this_time_window(1))&(time_span<=this_time_window(2))),2);
 
             bar_offset=bar_offset+1;
-            bar(bar_offset,mean(these_dFF_plus),'LineWidth', 3,'EdgeColor','none','FaceColor',[80/255 194/255 255/255])
+            bar(bar_offset,mean(these_dFF_cr),'LineWidth', 3,'EdgeColor','none','FaceColor','b')
 
             %Violin plot
-            [mean_out, CIout]=drgViolinPoint(these_dFF_plus...
+            [mean_out, CIout]=drgViolinPoint(these_dFF_cr...
+                ,edges,bar_offset,rand_offset,'k','k',1);
+
+            glm_clus.data(glm_peak_ii+1:glm_peak_ii+length(these_dFF_cr))=these_dFF_cr;
+            glm_clus.pcorr(glm_peak_ii+1:glm_peak_ii+length(these_dFF_cr))=grNo*ones(1,length(these_dFF_cr));
+            glm_clus.spm(glm_peak_ii+1:glm_peak_ii+length(these_dFF_cr))=1*ones(1,length(these_dFF_cr));
+            glm_peak_ii=glm_peak_ii+length(these_dFF_cr);
+
+            id_peak_ii=id_peak_ii+1;
+            input_clus_data(id_peak_ii).data=these_dFF_cr;
+            input_clus_data(id_peak_ii).description=[naive_pro{grNo} ' cr'];
+
+            %do miss
+            these_dFF_miss=mean(dFF_timecourse_per_clus.group(grNo).cluster(actual_clus).hit_timecourses...
+                (:,(time_span>=this_time_window(1))&(time_span<=this_time_window(2))),2);
+
+            bar_offset=bar_offset+1;
+            bar(bar_offset,mean(these_dFF_miss),'LineWidth', 3,'EdgeColor','none','FaceColor','c')
+
+            %Violin plot
+            [mean_out, CIout]=drgViolinPoint(these_dFF_miss...
                 ,edges,bar_offset,rand_offset,'k','k',1);
 
             bar_offset=bar_offset+1;
 
-            glm_clus.data(glm_peak_ii+1:glm_peak_ii+length(these_dFF_plus))=these_dFF_plus;
-            glm_clus.pcorr(glm_peak_ii+1:glm_peak_ii+length(these_dFF_plus))=grNo*ones(1,length(these_dFF_plus));
-            glm_clus.spm(glm_peak_ii+1:glm_peak_ii+length(these_dFF_plus))=1*ones(1,length(these_dFF_plus));
-            glm_peak_ii=glm_peak_ii+length(these_dFF_plus);
+            glm_clus.data(glm_peak_ii+1:glm_peak_ii+length(these_dFF_miss))=these_dFF_miss;
+            glm_clus.pcorr(glm_peak_ii+1:glm_peak_ii+length(these_dFF_miss))=grNo*ones(1,length(these_dFF_miss));
+            glm_clus.spm(glm_peak_ii+1:glm_peak_ii+length(these_dFF_miss))=2*ones(1,length(these_dFF_miss));
+            glm_peak_ii=glm_peak_ii+length(these_dFF_miss);
 
             id_peak_ii=id_peak_ii+1;
-            input_clus_data(id_peak_ii).data=these_dFF_plus;
-            input_clus_data(id_peak_ii).description=[naive_pro{grNo} ' S+'];
+            input_clus_data(id_peak_ii).data=these_dFF_miss;
+            input_clus_data(id_peak_ii).description=[naive_pro{grNo} ' miss'];
+
+            %do hit
+            these_dFF_hit=mean(dFF_timecourse_per_clus.group(grNo).cluster(actual_clus).hit_timecourses...
+                (:,(time_span>=this_time_window(1))&(time_span<=this_time_window(2))),2);
+
+            bar(bar_offset,mean(these_dFF_hit),'LineWidth', 3,'EdgeColor','none','FaceColor','r')
+
+            %Violin plot
+            [mean_out, CIout]=drgViolinPoint(these_dFF_hit...
+                ,edges,bar_offset,rand_offset,'k','k',1);
+
+            bar_offset=bar_offset+1;
+
+            glm_clus.data(glm_peak_ii+1:glm_peak_ii+length(these_dFF_hit))=these_dFF_hit;
+            glm_clus.pcorr(glm_peak_ii+1:glm_peak_ii+length(these_dFF_hit))=grNo*ones(1,length(these_dFF_hit));
+            glm_clus.spm(glm_peak_ii+1:glm_peak_ii+length(these_dFF_hit))=3*ones(1,length(these_dFF_hit));
+            glm_peak_ii=glm_peak_ii+length(these_dFF_hit);
+
+            id_peak_ii=id_peak_ii+1;
+            input_clus_data(id_peak_ii).data=these_dFF_hit;
+            input_clus_data(id_peak_ii).description=[naive_pro{grNo} ' hit'];
+
+
         end
 
-        xticks([1 2 4 5])
-        xticklabels({'S-','S+','S-','S+'})
+        xticks([1 2 3 4 6 7 8 9])
+        xticklabels({'fa','cr','miss','hit','fa','cr','miss','hit'})
 
         ylabel('zdFF')
 
@@ -1412,210 +1722,211 @@ if handles_out.all_div_ii_dFF>5
         [output_data] = drgMutiRanksumorTtest(input_clus_data, fileID,0);
 
     end
- 
-    %Divergence time
-    figureNo=figureNo+1;
-    try
-        close(figureNo)
-    catch
-    end
+end
 
-    hFig = figure(figureNo);
-
-    set(hFig, 'units','normalized','position',[.2 .2 .3 .3])
-    hold on
-
-    [f_aic,x_aic] = drg_ecdf(divergence_times_per_group.group(1).div_t(divergence_times_per_group.group(1).div_t<=7)');
-    plot(x_aic,f_aic,'Color',[80/255 194/255 255/255],'LineWidth',2)
-    plot([-3 -1.5],[0 0],'Color',[80/255 194/255 255/255],'LineWidth',2)
-
-    try
-        [f_aic,x_aic] = drg_ecdf(divergence_times_per_group.group(3).div_t(divergence_times_per_group.group(3).div_t<=7)');
-        plot(x_aic,f_aic,'Color',[0 114/255 178/255],'LineWidth',2)
-        plot([-3 -1.5],[0 0],'Color',[0 114/255 178/255],'LineWidth',2)
-    catch
-    end
-
-    xlim([-3 7])
-    ylim([-0.1 1.2])
-
-    this_ylim=ylim;
-
-    this_ylim=ylim;
-
-    %FV
-    fvhl=plot([-1.5 0],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-'...
-        ,'Color',[0.9 0.9 0.9],'LineWidth',5);
-    plot([-1.5 -1.5],[this_ylim],'-','Color',[0.5 0.5 0.5])
-
-    %Odor on markers
-    plot([0 0],this_ylim,'-k')
-    odorhl=plot([0 mean(delta_odor)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-k','LineWidth',5);
-    plot([mean(delta_odor) mean(delta_odor)],this_ylim,'-k')
-
-    %Reinforcement markers
-    plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on)],this_ylim,'-r')
-    reinfhl=plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on+delta_reinf)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-r','LineWidth',5);
-    plot([mean(delta_odor_on_reinf_on+delta_reinf) mean(delta_odor_on_reinf_on+delta_reinf)],this_ylim,'-r')
-
-    ylabel('Probability')
-    xlabel('Divegence time (sec)')
-    title(['Divergence time cumulative probability'])
-
-
-    %Divergence time histogram
-    figureNo=figureNo+1;
-    try
-        close(figureNo)
-    catch
-    end
-
-    hFig = figure(figureNo);
-
-    set(hFig, 'units','normalized','position',[.2 .2 .4 .3])
-    hold on
-
-    edges=[-1.5:0.5:6.5];
-
-
-    histogram(divergence_times_per_group.group(1).div_t(divergence_times_per_group.group(1).div_t<=7)',edges,...
-        'Normalization','probability','FaceColor',[80/255 194/255 255/255])
-
-    histogram(divergence_times_per_group.group(3).div_t(divergence_times_per_group.group(1).div_t<=7)',edges,...
-        'Normalization','probability','FaceColor',[0 114/255 178/255])
-
-    plot([-3 7],[0 0],'-k')
-    xlim([-2 7])
-    ylim([-0.04 0.18])
-
-    this_ylim=ylim;
-
-    %FV
-    fvhl=plot([-1.5 0],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-'...
-        ,'Color',[0.9 0.9 0.9],'LineWidth',5);
-    plot([-1.5 -1.5],[this_ylim],'-','Color',[0.5 0.5 0.5])
-
-    %Odor on markers
-    plot([0 0],this_ylim,'-k')
-    odorhl=plot([0 mean(delta_odor)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-k','LineWidth',5);
-    plot([mean(delta_odor) mean(delta_odor)],this_ylim,'-k')
-
-    %Reinforcement markers
-    plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on)],this_ylim,'-r')
-    reinfhl=plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on+delta_reinf)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-r','LineWidth',5);
-    plot([mean(delta_odor_on_reinf_on+delta_reinf) mean(delta_odor_on_reinf_on+delta_reinf)],this_ylim,'-r')
-
-    ylabel('No of ROIs')
-    xlabel('Divergence time')
-    title(['Histogram for divergence time'])
-
-    try
-        input_data=[];
-
-        input_data(1).data=divergence_times_per_group.group(1).div_t(divergence_times_per_group.group(1).div_t<=7)';
-        input_data(1).description='Naive';
-        input_data(2).data=divergence_times_per_group.group(3).div_t(divergence_times_per_group.group(1).div_t<=7)';
-        input_data(2).description='Proficient';
-
-        fprintf(1, ['\n\nRanksum or t-test p values for discrimination times\n'])
-
-        [output_data] = drgMutiRanksumorTtest(input_data);
-    catch
-    end
-
-    %Plot rainbow
-    figureNo=figureNo+1;
-    try
-        close(figureNo)
-    catch
-    end
-
-    hFig = figure(figureNo);
-
-    set(hFig, 'units','normalized','position',[.49 .1 .05 .3])
-
-
-    prain=[prctile(handles_out.all_div_dFFspm(:),1):(prctile(handles_out.all_div_dFFspm(:),99)-prctile(handles_out.all_div_dFFspm(:),1))/99:prctile(handles_out.all_div_dFFspm(:),99)];
-    pcolor(repmat([1:10],100,1)',repmat(prain,10,1),repmat(prain,10,1))
-    %             colormap jet
-    colormap fire
-    shading interp
-    ax=gca;
-    set(ax,'XTickLabel','')
-
-    pffft=1;
-
-    %Generate a histogram for the magnitude of the responses
-
-    %     handles_out.all_div_t=[];
-    %     handles_out.all_div_delta_dFFsplus=[];
-    %     handles_out.all_div_delta_dFFsminus=[];
-
-%     figureNo=figureNo+1;
-%     try
-%         close(figureNo)
-%     catch
-%     end
-% 
-%     hFig = figure(figureNo);
-% 
-%     set(hFig, 'units','normalized','position',[.2 .2 .4 .3])
-% 
-%     edges=-0.5:0.5:4;
-%     histogram(handles_out.all_div_delta_dFFsplus,edges,'FaceColor',[0 114/255 178/255])
-%     hold on
-%     histogram(handles_out.all_div_delta_dFFsminus,edges,'FaceColor',[158/255 31/255 99/255])
-% 
-%     ylabel('No of ROIs')
-%     xlabel('Delta zdFF')
-%     title('Histogram for Delta zdFF')
-% 
-%     this_ylim=ylim;
-% 
-%     text(2.5,this_ylim(1)+0.85*(this_ylim(2)-this_ylim(1)),'S+','Color',[0 114/255 178/255],'FontSize',16)
-%     text(2.5,this_ylim(1)+0.75*(this_ylim(2)-this_ylim(1)),'S-','Color',[158/255 31/255 99/255],'FontSize',16)
-% 
-%     figureNo=figureNo+1;
-%     try
-%         close(figureNo)
-%     catch
-%     end
-% 
-%     hFig = figure(figureNo);
-% 
-%     set(hFig, 'units','normalized','position',[.2 .2 .3 .3])
-% 
-%     plot(handles_out.all_div_delta_dFFsminus,handles_out.all_div_delta_dFFsplus,'ok')
-% 
-%     ylabel('S+')
-%     xlabel('S-')
-%     title('Delta zdFF')
-% 
+%
 %     %Divergence time
 %     figureNo=figureNo+1;
 %     try
 %         close(figureNo)
 %     catch
 %     end
-% 
+%
 %     hFig = figure(figureNo);
-% 
+%
+%     set(hFig, 'units','normalized','position',[.2 .2 .3 .3])
+%     hold on
+%
+%     [f_aic,x_aic] = drg_ecdf(divergence_times_per_group.group(1).div_t(divergence_times_per_group.group(1).div_t<=7)');
+%     plot(x_aic,f_aic,'Color',[80/255 194/255 255/255],'LineWidth',2)
+%     plot([-3 -1.5],[0 0],'Color',[80/255 194/255 255/255],'LineWidth',2)
+%
+%     try
+%         [f_aic,x_aic] = drg_ecdf(divergence_times_per_group.group(3).div_t(divergence_times_per_group.group(3).div_t<=7)');
+%         plot(x_aic,f_aic,'Color',[0 114/255 178/255],'LineWidth',2)
+%         plot([-3 -1.5],[0 0],'Color',[0 114/255 178/255],'LineWidth',2)
+%     catch
+%     end
+%
+%     xlim([-3 7])
+%     ylim([-0.1 1.2])
+%
+%     this_ylim=ylim;
+%
+%     this_ylim=ylim;
+%
+%     %FV
+%     fvhl=plot([-1.5 0],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-'...
+%         ,'Color',[0.9 0.9 0.9],'LineWidth',5);
+%     plot([-1.5 -1.5],[this_ylim],'-','Color',[0.5 0.5 0.5])
+%
+%     %Odor on markers
+%     plot([0 0],this_ylim,'-k')
+%     odorhl=plot([0 mean(delta_odor)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-k','LineWidth',5);
+%     plot([mean(delta_odor) mean(delta_odor)],this_ylim,'-k')
+%
+%     %Reinforcement markers
+%     plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on)],this_ylim,'-r')
+%     reinfhl=plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on+delta_reinf)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-r','LineWidth',5);
+%     plot([mean(delta_odor_on_reinf_on+delta_reinf) mean(delta_odor_on_reinf_on+delta_reinf)],this_ylim,'-r')
+%
+%     ylabel('Probability')
+%     xlabel('Divegence time (sec)')
+%     title(['Divergence time cumulative probability'])
+%
+%
+%     %Divergence time histogram
+%     figureNo=figureNo+1;
+%     try
+%         close(figureNo)
+%     catch
+%     end
+%
+%     hFig = figure(figureNo);
+%
 %     set(hFig, 'units','normalized','position',[.2 .2 .4 .3])
-% 
+%     hold on
+%
+%     edges=[-1.5:0.5:6.5];
+%
+%
+%     histogram(divergence_times_per_group.group(1).div_t(divergence_times_per_group.group(1).div_t<=7)',edges,...
+%         'Normalization','probability','FaceColor',[80/255 194/255 255/255])
+%
+%     histogram(divergence_times_per_group.group(3).div_t(divergence_times_per_group.group(1).div_t<=7)',edges,...
+%         'Normalization','probability','FaceColor',[0 114/255 178/255])
+%
+%     plot([-3 7],[0 0],'-k')
+%     xlim([-2 7])
+%     ylim([-0.04 0.18])
+%
+%     this_ylim=ylim;
+%
+%     %FV
+%     fvhl=plot([-1.5 0],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-'...
+%         ,'Color',[0.9 0.9 0.9],'LineWidth',5);
+%     plot([-1.5 -1.5],[this_ylim],'-','Color',[0.5 0.5 0.5])
+%
+%     %Odor on markers
+%     plot([0 0],this_ylim,'-k')
+%     odorhl=plot([0 mean(delta_odor)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-k','LineWidth',5);
+%     plot([mean(delta_odor) mean(delta_odor)],this_ylim,'-k')
+%
+%     %Reinforcement markers
+%     plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on)],this_ylim,'-r')
+%     reinfhl=plot([mean(delta_odor_on_reinf_on) mean(delta_odor_on_reinf_on+delta_reinf)],[this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1)) this_ylim(1)+0.1*(this_ylim(2)-this_ylim(1))],'-r','LineWidth',5);
+%     plot([mean(delta_odor_on_reinf_on+delta_reinf) mean(delta_odor_on_reinf_on+delta_reinf)],this_ylim,'-r')
+%
+%     ylabel('No of ROIs')
+%     xlabel('Divergence time')
+%     title(['Histogram for divergence time'])
+%
+%     try
+%         input_data=[];
+%
+%         input_data(1).data=divergence_times_per_group.group(1).div_t(divergence_times_per_group.group(1).div_t<=7)';
+%         input_data(1).description='Naive';
+%         input_data(2).data=divergence_times_per_group.group(3).div_t(divergence_times_per_group.group(1).div_t<=7)';
+%         input_data(2).description='Proficient';
+%
+%         fprintf(1, ['\n\nRanksum or t-test p values for discrimination times\n'])
+%
+%         [output_data] = drgMutiRanksumorTtest(input_data);
+%     catch
+%     end
+
+%Plot rainbow
+figureNo=figureNo+1;
+try
+    close(figureNo)
+catch
+end
+
+hFig = figure(figureNo);
+
+set(hFig, 'units','normalized','position',[.49 .1 .05 .3])
+
+
+prain=[prctile(handles_out.all_div_dFFspm(:),1):(prctile(handles_out.all_div_dFFspm(:),99)-prctile(handles_out.all_div_dFFspm(:),1))/99:prctile(handles_out.all_div_dFFspm(:),99)];
+pcolor(repmat([1:10],100,1)',repmat(prain,10,1),repmat(prain,10,1))
+%             colormap jet
+colormap fire
+shading interp
+ax=gca;
+set(ax,'XTickLabel','')
+
+pffft=1;
+
+%Generate a histogram for the magnitude of the responses
+
+%     handles_out.all_div_t=[];
+%     handles_out.all_div_delta_dFFsplus=[];
+%     handles_out.all_div_delta_dFFsminus=[];
+
+%     figureNo=figureNo+1;
+%     try
+%         close(figureNo)
+%     catch
+%     end
+%
+%     hFig = figure(figureNo);
+%
+%     set(hFig, 'units','normalized','position',[.2 .2 .4 .3])
+%
+%     edges=-0.5:0.5:4;
+%     histogram(handles_out.all_div_delta_dFFsplus,edges,'FaceColor',[0 114/255 178/255])
+%     hold on
+%     histogram(handles_out.all_div_delta_dFFsminus,edges,'FaceColor',[158/255 31/255 99/255])
+%
+%     ylabel('No of ROIs')
+%     xlabel('Delta zdFF')
+%     title('Histogram for Delta zdFF')
+%
+%     this_ylim=ylim;
+%
+%     text(2.5,this_ylim(1)+0.85*(this_ylim(2)-this_ylim(1)),'S+','Color',[0 114/255 178/255],'FontSize',16)
+%     text(2.5,this_ylim(1)+0.75*(this_ylim(2)-this_ylim(1)),'S-','Color',[158/255 31/255 99/255],'FontSize',16)
+%
+%     figureNo=figureNo+1;
+%     try
+%         close(figureNo)
+%     catch
+%     end
+%
+%     hFig = figure(figureNo);
+%
+%     set(hFig, 'units','normalized','position',[.2 .2 .3 .3])
+%
+%     plot(handles_out.all_div_delta_dFFsminus,handles_out.all_div_delta_dFFsplus,'ok')
+%
+%     ylabel('S+')
+%     xlabel('S-')
+%     title('Delta zdFF')
+%
+%     %Divergence time
+%     figureNo=figureNo+1;
+%     try
+%         close(figureNo)
+%     catch
+%     end
+%
+%     hFig = figure(figureNo);
+%
+%     set(hFig, 'units','normalized','position',[.2 .2 .4 .3])
+%
 %     edges=[-1.5:0.5:6.5];
 %     histogram(handles_out.all_div_t(~isnan(handles_out.all_div_t)),edges)
-% 
+%
 %     xlim([-3 7])
 %     ylim([0 120])
 %     ylabel('No of ROIs')
 %     xlabel('Divegence time')
 %     title('Histogram for divergence time')
 
-end
 
-%  
+%
 % %Now generate the summary figures for the divergent responses
-% 
+%
 % if handles_out.all_spresp_ii_dFF+handles_out.all_smresp_ii_dFF>5
 %     %Calculate the crosscorrelations
 %     %     croscorr_traces=abs(corrcoef(handles_out.all_div_dFFspm)); %please note that I am using the absolute value
@@ -1623,7 +1934,7 @@ end
 %     all_spandmresp_iidFF=[1:handles_out.all_spresp_ii_dFF 1:handles_out.all_smresp_ii_dFF];
 %     all_spandmresp_sporsm=[ones(1,handles_out.all_spresp_ii_dFF) zeros(1,handles_out.all_smresp_ii_dFF)];
 %     croscorr_traces=corrcoef(all_spandmresp_dFFspm);
-% 
+%
 %     %Set autocorrelations to zero
 % %     for ii=1:size(croscorr_traces,1)
 % %         croscorr_traces(ii,ii)=0;
@@ -1636,7 +1947,7 @@ end
 %         close(figureNo)
 %     catch
 %     end
-% 
+%
 %     hFig = figure(figureNo);
 %     %Do cutoff for 4 clusters
 %     cutoff = median([Z(end-(no_clusters-1),3) Z(end-(no_clusters-2),3)]);
@@ -1644,47 +1955,47 @@ end
 %     set(H,'LineWidth',2)
 %     hFig=figure(figureNo);
 %     set(hFig, 'units','normalized','position',[.05 .1 .14 .8])
-% 
+%
 %     %re-sort the matrix
 %     for ii=1:size(croscorr_traces,1)
 %         for jj=1:size(croscorr_traces,1)
 %             perm_croscorr_traces(ii,jj)=croscorr_traces(outperm(ii),outperm(jj));
 %         end
 %     end
-% 
-% 
-% 
+%
+%
+%
 %     figureNo=figureNo+1;
 %     try
 %         close(figureNo)
 %     catch
 %     end
-% 
+%
 %     hFig = figure(figureNo);
-% 
+%
 %     set(hFig, 'units','normalized','position',[.15 .1 .6 .8])
 %     hold on
 %     pcolor(perm_croscorr_traces)
 %     colormap fire
 %     shading flat
-% 
+%
 %     caxis([-1    1])
 %     title(['Cross correlations for all ROIs'])
 %     xlim([1 handles_out.all_spresp_ii_dFF+handles_out.all_smresp_ii_dFF])
 %     ylim([1 handles_out.all_spresp_ii_dFF+handles_out.all_smresp_ii_dFF])
-% 
+%
 %     %Plot rainbow for cross correlation
 %     figureNo=figureNo+1;
 %     try
 %         close(figureNo)
 %     catch
 %     end
-% 
+%
 %     hFig = figure(figureNo);
-% 
+%
 %     set(hFig, 'units','normalized','position',[.49 .1 .05 .3])
-% 
-% 
+%
+%
 %     prain=[-1:2/99:1];
 %     pcolor(repmat([1:10],100,1)',repmat(prain,10,1),repmat(prain,10,1))
 %     %             colormap jet
@@ -1692,22 +2003,22 @@ end
 %     shading interp
 %     ax=gca;
 %     set(ax,'XTickLabel','')
-% 
+%
 %     %Plot timecourses for all ROIs for S+ and S-
-% 
+%
 %     figureNo=figureNo+1;
 %     try
 %         close(figureNo)
 %     catch
 %     end
-% 
+%
 %     hFig = figure(figureNo);
-% 
+%
 %      set(hFig, 'units','normalized','position',[.05 .1 .18 .8])
 %     hold on
-% 
-% 
-% 
+%
+%
+%
 %     sorted_handles_out.all_spmresp_ii_dFF=0;
 %     sorted_handles_out.all_spmresp_sporsm=[];
 %     sorted_handles_out.all_sporsm_dFFspm=[];
@@ -1725,39 +2036,39 @@ end
 %         end
 %         sorted_handles_out.clusters(sorted_handles_out.all_spmresp_ii_dFF)=clusters(outperm(ii));
 %     end
-% 
+%
 %     %pcolor does not show the first row
 %     pseudo_dFFspm=zeros(size(sorted_handles_out.all_sporsm_dFFspm,1)+1,size(sorted_handles_out.all_sporsm_dFFspm,2));
 %     pseudo_dFFspm(1:end-1,:)=sorted_handles_out.all_sporsm_dFFspm;
-% 
+%
 %     time_span_mat=repmat(time_span,sorted_handles_out.all_spmresp_ii_dFF+1,1);
 %     ROI_mat=repmat(1:sorted_handles_out.all_spmresp_ii_dFF+1,length(time_span),1)';
-% 
+%
 %     pcolor(time_span_mat,ROI_mat,pseudo_dFFspm)
-% 
-% 
+%
+%
 %     %         time_span_mat=repmat(time_span,sorted_handles_out.all_spmresp_ii_dFF,1);
 %     %         ROI_mat=repmat(1:sorted_handles_out.all_spmresp_ii_dFF,length(time_span),1)';
 %     %
 %     %         pcolor(time_span_mat,ROI_mat,sorted_handles_out.all_sporsm_dFFspm)
-% 
+%
 %     colormap fire
 %     shading flat
-% 
+%
 %     caxis([prctile(sorted_handles_out.all_sporsm_dFFspm(:),1) prctile(sorted_handles_out.all_sporsm_dFFspm(:),99)])
-% 
+%
 %     for ii_te=1:length(timeEvents)
 %         plot([timeEvents(ii_te) timeEvents(ii_te)],[0 sorted_handles_out.all_spmresp_ii_dFF],'-r')
 %     end
-% 
+%
 %     xlim([-7 15])
 %     ylim([1 ii])
 %     title(['Timecourses for significant dFF changes, all ROIs'])
 %     xlabel('Time (sec)')
 %     ylabel('ROI number')
-% 
-% 
-% 
+%
+%
+%
 %     %Plot the average timecourses per cluster
 %     for clus=1:max(clusters)
 %         figureNo = figureNo + 1;
@@ -1766,19 +2077,19 @@ end
 %         catch
 %         end
 %         hFig=figure(figureNo);
-% 
+%
 %         ax=gca;ax.LineWidth=3;
 %         set(hFig, 'units','normalized','position',[.3 .2 .3 .3])
-% 
-% 
+%
+%
 %         hold on
-% 
+%
 %         %get the dF/F
-% 
-% 
+%
+%
 %         try
-% 
-% 
+%
+%
 %             this_cluster_dFF=[];
 %             ii_included=0;
 %             for ii=1:length(sorted_handles_out.clusters)
@@ -1787,38 +2098,38 @@ end
 %                     this_cluster_dFF(ii_included,:)=sorted_handles_out.all_sporsm_dFFspm(ii,:);
 %                 end
 %             end
-% 
-% 
+%
+%
 %             CIpv = bootci(1000, @mean, this_cluster_dFF);
 %             meanpv=mean(this_cluster_dFF,1);
 %             CIpv(1,:)=meanpv-CIpv(1,:);
 %             CIpv(2,:)=CIpv(2,:)-meanpv;
-% 
-% 
+%
+%
 %             [hlpvl, hppvl] = boundedline(time_span,mean(this_cluster_dFF), CIpv','cmap',[0 0 0]);
-% 
-% 
-% 
+%
+%
+%
 %         catch
 %         end
-% 
+%
 %         this_ylim=ylim;
 %         for ii_te=1:length(timeEvents)
 %             plot([timeEvents(ii_te) timeEvents(ii_te)],this_ylim,'-k')
 %         end
-% 
+%
 %         xlim([-7 15])
-% 
-% 
+%
+%
 %         xlabel('Time(sec)')
 %         ylabel('dFF')
-% 
-% 
+%
+%
 %         title(['dFF for cluster no ' num2str(clus)])
-% 
+%
 %     end
-% 
-% 
+%
+%
 %     %         %Now plot the timecourses per group
 %     %         for grNo=1:3
 %     %
@@ -2002,7 +2313,7 @@ end
 %     %         ylabel('No of ROIs')
 %     %         xlabel('Divegence time')
 %     %         title('Histogram for divergence time')
-% 
+%
 % end
 %Uncomment this if you want to browse through the figures
 %     tic

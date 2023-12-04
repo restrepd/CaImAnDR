@@ -593,6 +593,7 @@ if all_files_present==1
                     dFFsminus=zeros(length(time_span),trialNum(min_ii,2));
                     dFFsminus(:,:)=firingRates(min_ii,2,:,1:trialNum(min_ii,2));
 
+                   
 
                     handles_in.time_span=time_span;
                     handles_in.dFFsplus=dFFsplus;
@@ -642,7 +643,43 @@ if all_files_present==1
         end
         first_fig=1;
 
- 
+        sp_hit=[];
+        sp_miss=[];
+        jj_sp=0;
+        for ii_sp_or_sm=1:length(all_handles(fileNo).handles_out.sp_or_sm)
+            if all_handles(fileNo).handles_out.sp_or_sm(ii_sp_or_sm)==1
+                jj_sp=jj_sp+1;
+                if all_handles(fileNo).handles_out.hit_per_trial(ii_sp_or_sm)==1
+                    sp_hit(jj_sp)=1;
+                    sp_miss(jj_sp)=0;
+                else
+                    sp_hit(jj_sp)=0;
+                    sp_miss(jj_sp)=1;
+                end
+            end
+        end
+
+        sm_cr=[];
+        sm_fa=[];
+        jj_sm=0;
+        for ii_sp_or_sm=1:length(all_handles(fileNo).handles_out.sp_or_sm)
+            if all_handles(fileNo).handles_out.sp_or_sm(ii_sp_or_sm)==0
+                jj_sm=jj_sm+1;
+                if all_handles(fileNo).handles_out.fa_per_trial(ii_sp_or_sm)==1
+                    sm_cr(jj_sm)=0;
+                    sm_fa(jj_sm)=1;
+                else
+                    sm_cr(jj_sm)=1;
+                    sm_fa(jj_sm)=0;
+                end
+            end
+        end
+
+        handles_out.sp_hit=sp_hit;
+        handles_out.sp_miss=sp_miss;
+        handles_out.sm_cr=sm_cr;
+        handles_out.sm_fa=sm_fa;
+
         %Show the figure for divergent dFF in the odor period if p<pFDR
         %Save the dFFSplus and dFFSminus
 
@@ -801,6 +838,38 @@ if all_files_present==1
 
                 handles_out.all_div_dFFsplus(handles_out.all_div_ii_dFF,1:length(time_span))=mean(dFFsplus')';
                 handles_out.all_div_dFFsminus(handles_out.all_div_ii_dFF,1:length(time_span))=mean(dFFsminus')';
+
+                if sum(handles_out.sp_hit)>1
+                    handles_out.all_div_dFFhit(handles_out.all_div_ii_dFF,1:length(time_span))=mean(dFFsplus(:,logical(handles_out.sp_hit))')';
+                    handles_out.all_hit(handles_out.all_div_ii_dFF)=1;
+                else
+                    handles_out.all_div_dFFhit(handles_out.all_div_ii_dFF,1:length(time_span))=zeros(1,length(time_span));
+                    handles_out.all_hit(handles_out.all_div_ii_dFF)=0;
+                end
+
+                if sum(handles_out.sp_miss)>1
+                    handles_out.all_div_dFFmiss(handles_out.all_div_ii_dFF,1:length(time_span))=mean(dFFsplus(:,logical(handles_out.sp_miss))')';
+                    handles_out.all_miss(handles_out.all_div_ii_dFF)=1;
+                else
+                    handles_out.all_div_dFFmiss(handles_out.all_div_ii_dFF,1:length(time_span))=zeros(1,length(time_span));
+                    handles_out.all_miss(handles_out.all_div_ii_dFF)=0;
+                end
+
+                if sum(handles_out.sm_cr)>1
+                    handles_out.all_div_dFFcr(handles_out.all_div_ii_dFF,1:length(time_span))=mean(dFFsminus(:,logical(handles_out.sm_cr))')';
+                    handles_out.all_cr(handles_out.all_div_ii_dFF)=1;
+                else
+                    handles_out.all_div_dFFcr(handles_out.all_div_ii_dFF,1:length(time_span))=zeros(1,length(time_span));
+                    handles_out.all_cr(handles_out.all_div_ii_dFF)=0;
+                end
+
+                if sum(handles_out.sm_fa)>1
+                    handles_out.all_div_dFFfa(handles_out.all_div_ii_dFF,1:length(time_span))=mean(dFFsminus(:,logical(handles_out.sm_fa))')';
+                    handles_out.all_fa(handles_out.all_div_ii_dFF)=1;
+                else
+                    handles_out.all_div_dFFfa(handles_out.all_div_ii_dFF,1:length(time_span))=zeros(1,length(time_span));
+                    handles_out.all_fa(handles_out.all_div_ii_dFF)=0;
+                end
 
                 handles_out.all_div_delta_dFFsplus(handles_out.all_div_ii_dFF)=mean(handles_out.all_div_dFFsplus(handles_out.all_div_ii_dFF,(time_span>=odor_t(1))&(time_span<=odor_t(2))))...
                     -mean(handles_out.all_div_dFFsplus(handles_out.all_div_ii_dFF,(time_span>=pre_t(1))&(time_span<=pre_t(2))));
