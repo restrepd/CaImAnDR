@@ -1,4 +1,3 @@
-
 %drgCaImAn_analyze_pval_reversal_batch.m
 %Displays the data generated with drgCaImAn_pval_batch for proficient
 %forward vs reversed
@@ -23,7 +22,15 @@ end
 s=rng;
 
 do_std=0;
-no_clusters=3;
+no_clusters=2;
+
+%Pairing of clusters
+cluster_pairing.group(1).clus(1)=1;
+cluster_pairing.group(1).clus(2)=2;
+% cluster_pairing.group(1).clus(3)=2;
+
+cluster_pairing.group(3).clus(1)=2;
+cluster_pairing.group(3).clus(2)=1;
 
 fr_per_names{1}='Fwd <40%';
 fr_per_names{2}='Fwd 40-65%';
@@ -55,6 +62,9 @@ delta_reinf=4.078266e-01;
 pre_t=[-3 -2];
 fv_t=[-1 0];
 odor_t=[2 4];
+
+%Time to quantify the cluster dFF
+time_clus=1.5;
 
 if isfield(handles_in,'min_tr_div')
     min_tr_div=handles_in.min_tr_div;
@@ -875,7 +885,7 @@ if handles_out.all_div_ii_dFF>5
 
 
 %             croscorr_traces=corrcoef(these_all_div_dFFspm);
-             croscorr_traces=corrcoef(these_all_div_dFFsminus);
+             croscorr_traces=corrcoef(these_all_div_dFFsplus);
 
             Z = linkage(croscorr_traces,'complete','correlation');
 
@@ -1229,25 +1239,10 @@ if handles_out.all_div_ii_dFF>5
     %Quantify changes in dFF
     pffft=1;
 
-%     cluster_pairing.group(1).clus(1)=1;
-%     cluster_pairing.group(1).clus(2)=2;
-%     cluster_pairing.group(1).clus(3)=3;
-% 
-%     cluster_pairing.group(3).clus(1)=1;
-%     cluster_pairing.group(3).clus(2)=2;
-%     cluster_pairing.group(3).clus(3)=3;
 
-%     clus_per_clus_ii=[3 3 1 2];
-    time_window_clus=[0 2.81 1.46;...
-        0 0 0;...
-        -0.49 0.59 1.55];
 
-%     clus_ii_legends{1}='cluster 1 peak 1';
-%     clus_ii_legends{2}='cluster 1 peak 2';
-%     clus_ii_legends{3}='cluster 2';
-%     clus_ii_legends{4}='cluster 3';
-
-    for clus_ii=1:3
+    for clus_ii=1:no_clusters
+        %Note that clusters are numbered by forward cluster assignment
 
         figureNo=figureNo+1;
         try
@@ -1261,7 +1256,8 @@ if handles_out.all_div_ii_dFF>5
 
         hold on
 
-        clus=clus_ii;
+        fwd_clus=clus_ii;
+        rev_clus=3-clus_ii;
 
         
 
@@ -1275,106 +1271,102 @@ if handles_out.all_div_ii_dFF>5
         rand_offset=0.4;
 
 
+        this_time_window=[time_clus-0.5 time_clus+0.5];
+        
 
-        actual_clus=clus;
-
-        %do S- forward
+        %do S+ forward, HEP
         grNo=1;
-        this_time_window=[time_window_clus(grNo,clus_ii)-0.5 time_window_clus(grNo,clus_ii)+0.5];
-        these_dFF_minus=mean(dFF_timecourse_per_clus.group(grNo).cluster(actual_clus).sminus_timecourses...
+        these_dFF=mean(dFF_timecourse_per_clus.group(grNo).cluster(fwd_clus).splus_timecourses...
             (:,(time_span>=this_time_window(1))&(time_span<=this_time_window(2))),2);
 
         bar_offset=bar_offset+1;
-        bar(bar_offset,mean(these_dFF_minus),'LineWidth', 3,'EdgeColor','none','FaceColor',[238/255 111/255 179/255])
+        bar(bar_offset,mean(these_dFF),'LineWidth', 3,'EdgeColor','none','FaceColor',[80/255 194/255 255/255])
 
         %Violin plot
-        [mean_out, CIout]=drgViolinPoint(these_dFF_minus...
+        [mean_out, CIout]=drgViolinPoint(these_dFF...
             ,edges,bar_offset,rand_offset,'k','k',1);
 
-        glm_clus.data(glm_clus_ii+1:glm_clus_ii+length(these_dFF_minus))=these_dFF_minus;
-        glm_clus.odor(glm_clus_ii+1:glm_clus_ii+length(these_dFF_minus))=1*ones(1,length(these_dFF_minus));
-        glm_clus.fwdrev(glm_clus_ii+1:glm_clus_ii+length(these_dFF_minus))=0*ones(1,length(these_dFF_minus));
-        glm_clus_ii=glm_clus_ii+length(these_dFF_minus);
+        glm_clus.data(glm_clus_ii+1:glm_clus_ii+length(these_dFF))=these_dFF;
+        glm_clus.odor(glm_clus_ii+1:glm_clus_ii+length(these_dFF))=1*ones(1,length(these_dFF));
+        glm_clus.fwdrev(glm_clus_ii+1:glm_clus_ii+length(these_dFF))=0*ones(1,length(these_dFF));
+        glm_clus_ii=glm_clus_ii+length(these_dFF);
 
         id_clus_ii=id_clus_ii+1;
-        input_clus_data(id_clus_ii).data=these_dFF_minus;
+        input_clus_data(id_clus_ii).data=these_dFF;
+        input_clus_data(id_clus_ii).description=[naive_pro{grNo} ' S+ (HEP)'];
+
+
+        %do S- reversed, HEP
+        grNo=3;
+        these_dFF=mean(dFF_timecourse_per_clus.group(grNo).cluster(rev_clus).sminus_timecourses...
+            (:,(time_span>=this_time_window(1))&(time_span<=this_time_window(2))),2);
+
+        bar_offset=bar_offset+1;
+        bar(bar_offset,mean(these_dFF),'LineWidth', 3,'EdgeColor','none','FaceColor',[238/255 111/255 179/255])
+
+        %Violin plot
+        [mean_out, CIout]=drgViolinPoint(these_dFF...
+            ,edges,bar_offset,rand_offset,'k','k',1);
+
+        bar_offset=bar_offset+1;
+
+        glm_clus.data(glm_clus_ii+1:glm_clus_ii+length(these_dFF))=these_dFF;
+        glm_clus.odor(glm_clus_ii+1:glm_clus_ii+length(these_dFF))=1*ones(1,length(these_dFF));
+        glm_clus.fwdrev(glm_clus_ii+1:glm_clus_ii+length(these_dFF))=1*ones(1,length(these_dFF));
+        glm_clus_ii=glm_clus_ii+length(these_dFF);
+
+        id_clus_ii=id_clus_ii+1;
+        input_clus_data(id_clus_ii).data=these_dFF;
+        input_clus_data(id_clus_ii).description=[naive_pro{grNo} ' S- (HEP)'];
+
+        %do S+ reversed MO
+        grNo=3;
+        these_dFF=mean(dFF_timecourse_per_clus.group(grNo).cluster(rev_clus).splus_timecourses...
+            (:,(time_span>=this_time_window(1))&(time_span<=this_time_window(2))),2);
+
+        bar_offset=bar_offset+1;
+        bar(bar_offset,mean(these_dFF),'LineWidth', 3,'EdgeColor','none','FaceColor',[80/255 194/255 255/255])
+
+        %Violin plot
+        [mean_out, CIout]=drgViolinPoint(these_dFF...
+            ,edges,bar_offset,rand_offset,'k','k',1);
+
+        glm_clus.data(glm_clus_ii+1:glm_clus_ii+length(these_dFF))=these_dFF;
+        glm_clus.odor(glm_clus_ii+1:glm_clus_ii+length(these_dFF))=0*ones(1,length(these_dFF));
+        glm_clus.fwdrev(glm_clus_ii+1:glm_clus_ii+length(these_dFF))=1*ones(1,length(these_dFF));
+        glm_clus_ii=glm_clus_ii+length(these_dFF);
+
+        id_clus_ii=id_clus_ii+1;
+        input_clus_data(id_clus_ii).data=these_dFF;
+        input_clus_data(id_clus_ii).description=[naive_pro{grNo} ' S+ (MO)'];
+
+
+        %do S- forward MO
+        grNo=1;
+        these_dFF=mean(dFF_timecourse_per_clus.group(grNo).cluster(fwd_clus).sminus_timecourses...
+            (:,(time_span>=this_time_window(1))&(time_span<=this_time_window(2))),2);
+
+        bar_offset=bar_offset+1;
+        bar(bar_offset,mean(these_dFF),'LineWidth', 3,'EdgeColor','none','FaceColor',[238/255 111/255 179/255])
+
+        %Violin plot
+        [mean_out, CIout]=drgViolinPoint(these_dFF...
+            ,edges,bar_offset,rand_offset,'k','k',1);
+
+        bar_offset=bar_offset+1;
+
+        glm_clus.data(glm_clus_ii+1:glm_clus_ii+length(these_dFF))=these_dFF;
+        glm_clus.odor(glm_clus_ii+1:glm_clus_ii+length(these_dFF))=0*ones(1,length(these_dFF));
+        glm_clus.fwdrev(glm_clus_ii+1:glm_clus_ii+length(these_dFF))=0*ones(1,length(these_dFF));
+        glm_clus_ii=glm_clus_ii+length(these_dFF);
+
+        id_clus_ii=id_clus_ii+1;
+        input_clus_data(id_clus_ii).data=these_dFF;
         input_clus_data(id_clus_ii).description=[naive_pro{grNo} ' S- (MO)'];
 
 
-        %do S+ reversed
-        grNo=3;
-        this_time_window=[time_window_clus(grNo,clus_ii)-0.5 time_window_clus(grNo,clus_ii)+0.5];
-        these_dFF_plus=mean(dFF_timecourse_per_clus.group(grNo).cluster(actual_clus).splus_timecourses...
-            (:,(time_span>=this_time_window(1))&(time_span<=this_time_window(2))),2);
-
-        bar_offset=bar_offset+1;
-        bar(bar_offset,mean(these_dFF_plus),'LineWidth', 3,'EdgeColor','none','FaceColor',[80/255 194/255 255/255])
-
-        %Violin plot
-        [mean_out, CIout]=drgViolinPoint(these_dFF_plus...
-            ,edges,bar_offset,rand_offset,'k','k',1);
-
-        bar_offset=bar_offset+1;
-
-        glm_clus.data(glm_clus_ii+1:glm_clus_ii+length(these_dFF_plus))=these_dFF_plus;
-        glm_clus.odor(glm_clus_ii+1:glm_clus_ii+length(these_dFF_plus))=1*ones(1,length(these_dFF_plus));
-        glm_clus.fwdrev(glm_clus_ii+1:glm_clus_ii+length(these_dFF_plus))=1*ones(1,length(these_dFF_plus));
-        glm_clus_ii=glm_clus_ii+length(these_dFF_plus);
-
-        id_clus_ii=id_clus_ii+1;
-        input_clus_data(id_clus_ii).data=these_dFF_plus;
-        input_clus_data(id_clus_ii).description=[naive_pro{grNo} ' S+ (MO)'];
-
-        %do S- reversed
-        grNo=3;
-        this_time_window=[time_window_clus(grNo,clus_ii)-0.5 time_window_clus(grNo,clus_ii)+0.5];
-        these_dFF_minus=mean(dFF_timecourse_per_clus.group(grNo).cluster(actual_clus).sminus_timecourses...
-            (:,(time_span>=this_time_window(1))&(time_span<=this_time_window(2))),2);
-
-        bar_offset=bar_offset+1;
-        bar(bar_offset,mean(these_dFF_minus),'LineWidth', 3,'EdgeColor','none','FaceColor',[238/255 111/255 179/255])
-
-        %Violin plot
-        [mean_out, CIout]=drgViolinPoint(these_dFF_minus...
-            ,edges,bar_offset,rand_offset,'k','k',1);
-
-        glm_clus.data(glm_clus_ii+1:glm_clus_ii+length(these_dFF_minus))=these_dFF_minus;
-        glm_clus.odor(glm_clus_ii+1:glm_clus_ii+length(these_dFF_minus))=0*ones(1,length(these_dFF_minus));
-        glm_clus.fwdrev(glm_clus_ii+1:glm_clus_ii+length(these_dFF_minus))=1*ones(1,length(these_dFF_minus));
-        glm_clus_ii=glm_clus_ii+length(these_dFF_minus);
-
-        id_clus_ii=id_clus_ii+1;
-        input_clus_data(id_clus_ii).data=these_dFF_minus;
-        input_clus_data(id_clus_ii).description=[naive_pro{grNo} ' S- (IA)'];
-
-
-        %do S+ forward
-        grNo=1;
-        this_time_window=[time_window_clus(grNo,clus_ii)-0.5 time_window_clus(grNo,clus_ii)+0.5];
-        these_dFF_plus=mean(dFF_timecourse_per_clus.group(grNo).cluster(actual_clus).splus_timecourses...
-            (:,(time_span>=this_time_window(1))&(time_span<=this_time_window(2))),2);
-
-        bar_offset=bar_offset+1;
-        bar(bar_offset,mean(these_dFF_plus),'LineWidth', 3,'EdgeColor','none','FaceColor',[80/255 194/255 255/255])
-
-        %Violin plot
-        [mean_out, CIout]=drgViolinPoint(these_dFF_plus...
-            ,edges,bar_offset,rand_offset,'k','k',1);
-
-        bar_offset=bar_offset+1;
-
-        glm_clus.data(glm_clus_ii+1:glm_clus_ii+length(these_dFF_plus))=these_dFF_plus;
-         glm_clus.odor(glm_clus_ii+1:glm_clus_ii+length(these_dFF_plus))=0*ones(1,length(these_dFF_plus));
-        glm_clus.fwdrev(glm_clus_ii+1:glm_clus_ii+length(these_dFF_plus))=0*ones(1,length(these_dFF_plus));
-        glm_clus_ii=glm_clus_ii+length(these_dFF_plus);
-
-        id_clus_ii=id_clus_ii+1;
-        input_clus_data(id_clus_ii).data=these_dFF_plus;
-        input_clus_data(id_clus_ii).description=[naive_pro{grNo} ' S+ (IA)'];
-
-
         xticks([1 2 4 5])
-        xticklabels({'S- (MO)','S+ (MO)','S- (IA)','S+ (IA)'})
+        xticklabels({'S+ (HEP)','S- (HEP)','S+ (MO)','S- (MO)'})
         xtickangle(45)
 
         ylabel('zdFF')
@@ -1426,10 +1418,10 @@ if handles_out.all_div_ii_dFF>5
     hold on
 
     bar_offset=0;
-    for clus_no=1:3
+    for clus_no=1:no_clusters
         for grNo=[1 3]
             total_ROIs_this_cluster=0;
-            for clus_nos=1:3
+            for clus_nos=1:no_clusters
                 total_ROIs_this_cluster=total_ROIs_this_cluster+size(dFF_timecourse_per_clus.group(grNo).cluster(clus_nos).sminus_timecourses,1);
             end
 
