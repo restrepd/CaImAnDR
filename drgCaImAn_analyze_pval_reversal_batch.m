@@ -74,7 +74,7 @@ else
     min_tr_resp=6;
 end
 
-fileID = fopen([outhPathName 'drgCaImAn_analyze_pval_batch.txt'],'w');
+fileID = fopen([outhPathName 'drgCaImAn_analyze_pval_reversal_batch.txt'],'w');
 
 % Time events of interest (e.g. stimulus onset/offset, cues etc.)
 % They are marked on the plots with vertical lines
