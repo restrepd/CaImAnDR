@@ -58,7 +58,7 @@ warning('off')
 
 %Restart random seeds
 rng('shuffle');
-
+ 
 convert_z=1; %Convert dFF traces to z
 dt_span=40; %Seconds shown before and after odor on in the figures
 moving_mean_n=30; %Points used to calculate moving mean for the prediction label figure
