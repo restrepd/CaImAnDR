@@ -437,6 +437,22 @@ ylabel('No of traces')
 %Now keep only the traces above rho=0.7
 %Now read the DeepCADRT file and get traces from the caiman contours
 rho_thr=0.7;
+figNo=figNo+1;
+try
+    close(figNo)
+catch
+end
+
+hFig1 = figure(figNo);
+set(hFig1, 'units','normalized','position',[.55 .55 .4 .4])
+
+hold on
+histogram(rhos(rhos>=rho_thr))
+title('Culled rho between DeepCADRT and caiman')
+xlabel('rho')
+ylabel('No of traces')
+
+
 fprintf(1,['Number of caiman contours= ' num2str(length(rhos)) ', number with rho>=' num2str(rho_thr) ' is ' num2str(sum(rhos>=rho_thr)) '\n'])
 load(deepcadrt_filename)
 max_image=zeros(size(M2,1),size(M2,2));
@@ -449,6 +465,7 @@ for ii1=1:size(M2,1)
         end
     end
 end
+
 figNo=figNo+1;
 try
     close(figNo)
@@ -480,7 +497,7 @@ for ii=1: no_traces
         max2=max([max2 max(this_contour(:,2))]);
         figure(figNo)
         for jj=2:size(this_contour,1)
-            plot([this_contour(jj-1,2) this_contour(jj,2)],[this_contour(jj-1,1) this_contour(jj,1)],'-r')
+            plot([this_contour(jj-1,2) this_contour(jj,2)],[this_contour(jj-1,1) this_contour(jj,1)],'-y')
         end
     end
 end
@@ -592,7 +609,7 @@ for this_trace_no=1:no_traces
         for ii=1:iip
             if (peak_start_iis(ii)+ii_before>0)&peak_start_iis(ii)+ii_after<no_images
                 all_transients=[all_transients this_trace(peak_start_iis(ii)+ii_before:peak_start_iis(ii)+ii_after)];
-                plot(d_time,this_trace(peak_start_iis(ii)+ii_before:peak_start_iis(ii)+ii_after),'Color',[0.7 0.7 0.7])
+                plot(d_time,this_trace(peak_start_iis(ii)+ii_before:peak_start_iis(ii)+ii_after),'Color',[0.4 0.4 0.4])
             end
         end
 

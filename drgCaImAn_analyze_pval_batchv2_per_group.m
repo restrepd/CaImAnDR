@@ -3,9 +3,22 @@
 clear all
 close all
 
+addpath('/home/restrepd/Documents/MATLAB/drgMaster')
+addpath('/home/restrepd/Documents/MATLAB/CaImAnDR')
+addpath(genpath('/home/restrepd/Documents/MATLAB/m new/kakearney-boundedline-pkg-32f2a1f'))
+
+override_group_algo=1; %Override group algo?
+
 
 [outFileName,outhPathName] = uigetfile({'drgCaImAn_pval_choices*.mat'},'Select the .mat file with drgCaImAn_pval_batch');
 load([outhPathName outFileName])
+ 
+if override_group_algo==1
+    handles.group_algo=3;   %1 is Ming's spm for the paper
+                            %2 is Fabio's passive
+                            %3 is spm processed only for which_group
+    handles.which_group=3;  %For AD data 1 is forward, 2 is reverse and 3 is further forward
+end
 
 if ~isfield(handles_out,'use_pFDR')
     handles_out.use_pFDR=0;
@@ -123,7 +136,7 @@ edges=[0:10:80];
 rand_offset=0.5;
 
 switch handles.group_algo
-    case 1
+    case {1, 3}
         %Ming
         groups=[1 3];
     case 2
@@ -159,6 +172,18 @@ for grNo=groups
         case 2
             %Fabio
             files_included_gr=(handles.group==grNo)&(handles_out.mouseNo==mouseNo)&files_included_glm;
+        case 3
+            %Ming AD
+            switch grNo
+                case 1
+                    files_included_gr=(handles_out.perCorr>=45)&(handles_out.perCorr<=65)&files_included_glm&(handles_out.grNo==handles.which_group);
+                    fprintf(1, ['\nSessions for learning ' num2str(sum(files_included_gr)) '\n'])
+                case 2
+                    files_included_gr=(handles_out.perCorr>65)&(handles_out.perCorr<80)&files_included_glm&(handles_out.grNo==handles.which_group);
+                case 3
+                    files_included_gr=(handles_out.perCorr>=80)&files_included_glm&(handles_out.grNo==handles.which_group);
+                    fprintf(1, ['\nSessions for proficient ' num2str(sum(files_included_gr)) '\n'])
+            end
     end
 
     for mouseNo=unique(handles_out.mouseNo)
@@ -177,6 +202,16 @@ for grNo=groups
             case 2
                 %Fabio
                 files_included=(handles.group==grNo)&(handles_out.mouseNo==mouseNo)&files_included_glm;
+            case 3
+                %Ming
+                switch grNo
+                    case 1
+                        files_included=(handles_out.perCorr>=45)&(handles_out.perCorr<=65)&(handles_out.mouseNo==mouseNo)&files_included_glm&(handles_out.grNo==handles.which_group);
+                    case 2
+                        files_included=(handles_out.perCorr>65)&(handles_out.perCorr<80)&(handles_out.mouseNo==mouseNo)&files_included_glm&(handles_out.grNo==handles.which_group);
+                    case 3
+                        files_included=(handles_out.perCorr>=80)&(handles_out.mouseNo==mouseNo)&files_included_glm&(handles_out.grNo==handles.which_group);
+                end
         end
 
         switch handles_out.use_pFDR
@@ -258,6 +293,8 @@ for grNo=groups
                 input_sig_data(id_sig_ii).description=naive_pro{grNo};
             case 2
                 input_sig_data(id_sig_ii).description=naive_pro{grNo};
+            case 3
+                input_sig_data(id_sig_ii).description=naive_pro{grNo};
         end
     end
 
@@ -265,7 +302,7 @@ for grNo=groups
 end
 
 switch handles.group_algo
-    case 1
+    case {1, 3}
         %Ming
 
         xticks([0 1 2])
@@ -370,6 +407,17 @@ for grNo=groups
             case 2
                 %Fabio
                 files_included=(handles.group==grNo)&(handles_out.mouseNo==mouseNo)&files_included_glm;
+            case 3
+                %Ming
+                switch grNo
+                    case 1
+                        files_included=(handles_out.perCorr>=45)&(handles_out.perCorr<=65)&(handles_out.mouseNo==mouseNo)&files_included_glm&(handles_out.grNo==handles.which_group);
+                    case 2
+                        files_included=(handles_out.perCorr>65)&(handles_out.perCorr<80)&(handles_out.mouseNo==mouseNo)&files_included_glm&(handles_out.grNo==handles.which_group);
+                    case 3
+                        files_included=(handles_out.perCorr>=80)&(handles_out.mouseNo==mouseNo)&files_included_glm&(handles_out.grNo==handles.which_group);
+                end
+
         end
         switch handles_out.use_pFDR
             case {0,1}
@@ -434,7 +482,7 @@ for grNo=groups
         input_sig_data(id_sig_ii).data=these_odor;
 
         switch handles.group_algo
-            case 1
+            case {1, 3}
                 input_sig_data(id_sig_ii).description=naive_pro{grNo};
             case 2
                 input_sig_data(id_sig_ii).description=naive_pro{grNo};
@@ -445,7 +493,7 @@ for grNo=groups
 end
 
 switch handles.group_algo
-    case 1
+    case {1, 3}
         %Ming
 
         xticks([0 1 2])
@@ -469,7 +517,11 @@ switch handles.group_algo
 end
 
 ylabel('% responsive')
-title('Percent ROIs responding to S+ per mouse')
+if handles.group_algo==3
+    title(['Percent ROIs responding to S+ per mouse, grNo ' num2str(handles.which_group)])
+else
+    title('Percent ROIs responding to S+ per mouse')
+end
 
 % %Perform the glm
 % fprintf(1, ['\nglm for percent responsive to S+ per mouse\n'])
@@ -548,6 +600,17 @@ for grNo=groups
             case 2
                 %Fabio
                 files_included=(handles.group==grNo)&(handles_out.mouseNo==mouseNo)&files_included_glm;
+            case 3
+                %Ming
+                switch grNo
+                    case 1
+                        files_included=(handles_out.perCorr>=45)&(handles_out.perCorr<=65)&(handles_out.mouseNo==mouseNo)&files_included_glm&(handles_out.grNo==handles.which_group);
+                    case 2
+                        files_included=(handles_out.perCorr>65)&(handles_out.perCorr<80)&(handles_out.mouseNo==mouseNo)&files_included_glm&(handles_out.grNo==handles.which_group);
+                    case 3
+                        files_included=(handles_out.perCorr>=80)&(handles_out.mouseNo==mouseNo)&files_included_glm&(handles_out.grNo==handles.which_group);
+                end
+
         end
 
         if sum(files_included)>0
@@ -619,7 +682,7 @@ for grNo=groups
 
 
     switch handles.group_algo
-        case 1
+        case {1, 3}
             input_sig_data(id_sig_ii).description=naive_pro{grNo};
         case 2
             input_sig_data(id_sig_ii).description=naive_pro{grNo};
@@ -629,7 +692,7 @@ for grNo=groups
 end
 
 switch handles.group_algo
-    case 1
+    case {1, 3}
         %Ming
 
         xticks([0 1 2])
@@ -653,7 +716,12 @@ switch handles.group_algo
 end
 
 ylabel('% responsive')
-title('Percent ROIs responding to S-')
+
+if handles.group_algo==3
+    title(['Percent ROIs responding to S-, grNo ' num2str(handles.which_group)])
+else
+    title('Percent ROIs responding to S-')
+end
 
 % %Perform the glm
 % fprintf(1, ['\nglm for percent responsive to S-\n'])
@@ -930,14 +998,27 @@ if handles_out.all_div_ii_dFF>5
     divergence_times_per_group=[];
     dFF_timecourse_per_clus=[];
     for grNo=[1 3]
-
-        switch grNo
-            case 1
-                ROIs_included=(handles_out.all_div_dFFspm_pcorr>=45)&(handles_out.all_div_dFFspm_pcorr<=65);
-            case 2
-                ROIs_included=(handles_out.all_div_dFFspm_pcorr>65)&(handles_out.all_div_dFFspm_pcorr<80);
+        switch handles.group_algo
+            case {1, 2}
+                %Ming spm and passive
+                switch grNo
+                    case 1
+                        ROIs_included=(handles_out.all_div_dFFspm_pcorr>=45)&(handles_out.all_div_dFFspm_pcorr<=65);
+                    case 2
+                        ROIs_included=(handles_out.all_div_dFFspm_pcorr>65)&(handles_out.all_div_dFFspm_pcorr<80);
+                    case 3
+                        ROIs_included=(handles_out.all_div_dFFspm_pcorr>=80);
+                end
             case 3
-                ROIs_included=(handles_out.all_div_dFFspm_pcorr>=80);
+                %Ming's AD
+                switch grNo
+                    case 1
+                        ROIs_included=(handles_out.all_div_dFFspm_pcorr>=45)&(handles_out.all_div_dFFspm_pcorr<=65)&(handles_out.all_div_dFFspm_group==handles.which_group);
+                    case 2
+                        ROIs_included=(handles_out.all_div_dFFspm_pcorr>65)&(handles_out.all_div_dFFspm_pcorr<80)&(handles_out.all_div_dFFspm_group==handles.which_group);
+                    case 3
+                        ROIs_included=(handles_out.all_div_dFFspm_pcorr>=80)&(handles_out.all_div_dFFspm_group==handles.which_group);
+                end
         end
 
         if sum(ROIs_included)>0
@@ -1007,7 +1088,11 @@ if handles_out.all_div_ii_dFF>5
             shading flat
 
             caxis([-1  1])
-            title(['Cross correlations for all ROIs'])
+            if handles.group_algo==3
+                title(['Cross correlations for all ROIs, grNo ' num2str(handles.which_group)])
+            else
+                title(['Cross correlations for all ROIs'])
+            end
             xlim([1 sum(ROIs_included)])
             ylim([1 sum(ROIs_included)])
 
@@ -1045,7 +1130,11 @@ if handles_out.all_div_ii_dFF>5
 
             xlim([-7 15])
             ylim([1 ii_included])
-            title(['S+ ' per_names{grNo+1}])
+            if handles.group_algo==3
+                title(['S+ ' per_names{grNo+1} ' grNo ' num2str(handles.which_group)])
+            else
+                title(['S+ ' per_names{grNo+1}])
+            end
             xlabel('Time (sec)')
             ylabel('ROI number')
 
@@ -1083,7 +1172,11 @@ if handles_out.all_div_ii_dFF>5
 
             xlim([-7 15])
             ylim([1 ii_included])
-            title(['S- ' per_names{grNo+1}])
+             if handles.group_algo==3
+                title(['S- ' per_names{grNo+1} ' grNo ' num2str(handles.which_group)])
+            else
+                title(['S- ' per_names{grNo+1}])
+            end
             xlabel('Time (sec)')
             ylabel('ROI number')
 
@@ -1199,8 +1292,11 @@ if handles_out.all_div_ii_dFF>5
                 xlabel('Time(sec)')
                 ylabel('dFF')
 
-
-                title(['dFF divergent for ' per_names{grNo+1} ' cluster no ' num2str(clus)])
+                if handles.group_algo==3
+                    title(['dFF divergent for ' per_names{grNo+1} ' cluster no ' num2str(clus) ' grNo ' num2str(handles.which_group)])
+                else
+                    title(['dFF divergent for ' per_names{grNo+1} ' cluster no ' num2str(clus)])
+                end
 
             end
 

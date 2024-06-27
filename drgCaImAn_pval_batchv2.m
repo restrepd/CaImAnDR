@@ -15,6 +15,11 @@ function handles_out=drgCaImAn_pval_batchv2(handles_choices)
 close all
 clear all
 
+addpath('/home/restrepd/Documents/MATLAB/drgMaster')
+addpath('/home/restrepd/Documents/MATLAB/CaImAnDR')
+addpath(genpath('/home/restrepd/Documents/MATLAB/m new/kakearney-boundedline-pkg-32f2a1f'))
+
+
 handles_out=[];
 
 %These are the dFF example figures to show for New Figure S3
@@ -1300,9 +1305,18 @@ if all_files_present==1
                     end
                 end
 
-                odor_responses=logical(handles_out.file(fileNo).output_data_odor_Sp.p<=handles_out.file(fileNo).output_data_odor_Sp.pFDR)|...
-                    logical(handles_out.file(fileNo).output_data_odor_Sm.p<=handles_out.file(fileNo).output_data_odor_Sm.pFDR);
-                no_odor_responses=sum(odor_responses);
+
+                no_odor_responses=0;
+                if isfield(handles_out.file(fileNo).output_data_odor_Sp,'p')
+                    odor_responses=logical(handles_out.file(fileNo).output_data_odor_Sp.p<=handles_out.file(fileNo).output_data_odor_Sp.pFDR);
+                    no_odor_responses=no_odor_responses+sum(odor_responses);
+                end
+                if isfield(handles_out.file(fileNo).output_data_odor_Sm,'p')
+                    odor_responses=logical(handles_out.file(fileNo).output_data_odor_Sm.p<=handles_out.file(fileNo).output_data_odor_Sm.pFDR);
+                    no_odor_responses=no_odor_responses+sum(odor_responses);
+                end
+
+                
                 handles_out.output_data_SporSm=[handles_out.output_data_SporSm no_odor_responses];
 
             case 5

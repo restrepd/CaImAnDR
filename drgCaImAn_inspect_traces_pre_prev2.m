@@ -207,7 +207,7 @@ if show_figures==1
     set(hFig, 'units','normalized','position',[.05 .1 .8 .8])
     hold on
     pcolor(perm_croscorr_traces)
-    colormap fire
+    colormap hot
 
     caxis([0    0.6])
     title(['Cross correlations for ' pre_perFileName])
@@ -227,7 +227,7 @@ if show_figures==1
     prain=[0:0.6/99:0.6];
     pcolor(repmat([1:10],100,1)',repmat(prain,10,1),repmat(prain,10,1))
     %             colormap jet
-    colormap fire
+    colormap hot
     shading interp
     ax=gca;
     set(ax,'XTickLabel','')
@@ -296,7 +296,7 @@ if show_figures==1
 
 
 
-    colormap fire
+    colormap hot
     shading interp
     cmax=prctile(traces(:),99);
     cmin=prctile(traces(:),1);
@@ -903,7 +903,7 @@ if length(hit_per_trial)>window
 
 
 
-        colormap fire
+        colormap hot
         shading interp
         cmax=prctile(traces(:),99);
         cmin=prctile(traces(:),1);
