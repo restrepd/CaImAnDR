@@ -4,6 +4,8 @@ function rspm_out=readdropcspm_hf(PathName,FileName,show_figure)
 % The program assumes version 1.1 output files
 % First, open the file
 
+%VERY IMPORTANT: When you bring in the files sort them by date
+
 if nargin==0
     clear;
     close all;
